@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Home Navigator — Test Harness</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --bg: #0f1117;
+  --surface: #1a1d27;
+  --surface2: #242836;
+  --border: #2e3345;
+  --text: #e4e6f0;
+  --text-dim: #8b8fa3;
+  --accent: #6c8cff;
+  --accent-glow: rgba(108, 140, 255, 0.15);
+  --highlight: #ffb74d;
+  --highlight-glow: rgba(255, 183, 77, 0.2);
+  --success: #66bb6a;
+}
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh;
+  overflow: hidden;
+}
+.app { display: flex; height: 100vh; }
+.sidebar {
+  width: 220px;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  padding: 16px 10px;
+  overflow-y: auto;
+}
+.sidebar h1 { font-size: 15px; margin-bottom: 4px; padding: 0 6px; }
+.sidebar .sub { font-size: 11px; color: var(--text-dim); padding: 0 6px; margin-bottom: 12px; }
+.sidebar .section { font-size: 10px; text-transform: uppercase; color: var(--text-dim); padding: 10px 6px 4px; letter-spacing: 0.05em; }
+.nav-item {
+  padding: 8px 10px;
+  border-radius: 7px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  margin-bottom: 2px;
+  transition: background 0.15s;
+}
+.nav-item:hover { background: var(--surface2); }
+.nav-item.active { background: var(--accent-glow); color: var(--accent); }
+.nav-item.has-results { background: var(--highlight-glow); }
+.nav-icon {
+  width: 26px; height: 26px;
+  border-radius: 6px;
+  background: var(--surface2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; flex-shrink: 0;
+}
+.nav-item.active .nav-icon { background: var(--accent); color: white; }
+.nav-count { margin-left: auto; font-size: 11px; color: var(--text-dim); background: var(--surface2); padding: 1px 6px; border-radius: 10px; }
+.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.topbar {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.search-box { flex: 1; max-width: 420px; position: relative; }
+.search-box input {
+  width: 100%;
+  padding: 8px 12px 8px 32px;
+  border-radius: 7px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 13px;
+  outline: none;
+}
+.search-box input:focus { border-color: var(--accent); }
+.search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text-dim); font-size: 13px; }
+.result-count { font-size: 12px; color: var(--text-dim); white-space: nowrap; }
+.view-toggle { margin-left: auto; display: flex; gap: 4px; }
+.btn {
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text);
+  font-size: 12px;
+  cursor: pointer;
+}
+.btn:hover { border-color: var(--accent); }
+.btn.active { background: var(--accent-glow); border-color: var(--accent); color: var(--accent); }
+.content { flex: 1; position: relative; }
+canvas#scene { width: 100% !important; height: 100% !important; display: block; }
+.stats {
+  padding: 6px 16px;
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+  display: flex;
+  gap: 16px;
+  font-size: 11px;
+  color: var(--text-dim);
+}
+.search-results-panel {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: rgba(26, 29, 39, 0.95);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  max-width: 280px;
+  max-height: 50vh;
+  overflow-y: auto;
+  z-index: 5;
+  backdrop-filter: blur(8px);
+}
+.search-result-item {
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  font-size: 12px;
+}
+.search-result-item:last-child { border-bottom: none; }
+.search-result-item:hover { color: var(--accent); }
+.search-result-name { font-weight: 600; }
+.search-result-loc { color: var(--text-dim); font-size: 11px; margin-top: 1px; }
+.overlay-hint {
+  position: absolute;
+  bottom: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(26, 29, 39, 0.9);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 6px 14px;
+  font-size: 11px;
+  color: var(--text-dim);
+  pointer-events: none;
+}
+</style>
+</head>
+<body>
+<div id="app" class="app">
+  <div class="sidebar" id="sidebar"></div>
+  <div class="main">
+    <div class="topbar">
+      <div class="search-box">
+        <span class="search-icon">&#x1F50D;</span>
+        <input id="search" type="text" placeholder="Search for anything... (try &quot;tea tray&quot;)" />
+      </div>
+      <span id="resultCount" class="result-count"></span>
+    </div>
+    <div class="content" id="content">
+      <canvas id="scene"></canvas>
+      <div id="searchResults" class="search-results-panel" style="display:none;"></div>
+      <div class="overlay-hint" id="hint">Click a room to fly in &middot; Scroll to zoom &middot; Drag to rotate</div>
+    </div>
+    <div class="stats" id="stats"></div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+
+// ---- MOCK DATA (fictional house, not Brendan's) ----
+const ROOMS = [
+  {
+    id: "r1", name: "Kitchen", icon: "K", color: "#5d4037",
+    pos_x: 0, pos_y: 0, pos_z: 0, width: 5, depth: 4, height: 2.7,
+    frames: [
+      { id: "f1", timestamp: "0:02", items: [
+        { id: "i1", name: "Stand mixer", location: "Counter, left of stove" },
+        { id: "i2", name: "Knife block", location: "Counter, right of stove" },
+        { id: "i3", name: "Spice rack", location: "Upper cabinet, right of stove" },
+      ]},
+      { id: "f2", timestamp: "0:06", items: [
+        { id: "i4", name: "Cast iron skillet", location: "Lower cabinet, under island" },
+        { id: "i5", name: "Dutch oven", location: "Lower cabinet, under island" },
+        { id: "i6", name: "Baking sheets", location: "Vertical organizer, next to oven" },
+      ]},
+    ]
+  },
+  {
+    id: "r2", name: "Basement", icon: "B", color: "#283593",
+    pos_x: 0, pos_y: 0, pos_z: -6, width: 6, depth: 5, height: 2.4,
+    frames: [
+      { id: "f3", timestamp: "0:04", items: [
+        { id: "i7", name: "Tea tray", location: "Bottom cabinet, left side" },
+        { id: "i8", name: "Serving bowls", location: "Bottom cabinet, right side" },
+        { id: "i9", name: "Holiday tablecloths", location: "Bottom cabinet, middle shelf" },
+      ]},
+      { id: "f4", timestamp: "0:08", items: [
+        { id: "i10", name: "Power drill", location: "Pegboard wall, top row" },
+        { id: "i11", name: "Screwdriver set", location: "Pegboard wall, middle row" },
+        { id: "i12", name: "Extension cords", location: "Hook by door" },
+      ]},
+    ]
+  },
+  {
+    id: "r3", name: "Garage", icon: "G", color: "#455a64",
+    pos_x: 7, pos_y: 0, pos_z: 0, width: 5, depth: 5, height: 3,
+    frames: [
+      { id: "f5", timestamp: "0:03", items: [
+        { id: "i13", name: "Bicycle", location: "Wall mount, left side" },
+        { id: "i14", name: "Camping tent", location: "Top shelf, back wall" },
+        { id: "i15", name: "Cooler", location: "Floor, under shelf" },
+      ]},
+    ]
+  },
+  {
+    id: "r4", name: "Master Bedroom", icon: "M", color: "#2e7d32",
+    pos_x: 0, pos_y: 0, pos_z: 6, width: 4.5, depth: 4, height: 2.7,
+    frames: [
+      { id: "f6", timestamp: "0:02", items: [
+        { id: "i16", name: "Extra pillows", location: "Top shelf, closet" },
+        { id: "i17", name: "Winter blankets", location: "Second shelf, closet" },
+        { id: "i18", name: "Luggage set", location: "Floor, back of closet" },
+      ]},
+    ]
+  },
+  {
+    id: "r5", name: "Living Room", icon: "L", color: "#6a1b9a",
+    pos_x: 7, pos_y: 0, pos_z: 6, width: 6, depth: 5, height: 2.7,
+    frames: [
+      { id: "f7", timestamp: "0:05", items: [
+        { id: "i19", name: "Board games", location: "TV stand, bottom shelf" },
+        { id: "i20", name: "Remote controls", location: "Coffee table drawer" },
+        { id: "i21", name: "Throw blankets", location: "Basket by couch" },
+        { id: "i22", name: "Photo albums", location: "Bookshelf, third row" },
+      ]},
+    ]
+  },
+];
+
+// ---- SCENE SETUP ----
+const canvas = document.getElementById('scene');
+const container = document.getElementById('content');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(window.devicePixelRatio);
+renderer.setClearColor(0x0f1117);
+
+const scene = new THREE.Scene();
+scene.fog = new THREE.Fog(0x0f1117, 25, 55);
+
+const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+camera.position.set(15, 14, 18);
+camera.lookAt(3, 0, 0);
+
+// Lighting
+scene.add(new THREE.AmbientLight(0xffffff, 0.35));
+const dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
+dirLight.position.set(10, 20, 10);
+scene.add(dirLight);
+const blueLight = new THREE.PointLight(0x6c8cff, 0.25, 30);
+blueLight.position.set(-8, 10, -8);
+scene.add(blueLight);
+
+// Ground grid
+const gridHelper = new THREE.GridHelper(40, 40, 0x2e3345, 0x1a1d27);
+gridHelper.position.y = -1.5;
+scene.add(gridHelper);
+
+// ---- CREATE ROOM MESHES ----
+const roomMeshes = {};
+const itemMeshes = {};
+const labelSprites = {};
+const WALLS = ['north', 'east', 'south', 'west'];
+
+function hexToColor(hex) { return new THREE.Color(hex); }
+
+function createTextSprite(text, color, size) {
+  const cvs = document.createElement('canvas');
+  const ctx = cvs.getContext('2d');
+  cvs.width = 512;
+  cvs.height = 128;
+  ctx.font = `bold ${size || 48}px -apple-system, sans-serif`;
+  ctx.fillStyle = color || '#e4e6f0';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(text, 256, 64);
+  const texture = new THREE.CanvasTexture(cvs);
+  const mat = new THREE.SpriteMaterial({ map: texture, transparent: true });
+  const sprite = new THREE.Sprite(mat);
+  sprite.scale.set(2.5, 0.6, 1);
+  return sprite;
+}
+
+ROOMS.forEach(room => {
+  const group = new THREE.Group();
+  group.position.set(room.pos_x, room.pos_y, room.pos_z);
+
+  // Box wireframe
+  const geo = new THREE.BoxGeometry(room.width, room.height, room.depth);
+  const edges = new THREE.EdgesGeometry(geo);
+  const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({
+    color: hexToColor(room.color), transparent: true, opacity: 0.5,
+  }));
+  group.add(line);
+
+  // Transparent fill
+  const fill = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({
+    color: hexToColor(room.color), transparent: true, opacity: 0.08, side: THREE.DoubleSide,
+  }));
+  group.add(fill);
+
+  // Floor
+  const floorGeo = new THREE.PlaneGeometry(room.width - 0.1, room.depth - 0.1);
+  const floor = new THREE.Mesh(floorGeo, new THREE.MeshStandardMaterial({
+    color: hexToColor(room.color), transparent: true, opacity: 0.15, side: THREE.DoubleSide,
+  }));
+  floor.rotation.x = -Math.PI / 2;
+  floor.position.y = -room.height / 2 + 0.01;
+  group.add(floor);
+
+  // Label
+  const label = createTextSprite(room.name, '#e4e6f0', 42);
+  label.position.y = room.height / 2 + 0.5;
+  group.add(label);
+  labelSprites[room.id] = label;
+
+  // Items count sub-label
+  const itemCount = room.frames.reduce((s, f) => s + f.items.length, 0);
+  const countLabel = createTextSprite(`${itemCount} items`, '#8b8fa3', 28);
+  countLabel.position.y = room.height / 2 + 0.15;
+  countLabel.scale.set(1.5, 0.4, 1);
+  group.add(countLabel);
+
+  // Item pins
+  let itemIdx = 0;
+  room.frames.forEach(frame => {
+    frame.items.forEach(item => {
+      const wall = WALLS[itemIdx % WALLS.length];
+      const col = Math.floor(itemIdx / WALLS.length);
+
+      let px, py, pz;
+      py = -room.height / 2 + 0.4 + col * 0.6;
+
+      const spread = 0.7;
+      const offset = (itemIdx % 4) * spread - spread * 1.5;
+
+      if (wall === 'north') { px = offset; pz = -room.depth / 2 + 0.15; }
+      else if (wall === 'south') { px = offset; pz = room.depth / 2 - 0.15; }
+      else if (wall === 'east') { px = room.width / 2 - 0.15; pz = offset; }
+      else { px = -room.width / 2 + 0.15; pz = offset; }
+
+      // Pin sphere
+      const sphere = new THREE.Mesh(
+        new THREE.SphereGeometry(0.07, 16, 16),
+        new THREE.MeshStandardMaterial({
+          color: 0x6c8cff, emissive: 0x6c8cff, emissiveIntensity: 0.3,
+        })
+      );
+      sphere.position.set(px, py, pz);
+      sphere.userData = { itemId: item.id, name: item.name, location: item.location, roomId: room.id };
+      group.add(sphere);
+
+      // Pin stem
+      const stem = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.008, 0.008, 0.16, 8),
+        new THREE.MeshStandardMaterial({ color: 0x8b8fa3, transparent: true, opacity: 0.6 })
+      );
+      stem.position.set(px, py - 0.12, pz);
+      group.add(stem);
+
+      itemMeshes[item.id] = { sphere, stem, group, room };
+      itemIdx++;
+    });
+  });
+
+  // Glow mesh (hidden by default)
+  const glowMesh = new THREE.Mesh(
+    new THREE.BoxGeometry(room.width + 0.3, room.height + 0.3, room.depth + 0.3),
+    new THREE.MeshStandardMaterial({
+      color: 0xffb74d, transparent: true, opacity: 0, side: THREE.BackSide,
+    })
+  );
+  glowMesh.visible = false;
+  group.add(glowMesh);
+
+  scene.add(group);
+  roomMeshes[room.id] = { group, fill, line, glowMesh, floor, room };
+});
+
+// Connection lines between rooms
+for (let i = 0; i < ROOMS.length - 1; i++) {
+  const a = ROOMS[i], b = ROOMS[i + 1];
+  const points = [
+    new THREE.Vector3(a.pos_x, -1.4, a.pos_z),
+    new THREE.Vector3(b.pos_x, -1.4, b.pos_z),
+  ];
+  const lineGeo = new THREE.BufferGeometry().setFromPoints(points);
+  const lineMat = new THREE.LineBasicMaterial({ color: 0x2e3345, transparent: true, opacity: 0.4 });
+  scene.add(new THREE.Line(lineGeo, lineMat));
+}
+
+// ---- ORBIT CONTROLS (manual) ----
+let isDragging = false;
+let prevMouse = { x: 0, y: 0 };
+let spherical = new THREE.Spherical().setFromVector3(camera.position.clone().sub(new THREE.Vector3(3, 0, 0)));
+let target = new THREE.Vector3(3, 0, 0);
+
+function updateCamera() {
+  camera.position.setFromSpherical(spherical).add(target);
+  camera.lookAt(target);
+}
+
+canvas.addEventListener('mousedown', (e) => { isDragging = true; prevMouse = { x: e.clientX, y: e.clientY }; });
+window.addEventListener('mouseup', () => { isDragging = false; });
+window.addEventListener('mousemove', (e) => {
+  if (!isDragging) return;
+  const dx = e.clientX - prevMouse.x;
+  const dy = e.clientY - prevMouse.y;
+  spherical.theta -= dx * 0.005;
+  spherical.phi = Math.max(0.2, Math.min(Math.PI / 2 - 0.05, spherical.phi - dy * 0.005));
+  updateCamera();
+  prevMouse = { x: e.clientX, y: e.clientY };
+});
+canvas.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  spherical.radius = Math.max(4, Math.min(40, spherical.radius + e.deltaY * 0.02));
+  updateCamera();
+}, { passive: false });
+
+// ---- FLY-TO ANIMATION ----
+let flyAnim = null;
+
+function flyTo(roomId) {
+  const rm = roomMeshes[roomId];
+  if (!rm) return;
+  const r = rm.room;
+  const newTarget = new THREE.Vector3(r.pos_x, 0, r.pos_z);
+  const newSph = new THREE.Spherical(
+    Math.max(r.width, r.depth) * 1.8,
+    Math.PI / 4,
+    spherical.theta
+  );
+
+  flyAnim = {
+    startTarget: target.clone(),
+    endTarget: newTarget,
+    startSph: spherical.clone(),
+    endSph: newSph,
+    progress: 0,
+  };
+}
+
+function easeInOutCubic(t) {
+  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+}
+
+// ---- CLICK DETECTION ----
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+
+canvas.addEventListener('click', (e) => {
+  const rect = canvas.getBoundingClientRect();
+  mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+  mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+  raycaster.setFromCamera(mouse, camera);
+
+  // Check room fills
+  const fills = Object.values(roomMeshes).map(r => r.fill);
+  const hits = raycaster.intersectObjects(fills);
+  if (hits.length > 0) {
+    const hit = hits[0].object;
+    const entry = Object.values(roomMeshes).find(r => r.fill === hit);
+    if (entry) {
+      setActiveRoom(entry.room.id);
+      flyTo(entry.room.id);
+    }
+  }
+});
+
+// ---- SEARCH ----
+let activeRoomId = null;
+let highlightedRooms = new Set();
+let highlightedItems = new Set();
+
+function searchItems(query) {
+  if (!query.trim()) return [];
+  const q = query.toLowerCase();
+  const results = [];
+  ROOMS.forEach(room => {
+    room.frames.forEach(frame => {
+      frame.items.forEach(item => {
+        if (item.name.toLowerCase().includes(q) || item.location.toLowerCase().includes(q)) {
+          results.push({ ...item, roomId: room.id, roomName: room.name });
+        }
+      });
+    });
+  });
+  return results;
+}
+
+function updateHighlights() {
+  Object.entries(roomMeshes).forEach(([id, rm]) => {
+    const isHL = highlightedRooms.has(id);
+    const isActive = activeRoomId === id;
+    const color = isHL ? 0xffb74d : isActive ? 0x6c8cff : hexToColor(rm.room.color);
+
+    rm.line.material.color.set(color);
+    rm.line.material.opacity = isHL ? 0.9 : isActive ? 0.7 : 0.4;
+    rm.fill.material.color.set(color);
+    rm.fill.material.opacity = isHL ? 0.25 : isActive ? 0.2 : 0.08;
+    rm.glowMesh.visible = isHL;
+  });
+
+  Object.entries(itemMeshes).forEach(([id, im]) => {
+    const isHL = highlightedItems.has(id);
+    im.sphere.material.color.set(isHL ? 0xff9800 : 0x6c8cff);
+    im.sphere.material.emissive.set(isHL ? 0xff9800 : 0x6c8cff);
+    im.sphere.material.emissiveIntensity = isHL ? 1 : 0.3;
+    im.sphere.scale.setScalar(isHL ? 2 : 1);
+  });
+}
+
+const searchInput = document.getElementById('search');
+const resultCountEl = document.getElementById('resultCount');
+const searchResultsPanel = document.getElementById('searchResults');
+const hintEl = document.getElementById('hint');
+
+searchInput.addEventListener('input', () => {
+  const q = searchInput.value;
+  const results = searchItems(q);
+
+  highlightedRooms = new Set(results.map(r => r.roomId));
+  highlightedItems = new Set(results.map(r => r.id));
+  updateHighlights();
+  renderSidebar();
+
+  if (results.length > 0) {
+    resultCountEl.textContent = `${results.length} match${results.length === 1 ? '' : 'es'} across ${highlightedRooms.size} room${highlightedRooms.size === 1 ? '' : 's'}`;
+    hintEl.style.display = 'none';
+
+    // Fly to first result's room
+    flyTo(results[0].roomId);
+
+    // Show results panel
+    searchResultsPanel.style.display = 'block';
+    searchResultsPanel.innerHTML = `
+      <div style="font-size:11px;color:var(--text-dim);margin-bottom:6px;">Found ${results.length} items</div>
+      ${results.map(r => `
+        <div class="search-result-item" data-room="${r.roomId}">
+          <div class="search-result-name">${r.name}</div>
+          <div class="search-result-loc">${r.roomName} &middot; ${r.location}</div>
+        </div>
+      `).join('')}
+    `;
+
+    // Click handlers on results
+    searchResultsPanel.querySelectorAll('.search-result-item').forEach(el => {
+      el.addEventListener('click', () => {
+        flyTo(el.dataset.room);
+        setActiveRoom(el.dataset.room);
+      });
+    });
+  } else {
+    resultCountEl.textContent = q ? 'No matches' : '';
+    searchResultsPanel.style.display = 'none';
+    hintEl.style.display = q ? 'none' : '';
+  }
+});
+
+// ---- SIDEBAR ----
+function setActiveRoom(id) {
+  activeRoomId = id;
+  updateHighlights();
+  renderSidebar();
+}
+
+function renderSidebar() {
+  const sb = document.getElementById('sidebar');
+  const totalItems = ROOMS.reduce((s, r) => s + r.frames.reduce((ss, f) => ss + f.items.length, 0), 0);
+
+  sb.innerHTML = `
+    <h1>Home Navigator</h1>
+    <div class="sub">Search anything in your house</div>
+    <div class="section">Views</div>
+    <div class="nav-item ${!activeRoomId ? 'active' : ''}" data-action="all">
+      <span class="nav-icon">3D</span>
+      <span>House View</span>
+    </div>
+    <div class="section">Rooms</div>
+    ${ROOMS.map(r => {
+      const count = r.frames.reduce((s, f) => s + f.items.length, 0);
+      const hasResults = highlightedRooms.has(r.id);
+      return `
+        <div class="nav-item ${activeRoomId === r.id ? 'active' : ''} ${hasResults ? 'has-results' : ''}" data-room="${r.id}">
+          <span class="nav-icon">${r.icon}</span>
+          <span>${r.name}</span>
+          <span class="nav-count">${count}</span>
+        </div>
+      `;
+    }).join('')}
+  `;
+
+  // Click handlers
+  sb.querySelectorAll('[data-room]').forEach(el => {
+    el.addEventListener('click', () => {
+      setActiveRoom(el.dataset.room);
+      flyTo(el.dataset.room);
+    });
+  });
+  sb.querySelector('[data-action="all"]')?.addEventListener('click', () => {
+    setActiveRoom(null);
+    flyAnim = {
+      startTarget: target.clone(),
+      endTarget: new THREE.Vector3(3, 0, 0),
+      startSph: spherical.clone(),
+      endSph: new THREE.Spherical(22, Math.PI / 4, spherical.theta),
+      progress: 0,
+    };
+  });
+
+  // Stats
+  const statsEl = document.getElementById('stats');
+  statsEl.innerHTML = `
+    <span>${ROOMS.length} rooms</span>
+    <span>${ROOMS.reduce((s, r) => s + r.frames.length, 0)} frames</span>
+    <span>${totalItems} items cataloged</span>
+  `;
+}
+renderSidebar();
+
+// ---- ANIMATION LOOP ----
+const clock = new THREE.Clock();
+
+function animate() {
+  requestAnimationFrame(animate);
+  const delta = clock.getDelta();
+  const elapsed = clock.getElapsedTime();
+
+  // Fly-to animation
+  if (flyAnim) {
+    flyAnim.progress = Math.min(flyAnim.progress + delta * 1.5, 1);
+    const t = easeInOutCubic(flyAnim.progress);
+
+    target.lerpVectors(flyAnim.startTarget, flyAnim.endTarget, t);
+    spherical.radius = THREE.MathUtils.lerp(flyAnim.startSph.radius, flyAnim.endSph.radius, t);
+    spherical.phi = THREE.MathUtils.lerp(flyAnim.startSph.phi, flyAnim.endSph.phi, t);
+    spherical.theta = THREE.MathUtils.lerp(flyAnim.startSph.theta, flyAnim.endSph.theta, t);
+    updateCamera();
+
+    if (flyAnim.progress >= 1) flyAnim = null;
+  }
+
+  // Pulsing glow on highlighted rooms
+  Object.entries(roomMeshes).forEach(([id, rm]) => {
+    if (highlightedRooms.has(id)) {
+      const pulse = Math.sin(elapsed * 3) * 0.12 + 0.25;
+      rm.glowMesh.material.opacity = pulse;
+    }
+  });
+
+  // Bouncing highlighted items
+  Object.entries(itemMeshes).forEach(([id, im]) => {
+    if (highlightedItems.has(id)) {
+      const bounce = Math.abs(Math.sin(elapsed * 4)) * 0.15;
+      im.sphere.position.y = im.sphere.userData._baseY + bounce;
+    }
+  });
+
+  // Billboard labels
+  Object.values(labelSprites).forEach(sprite => {
+    sprite.quaternion.copy(camera.quaternion);
+  });
+
+  // Resize
+  const w = container.clientWidth;
+  const h = container.clientHeight;
+  if (canvas.width !== w || canvas.height !== h) {
+    renderer.setSize(w, h);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+  }
+
+  renderer.render(scene, camera);
+}
+
+// Store base Y for item bounce
+Object.values(itemMeshes).forEach(im => {
+  im.sphere.userData._baseY = im.sphere.position.y;
+});
+
+animate();
+</script>
+</body>
+</html>
