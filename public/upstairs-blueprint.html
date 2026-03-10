@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Upstairs Blueprint v6 — 2D Top-Down</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #111; color: #e0e0e0; font-family: 'Segoe UI', system-ui, sans-serif; padding: 12px; }
+h1 { text-align: center; margin-bottom: 2px; color: #82b1ff; font-size: 18px; }
+.sub { text-align: center; color: #666; margin-bottom: 8px; font-size: 11px; }
+.legend { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; font-size: 10px; margin-bottom: 6px; }
+.legend span { display: flex; align-items: center; gap: 3px; }
+.legend .s { width: 10px; height: 10px; border-radius: 2px; border: 1px solid #444; }
+canvas { display: block; margin: 0 auto; border: 1px solid #2a2a2a; border-radius: 4px; }
+.notes { max-width: 750px; margin: 12px auto; font-size: 10px; line-height: 1.4; color: #888; }
+.notes h3 { color: #82b1ff; margin: 8px 0 3px; font-size: 12px; }
+.notes .w { color: #ffab40; }
+</style>
+</head>
+<body>
+<h1>Upstairs Floor — Blueprint v6</h1>
+<p class="sub">Top-down · North ↑ · East → · 1 grid = 1 ft</p>
+<div class="legend">
+  <span><div class="s" style="background:#388e3c"></div> Master (r4)</span>
+  <span><div class="s" style="background:#66bb6a"></div> Baby Room (r9)</span>
+  <span><div class="s" style="background:#5c6bc0"></div> Hallway (r10)</span>
+  <span><div class="s" style="background:#4fc3f7"></div> Bathroom (r11)</span>
+  <span><div class="s" style="background:#8d6e63"></div> Walk-in Closet</span>
+  <span><div class="s" style="background:#ef6c00"></div> Middle Zone</span>
+  <span><div class="s" style="background:#ff7043"></div> Door</span>
+  <span><div class="s" style="background:#ffeb3b"></div> ❓</span>
+</div>
+<canvas id="bp" width="1050" height="950"></canvas>
+<div class="notes">
+<h3>Layout (N→S) — everything shifted down, master stays put</h3>
+<p>Baby Room (20×14ft, y=7..21) → Corridors (15ft, y=21..36): Alcove(W,N)+Closet(W,S) | Bath(5ft)+Mid(3ft)+Hall(9ft to E wall) → Master (23×16ft, y=36..52).</p>
+<h3>v6 changes from v5b</h3>
+<p>1. Master back at y=36..52. Everything else shifted south 7ft. 2. Linen closet restored. 3. Queen bed moved to W wall. 4. Hallway wider (to E wall, x=14..23). Master extended to x=23. Baby closet E wall = hallway E wall = master E wall (all x=23). 5. Table+stools on master N wall between doors. 6. Hall door moved east.</p>
+<h3>Middle Zone (S→N): Laundry(5ft) · Bath closet(2ft) · Linen closet(2ft) · Vanity(6ft)</h3>
+<h3 class="w">❓ Uncertainties</h3>
+<p class="w">1. Baby closet depth · 2. Glider position · 3. Desk dimensions · 4. Table+stools size</p>
+</div>
+<script>
+const C = document.getElementById('bp');
+const ctx = C.getContext('2d');
+const CW = C.width, CH = C.height;
+
+const S = 14; // 14 px/ft (slightly smaller to fit)
+const OX = 50, OY = 20;
+
+// ============================================================
+// v6 COORDINATES (ft). x→East (right). y→South (down).
+//
+//  BABY ROOM:       x=0..20,  y=7..21   (20×14ft)
+//  BABY CLOSET:     x=20..23, y=8..13   (3×5ft, NE extension)
+//
+//  --- CORRIDOR ZONE y=21..36 (15ft) ---
+//  ALCOVE:          x=0..6,   y=21..29  (6×8ft, N portion of W strip)
+//  WALK-IN CLOSET:  x=0..6,   y=29..36  (6×7ft, S portion of W strip)
+//  BATH CORRIDOR:   x=6..11,  y=21..36  (5×15ft)
+//  MIDDLE ZONE:     x=11..14, y=21..36  (3×15ft)
+//  HALLWAY:         x=14..23, y=21..36  (9×15ft, to E wall)
+//
+//  MASTER:          x=0..23,  y=36..52  (23×16ft)
+//
+//  KEY ALIGNMENTS:
+//    Alcove S wall (y=29) = Closet N wall (y=29)
+//    Closet E wall (x=6) = Bath W wall (x=6)
+//    Corridor S wall (y=36) = Master N wall (y=36) ← NO GAP
+//    Baby closet E (x=23) = Hall E (x=23) = Master E (x=23)
+// ============================================================
+
+function px(f){return f*S}
+function X(f){return OX+px(f)}
+function Y(f){return OY+px(f)}
+
+function room(x,y,w,h,c,a){
+  ctx.fillStyle=c;ctx.globalAlpha=a||0.1;ctx.fillRect(X(x),Y(y),px(w),px(h));
+  ctx.globalAlpha=1;ctx.strokeStyle=c;ctx.lineWidth=2;ctx.strokeRect(X(x),Y(y),px(w),px(h));
+}
+function lbl(x,y,w,h,t,c,sz){
+  ctx.fillStyle=c||'#fff';ctx.font=`bold ${sz||11}px system-ui`;
+  ctx.textAlign='center';ctx.textBaseline='middle';
+  const lines=t.split('\n');const lh=(sz||11)+2;
+  const startY=Y(y+h/2)-(lines.length-1)*lh/2;
+  lines.forEach((l,i)=>ctx.fillText(l,X(x+w/2),startY+i*lh));
+  ctx.textBaseline='alphabetic';
+}
+function bx(x,y,w,h,c,t,sz){
+  ctx.fillStyle=c;ctx.globalAlpha=0.4;ctx.fillRect(X(x),Y(y),px(w),px(h));
+  ctx.globalAlpha=1;ctx.strokeStyle=c;ctx.lineWidth=0.8;ctx.strokeRect(X(x),Y(y),px(w),px(h));
+  if(t){ctx.fillStyle='#fff';ctx.font=`${sz||7}px system-ui`;
+  ctx.textAlign='center';ctx.textBaseline='middle';
+  const ls=t.split('\n'),lh=(sz||7)+1,sy=Y(y+h/2)-(ls.length-1)*lh/2;
+  ls.forEach((l,i)=>ctx.fillText(l,X(x+w/2),sy+i*lh));
+  ctx.textBaseline='alphabetic';}
+}
+function dr(x,y,w,h){ctx.fillStyle='#ff7043';ctx.globalAlpha=0.85;ctx.fillRect(X(x),Y(y),px(w),px(h));ctx.globalAlpha=1;}
+function dl(x,y,t){ctx.fillStyle='#ff7043';ctx.font='7px system-ui';ctx.textAlign='center';ctx.fillText(t,X(x),Y(y));}
+function nt(x,y,t,c,sz,al){ctx.fillStyle=c||'#555';ctx.font=`${sz||8}px system-ui`;ctx.textAlign=al||'center';ctx.fillText(t,X(x),Y(y));}
+function unc(x,y){ctx.fillStyle='#ffeb3b';ctx.font='10px system-ui';ctx.textAlign='center';ctx.fillText('❓',X(x),Y(y));}
+function dimH(x1,x2,y,t){
+  const ya=Y(y),a=X(x1),b=X(x2);
+  ctx.strokeStyle='#444';ctx.lineWidth=0.8;ctx.setLineDash([2,2]);
+  ctx.beginPath();ctx.moveTo(a,ya);ctx.lineTo(b,ya);ctx.stroke();ctx.setLineDash([]);
+  ctx.beginPath();ctx.moveTo(a,ya-3);ctx.lineTo(a,ya+3);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(b,ya-3);ctx.lineTo(b,ya+3);ctx.stroke();
+  ctx.fillStyle='#666';ctx.font='8px system-ui';ctx.textAlign='center';ctx.fillText(t,(a+b)/2,ya-4);
+}
+function dimV(x,y1,y2,t){
+  const xa=X(x),a=Y(y1),b=Y(y2);
+  ctx.strokeStyle='#444';ctx.lineWidth=0.8;ctx.setLineDash([2,2]);
+  ctx.beginPath();ctx.moveTo(xa,a);ctx.lineTo(xa,b);ctx.stroke();ctx.setLineDash([]);
+  ctx.beginPath();ctx.moveTo(xa-3,a);ctx.lineTo(xa+3,a);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(xa-3,b);ctx.lineTo(xa+3,b);ctx.stroke();
+  ctx.save();ctx.translate(xa-6,(a+b)/2);ctx.rotate(-Math.PI/2);
+  ctx.fillStyle='#666';ctx.font='8px system-ui';ctx.textAlign='center';ctx.fillText(t,0,0);
+  ctx.restore();
+}
+
+// --- clear + grid ---
+ctx.fillStyle='#090909';ctx.fillRect(0,0,CW,CH);
+ctx.strokeStyle='#141414';ctx.lineWidth=0.3;
+for(let g=5;g<=55;g++){
+  ctx.beginPath();ctx.moveTo(X(-2),Y(g));ctx.lineTo(X(26),Y(g));ctx.stroke();
+  ctx.beginPath();ctx.moveTo(X(g-5),Y(5));ctx.lineTo(X(g-5),Y(55));ctx.stroke();
+}
+
+// ================================================================
+//  BABY'S ROOM (r9) — x=0..20, y=7..21 (20×14ft)
+// ================================================================
+room(0,7,20,14,'#66bb6a');
+lbl(0,7,20,5,"BABY'S ROOM (r9) 20×14ft",'#a5d6a7',12);
+
+// Baby closet — NE, extends 3ft east (x=20..23)
+room(20,8,3,5,'#8d6e63',0.12);
+lbl(20,8,3,5,"Closet",'#a1887f',8);
+unc(21.5,13.5);
+
+// Queen bed — SW corner, AGAINST WEST WALL
+bx(0.3,14.5,5,6.2,'#2e7d32','Queen\nBed',8);
+nt(2.8,14,'W wall + SW corner','#4caf50',6);
+
+// Bookshelf — E wall, south of closet
+bx(19,13,1,4,'#4caf50','Book-\nshelf',6);
+
+// Glider — uncertain
+bx(8,8.5,3,3,'#4caf50','Glider\n(45°)',7);
+unc(9.5,7.8);
+
+// Dresser+mirror — south wall between doors
+bx(11,19.5,4,1.3,'#4caf50','Dresser+Mirror',7);
+
+// 2 DOORS on south wall (y=21):
+dr(7,20.7,3,0.6);
+dl(8.5,21.8,'Door→Bath');
+dr(15,20.7,3,0.6);
+dl(16.5,21.8,'Door→Hall');
+
+// ================================================================
+//  ALCOVE — x=0..6, y=21..29 (6×8ft)
+//  N portion of west strip. S wall (y=29) = closet N wall.
+// ================================================================
+room(0,21,6,8,'#4fc3f7',0.06);
+ctx.strokeStyle='#4fc3f7';ctx.lineWidth=1.5;ctx.strokeRect(X(0),Y(21),px(6),px(8));
+nt(3,20.3,'Alcove (tub/toilet/shower)','#4fc3f7',7);
+
+// N→S: Tub, Toilet, Shower
+bx(0.3,21.3,5.4,2.2,'#0288d1','Bathtub (full width)',7);
+bx(0.3,24,2,2.5,'#0288d1','Toilet\n(W wall)',6);
+nt(4,25,'(open E)','#4fc3f7',6);
+bx(0.3,27,5.4,1.7,'#0288d1','Walk-in Shower',7);
+
+// ================================================================
+//  WALK-IN CLOSET — x=0..6, y=29..36 (6×7ft)
+//  S portion of west strip. Extrudes N from master.
+//  S wall (y=36) = master N wall.
+// ================================================================
+room(0,29,6,7,'#8d6e63',0.12);
+lbl(0,29,6,7,"WALK-IN\nCLOSET\n6×7ft",'#bcaaa4',10);
+
+// Closet door → master (south wall)
+dr(1.5,35.7,3,0.6);
+dl(3,36.8,'Closet→Master');
+
+// ================================================================
+//  BATH CORRIDOR (r11) — x=6..11, y=21..36 (5×15ft)
+// ================================================================
+room(6,21,5,15,'#4fc3f7');
+lbl(6,27,5,9,"BATH\nCORRIDOR\n(r11)",'#81d4fa',9);
+
+// Bath south door → master
+dr(7,35.7,3,0.6);
+dl(8.5,37.2,'Door→Master');
+
+// ================================================================
+//  MIDDLE ZONE — x=11..14, y=21..36 (3×15ft)
+//  No doors. Linen closet restored.
+// ================================================================
+room(11,21,3,15,'#ef6c00',0.06);
+ctx.strokeStyle='#ef6c00';ctx.lineWidth=1.5;ctx.setLineDash([3,2]);
+ctx.strokeRect(X(11),Y(21),px(3),px(15));ctx.setLineDash([]);
+
+// Features S→N (y=36 is south, y=21 is north):
+// 1. Laundry nook (S end, 5ft): y=31..36
+bx(11.2,31,2.6,4.8,'#ef6c00','Laundry\nNook\n(5ft)',7);
+
+// 2. Bath closet (2ft): y=29..31
+bx(11.2,29,2.6,1.8,'#ef6c00','Bath\nCloset',6);
+
+// 3. Linen closet (2ft): y=27..29
+bx(11.2,27,2.6,1.8,'#ef6c00','Linen\nCloset',6);
+
+// 4. Vanity (6ft, to N wall): y=21..27
+bx(11.2,21.2,2.6,5.6,'#0288d1','VANITY\nAREA\n(6ft)\n\nextends E\nfrom bath',6);
+
+// ================================================================
+//  HALLWAY (r10) — x=14..23, y=21..36 (9×15ft)
+//  Wider: extends to E wall (x=23).
+//  E wall aligns with baby closet E and master E.
+// ================================================================
+room(14,21,9,15,'#5c6bc0');
+lbl(14,21,9,15,"HALLWAY\n(r10)\n9×15ft",'#9fa8da',10);
+
+// Stair railing (interior, ~x=20)
+ctx.strokeStyle='#ff9800';ctx.lineWidth=1.5;ctx.setLineDash([4,3]);
+ctx.beginPath();ctx.moveTo(X(20),Y(21));ctx.lineTo(X(20),Y(36));ctx.stroke();
+ctx.setLineDash([]);
+nt(21.5,28.5,'Stair','#ff9800',7);
+nt(21.5,29.3,'zone','#ff9800',7);
+
+// Hall south door → master (EAST END, near E wall)
+dr(20,35.7,2.5,0.6);
+dl(21.2,37.2,'Door→Master');
+
+// ================================================================
+//  MASTER BEDROOM (r4) — x=0..23, y=36..52 (23×16ft)
+//  N wall at y=36 = corridor S wall. NO GAP.
+// ================================================================
+room(0,36,23,16,'#388e3c');
+lbl(7,42,10,5,"MASTER BEDROOM (r4)\n23×16ft",'#a5d6a7',13);
+
+// --- TABLE + STOOLS on N wall between bath door and hall door ---
+bx(11,36.3,7,2,'#2e7d32','Table + Stools',7);
+nt(14.5,38.8,'(N wall, between doors)','#555',6);
+unc(14.5,39.5);
+
+// --- SOUTH WALL (y=52): Fireplace centered ---
+bx(8.5,49.5,6,2.5,'#795548','STONE\nFIREPLACE',8);
+bx(2,50.5,5.5,1,'#ffcc80','Windows',7);
+bx(15.5,50.5,5.5,1,'#ffcc80','Win+Balcony',7);
+nt(11.5,48.5,'S WALL — fireplace (no hearth)','#a1887f',7);
+
+// --- WEST WALL (x=0): pictures ---
+nt(0.8,44,'W wall:','#555',6);
+nt(0.8,44.8,'pictures','#555',6);
+
+// --- DESK: ~2ft from W wall, 6ft N-S, south of closet ---
+bx(2,39.5,2,6,'#2e7d32','Desk\n(2 stools)',8);
+
+// --- NIGHTSTANDS: N and S of desk ---
+bx(2.3,38.5,1.5,0.8,'#388e3c','NS',6);
+bx(2.3,45.7,1.5,0.8,'#388e3c','NS',6);
+
+// --- KING BED: headboard W at x=4, touching desk ---
+bx(4,39,6.3,6.7,'#1b5e20','King\nBed',9);
+nt(7,38.3,'headboard W →','#555',6);
+
+// --- EAST WALL (x=23): Credenza + TV + screens ---
+bx(21,40,1.8,5,'#2e7d32','Credenza\n+TV above',7);
+bx(21.2,38.5,1.5,1.3,'#558b2f','Scrn',6);
+bx(21.2,45.3,1.5,1.3,'#558b2f','Scrn',6);
+nt(22,37.5,'E wall','#555',6);
+
+// ================================================================
+//  DIMENSION LINES
+// ================================================================
+// Baby room
+dimH(0,20,6,'20 ft');
+dimV(-1.5,7,21,'14 ft');
+
+// Corridors
+dimH(6,11,20,'5 ft');
+dimH(11,14,20.3,'3ft');
+dimH(14,23,20,'9 ft hall');
+dimV(24,21,36,'15 ft');
+
+// Alcove
+dimH(0,6,20,'~6 ft');
+dimV(-1,21,29,'~8 ft');
+
+// Walk-in closet
+dimH(0,6,28.5,'6 ft');
+dimV(-1.5,29,36,'7 ft');
+
+// Master
+dimH(0,23,53,'23 ft');
+dimV(-2.5,36,52,'16 ft');
+
+// ================================================================
+//  ALIGNMENT ANNOTATIONS
+// ================================================================
+// Red: bath W = closet E at x=6
+ctx.strokeStyle='#ff5252';ctx.lineWidth=1;ctx.setLineDash([2,2]);
+ctx.beginPath();ctx.moveTo(X(6),Y(21));ctx.lineTo(X(6),Y(36));ctx.stroke();
+ctx.setLineDash([]);
+nt(4,35,'bath W = closet E','#ff5252',6);
+
+// Green: corridor S = master N at y=36
+ctx.strokeStyle='#69f0ae';ctx.lineWidth=1.5;ctx.setLineDash([2,2]);
+ctx.beginPath();ctx.moveTo(X(0),Y(36));ctx.lineTo(X(23),Y(36));ctx.stroke();
+ctx.setLineDash([]);
+nt(18,36.6,'corridor S = master N (y=36)','#69f0ae',6);
+
+// Blue: east wall alignment at x=23
+ctx.strokeStyle='#42a5f5';ctx.lineWidth=1;ctx.setLineDash([2,2]);
+ctx.beginPath();ctx.moveTo(X(23),Y(8));ctx.lineTo(X(23),Y(52));ctx.stroke();
+ctx.setLineDash([]);
+nt(24,15,'E wall','#42a5f5',6);
+nt(24,15.7,'x=23','#42a5f5',6);
+
+// Alcove S = closet N at y=29
+ctx.strokeStyle='#ffab40';ctx.lineWidth=1;ctx.setLineDash([2,2]);
+ctx.beginPath();ctx.moveTo(X(0),Y(29));ctx.lineTo(X(6),Y(29));ctx.stroke();
+ctx.setLineDash([]);
+nt(3,29.8,'alcove S = closet N','#ffab40',6);
+
+// ================================================================
+//  COMPASS
+// ================================================================
+const cx=CW-50,cy=35;
+ctx.strokeStyle='#aaa';ctx.lineWidth=1.5;
+ctx.beginPath();ctx.moveTo(cx,cy+12);ctx.lineTo(cx,cy-12);ctx.stroke();
+ctx.beginPath();ctx.moveTo(cx-3,cy-7);ctx.lineTo(cx,cy-12);ctx.lineTo(cx+3,cy-7);ctx.stroke();
+ctx.beginPath();ctx.moveTo(cx-12,cy);ctx.lineTo(cx+12,cy);ctx.stroke();
+ctx.beginPath();ctx.moveTo(cx+7,cy-3);ctx.lineTo(cx+12,cy);ctx.lineTo(cx+7,cy+3);ctx.stroke();
+ctx.fillStyle='#fff';ctx.font='bold 10px system-ui';ctx.textAlign='center';
+ctx.fillText('N',cx,cy-17);
+ctx.fillStyle='#777';ctx.font='8px system-ui';
+ctx.fillText('S',cx,cy+20);ctx.fillText('W',cx-18,cy+3);ctx.fillText('E',cx+18,cy+3);
+
+// ================================================================
+//  SCALE
+// ================================================================
+const sbx=12,sby=CH-12;
+ctx.fillStyle='#444';ctx.font='8px system-ui';ctx.textAlign='left';ctx.fillText('Scale:',sbx,sby);
+ctx.strokeStyle='#444';ctx.lineWidth=1;
+ctx.beginPath();ctx.moveTo(sbx+32,sby);ctx.lineTo(sbx+32+5*S,sby);ctx.stroke();
+ctx.beginPath();ctx.moveTo(sbx+32,sby-2);ctx.lineTo(sbx+32,sby+2);ctx.stroke();
+ctx.beginPath();ctx.moveTo(sbx+32+5*S,sby-2);ctx.lineTo(sbx+32+5*S,sby+2);ctx.stroke();
+ctx.textAlign='center';ctx.fillText('5 ft',sbx+32+2.5*S,sby-4);
+
+// House outline (L-shape: baby room narrower on east)
+ctx.strokeStyle='#2a2a2a';ctx.lineWidth=1;ctx.setLineDash([6,3]);
+ctx.beginPath();
+ctx.moveTo(X(0),Y(7));   // baby NW
+ctx.lineTo(X(20),Y(7));  // baby NE
+ctx.lineTo(X(20),Y(8));  // jog to closet
+ctx.lineTo(X(23),Y(8));  // closet NE
+ctx.lineTo(X(23),Y(52)); // down east wall
+ctx.lineTo(X(0),Y(52));  // master SW
+ctx.lineTo(X(0),Y(7));   // back to baby NW
+ctx.stroke();
+ctx.setLineDash([]);
+
+nt(11,5.5,'A-frame roof covers both bedrooms','#888',8);
+
+</script>
+</body>
+</html>
