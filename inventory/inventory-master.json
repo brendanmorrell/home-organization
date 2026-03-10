@@ -1,0 +1,26 @@
+{
+  "version": "1.0",
+  "lastUpdated": "2026-03-10",
+  "householdContext": {
+    "location": "Colorado Springs, CO",
+    "residents": ["Brendan", "Wife", "Son (1.5yr)"]
+  },
+  "categories": [
+    "Workshop", "Auto & Garage", "Outdoor & Lawn", "Camping & Travel",
+    "Kitchen Overflow", "Household Maintenance", "Household Chemicals",
+    "Cleaning & Consumables", "Medical & First Aid", "Office & Tech",
+    "Seasonal & Holiday", "Clothing Overflow", "Baby: Current Overflow",
+    "Baby: Round Two", "Memorabilia & Sentimental", "Linens & Bedding",
+    "Documents & Records", "Home Materials", "Wife's SLP Supplies",
+    "Original House Fixtures"
+  ],
+  "tiers": {
+    "1": "Grab and Go (daily access)",
+    "2": "Easy Trip (periodic access)",
+    "3": "Planned Retrieval (yearly or less)",
+    "4": "Deep Archive (functionally never)"
+  },
+  "boxes": [],
+  "items": [],
+  "flaggedForRemoval": []
+}
