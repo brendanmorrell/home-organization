@@ -118,6 +118,16 @@ export default function AppLayout() {
 
           <div className="nav-section">Manage</div>
           <Link
+            to="/inventory"
+            className={`nav-item ${
+              location.pathname === "/inventory" ? "active" : ""
+            }`}
+          >
+            <span className="icon">&#x1F4CB;</span>
+            <span>Inventory</span>
+            <span className="count">{totalItems}</span>
+          </Link>
+          <Link
             to="/admin"
             className={`nav-item ${
               location.pathname === "/admin" ? "active" : ""

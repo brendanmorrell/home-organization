@@ -165,6 +165,20 @@ export async function createItems(
   return data || [];
 }
 
+export async function updateItem(
+  id: string,
+  fields: Partial<Pick<Item, "name" | "location">>
+): Promise<Item> {
+  const { data, error } = await supabase
+    .from("items")
+    .update(fields)
+    .eq("id", id)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
 export async function uploadFrameImage(
   file: File | Blob,
   path: string
