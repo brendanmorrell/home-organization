@@ -1,0 +1,9 @@
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": "build/client",
+  "rewrites": [
+    { "source": "/house-3d.html", "destination": "/house-3d.html" },
+    { "source": "/assets/(.*)", "destination": "/assets/$1" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}

@@ -1,0 +1,491 @@
+import { useState } from "react";
+import { useOutletContext } from "react-router";
+import type { RoomWithFrames } from "~/lib/supabase";
+
+interface LayoutContext {
+  rooms: RoomWithFrames[];
+  loading: boolean;
+}
+
+// ---- Data from organization-plan.md ----
+
+interface PlanItem {
+  id: string;
+  name: string;
+  zone: string;
+  recommendation?: string;
+  reasoning?: string;
+}
+
+interface CategoryGroup {
+  name: string;
+  zone: string;
+  tier: "A" | "B" | "C" | "D";
+  items: PlanItem[];
+}
+
+interface ContainerSpec {
+  type: string;
+  label: string;
+  zone: string;
+  items: string;
+}
+
+interface MoveStep {
+  id: number;
+  description: string;
+  from: string;
+  to: string;
+  category: "unpack" | "rearrange" | "repack";
+}
+
+const DISPOSAL_ITEMS: PlanItem[] = [
+  { id: "i046", name: "Dead batteries", zone: "KITCHEN-UPPER-CAB", recommendation: "DISPOSE", reasoning: "Useless, possible leak hazard" },
+  { id: "i130", name: "3 LED lights", zone: "PACKED-BOX:c7", recommendation: "REGIFT", reasoning: "Already flagged — no use for them" },
+  { id: "i139", name: "Baby gear manuals", zone: "PACKED-BOX:c8", recommendation: "DISPOSE", reasoning: "All available online" },
+  { id: "i148", name: "Old laptop + misc paperwork + hammocks + decorative doll", zone: "PACKED-BOX:c18", recommendation: "REVIEW", reasoning: "Laptop likely obsolete. Wipe & recycle?" },
+  { id: "i149", name: "Labels and decor for van", zone: "PACKED-BOX:c2", recommendation: "REVIEW", reasoning: "Do you still have the van?" },
+  { id: "i012", name: "Stopwatch", zone: "LIVING-HALL-CLOSET", recommendation: "REVIEW", reasoning: "Phones have timers. Sentimental value?" },
+  { id: "i060", name: "Extra spare keys (set 2)", zone: "WORKHALL-DRAWERS-S", recommendation: "REVIEW", reasoning: "You already have spare keys in i054" },
+  { id: "i065", name: "Dog ball", zone: "FOYER-COAT-CLOSET", recommendation: "RETURN", reasoning: "Return to friend" },
+  { id: "i062", name: "Gift cup for parents", zone: "WORKHALL-DRAWERS-N", recommendation: "GIVE", reasoning: "Give to parents" },
+  { id: "i081", name: "Broken-away suitcase", zone: "BABY-CLOSET", recommendation: "REVIEW", reasoning: "Usable but not for important travel" },
+];
+
+const TIER_META = {
+  A: { label: "Daily/Weekly", desc: "Inside the house, easy reach", color: "#4caf50", icon: "⚡" },
+  B: { label: "Weekly/Monthly", desc: "In-house, less convenient spots", color: "#ff9800", icon: "📦" },
+  C: { label: "Packed Storage", desc: "Garage shelves, moderate access", color: "#2196f3", icon: "🏷️" },
+  D: { label: "Deep Storage", desc: "Basement platforms, rarely accessed", color: "#9c27b0", icon: "🗄️" },
+};
+
+const GROUPS: CategoryGroup[] = [
+  // Tier A
+  { name: "Kitchen Everyday", zone: "KITCHEN-LOWER-CAB / NOOK / ISLAND", tier: "A", items: [
+    { id: "i014", name: "Pots and pans", zone: "KITCHEN" },
+    { id: "i015", name: "Spices", zone: "KITCHEN" },
+    { id: "i021", name: "Big bowls and sieve", zone: "KITCHEN" },
+    { id: "i022", name: "Kimchi fermenting container", zone: "KITCHEN" },
+    { id: "i023", name: "Big thermoses (x2)", zone: "KITCHEN" },
+    { id: "i024", name: "Cups", zone: "KITCHEN" },
+    { id: "i025", name: "Mixer", zone: "KITCHEN" },
+  ]},
+  { name: "Cleaning — Kitchen & Downstairs", zone: "KITCHEN-NOOK-SOUTH", tier: "A", items: [
+    { id: "i016", name: "Cleaning products", zone: "KITCHEN" },
+    { id: "i017", name: "Dishwasher pads", zone: "KITCHEN" },
+    { id: "i019", name: "Soaps (assorted)", zone: "KITCHEN" },
+    { id: "i071", name: "Toilet bowl cleaner & brush", zone: "BATH" },
+  ]},
+  { name: "Cleaning — Hall Closet", zone: "LIVING-HALL-CLOSET", tier: "A", items: [
+    { id: "i007", name: "Extra paper towels", zone: "CLOSET" },
+    { id: "i008", name: "Light bulb replacer", zone: "CLOSET" },
+    { id: "i009", name: "Swiffer WetJet", zone: "CLOSET" },
+    { id: "i010", name: "Broom", zone: "CLOSET" },
+    { id: "i013", name: "Metal stools (x2)", zone: "CLOSET" },
+  ]},
+  { name: "Bar & Entertaining", zone: "LIVING-BAR-CABINETS", tier: "A", items: [
+    { id: "i001", name: "Sodas & canned drinks", zone: "BAR" },
+    { id: "i003", name: "Wine aerator", zone: "BAR" },
+    { id: "i005", name: "Cocktail smoking torch + wood chips", zone: "BAR" },
+    { id: "i006", name: "Wine toppers", zone: "BAR" },
+  ]},
+  { name: "Bathroom Upstairs — Daily Use", zone: "BATH-CLOSET", tier: "A", items: [
+    { id: "i089", name: "Drain clog tools", zone: "BATH" },
+    { id: "i090", name: "Erin's toiletries", zone: "BATH" },
+    { id: "i091", name: "Brendan's toiletries", zone: "BATH" },
+    { id: "i092", name: "Hair clippers", zone: "BATH" },
+    { id: "i094", name: "Erin's makeup (labeled: MAKEUP & TRAVEL)", zone: "BATH" },
+    { id: "i095", name: "First aid kits", zone: "BATH" },
+    { id: "i096", name: "Baby health supplies (labeled: BABYHEALTH)", zone: "BATH" },
+    { id: "i146", name: "Curling iron, head massager, hairbrush ← UNPACK c9", zone: "BATH" },
+    { id: "i147", name: "Red light therapy mask ← UNPACK c14", zone: "BATH" },
+  ]},
+  { name: "Laundry", zone: "HALL-LAUNDRY", tier: "A", items: [
+    { id: "i072", name: "Laundry detergent & supplies", zone: "LAUNDRY" },
+    { id: "i073", name: "Stain stick", zone: "LAUNDRY" },
+    { id: "i074", name: "Iron", zone: "LAUNDRY" },
+  ]},
+  // Tier B
+  { name: "Office & Documents", zone: "WORKHALL-DRAWERS-S / MID-CAB", tier: "B", items: [
+    { id: "i057", name: "Stationery (notes, letters, envelopes)", zone: "WORKHALL" },
+    { id: "i059", name: "Tax documents", zone: "WORKHALL" },
+    { id: "i047", name: "Receipts & warranties", zone: "WORKHALL" },
+    { id: "i054", name: "Spare keys", zone: "WORKHALL" },
+    { id: "i144", name: "House docs, wedding stuff, games ← UNPACK c13", zone: "WORKHALL" },
+  ]},
+  { name: "Crypto & Security", zone: "WORKHALL-MID-CAB", tier: "B", items: [
+    { id: "i050", name: "Cryptography equipment (Ledger wallets)", zone: "WORKHALL" },
+    { id: "i111", name: "External hard drive + USB ← from UNASSIGNED", zone: "WORKHALL" },
+  ]},
+  { name: "Baby & Kids Supplies", zone: "WORKHALL-DRAWERS-N / UPPER", tier: "B", items: [
+    { id: "i061", name: "Ronin travel art supplies", zone: "WORKHALL" },
+    { id: "i063", name: "Ronin stickers & gifts", zone: "WORKHALL" },
+    { id: "i064", name: "Old photos / early life memories", zone: "WORKHALL" },
+    { id: "i040", name: "Corner protectors (baby-proofing)", zone: "WORKHALL" },
+  ]},
+  { name: "Gifts & Wrapping", zone: "KITCHEN-LOWER-CAB", tier: "B", items: [
+    { id: "i052", name: "Stuffed animal gifts", zone: "KITCHEN" },
+    { id: "i053", name: "Gift wrapping materials", zone: "KITCHEN" },
+    { id: "i143", name: "Gift wrapping ← UNPACK c5, consolidate", zone: "KITCHEN" },
+  ]},
+  { name: "Tools, Tape & Supplies", zone: "KITCHEN-UPPER-CAB", tier: "B", items: [
+    { id: "i030", name: "Gorilla tape", zone: "KITCHEN" },
+    { id: "i034", name: "Rechargeable battery charger", zone: "KITCHEN" },
+    { id: "i035", name: "Duracell batteries", zone: "KITCHEN" },
+    { id: "i037", name: "Glue", zone: "KITCHEN" },
+    { id: "i043", name: "Scissors", zone: "KITCHEN" },
+    { id: "i045", name: "Sharpies", zone: "KITCHEN" },
+  ]},
+  // Tier C
+  { name: "Erin's Work — Speech Therapy", zone: "GARAGE-SHELF-NORTH", tier: "C", items: [
+    { id: "i120", name: "Flashcards, notebooks, therapy toys, puppets", zone: "GARAGE" },
+    { id: "i121", name: "Felt letterboard, games, Velcro dots, paints", zone: "GARAGE" },
+    { id: "i122", name: "Speech desk supplies, CVC game, books", zone: "GARAGE" },
+    { id: "i123", name: "Work paperwork, test materials, assessment binder", zone: "GARAGE" },
+  ]},
+  { name: "Electronics — Organized", zone: "GARAGE-SHELF-NE", tier: "C", items: [
+    { id: "i106", name: "Screwdriver kit (Strebito)", zone: "GARAGE" },
+    { id: "i107", name: "USB plugs bag", zone: "GARAGE" },
+    { id: "i110", name: "USB-C cords bag", zone: "GARAGE" },
+    { id: "i113", name: "Power banks", zone: "GARAGE" },
+    { id: "i116", name: "HDMI cord + universal adapter", zone: "GARAGE" },
+    { id: "i118", name: "Power strips + extension cord", zone: "GARAGE" },
+  ]},
+  { name: "Books & Reading", zone: "GARAGE-SHELF-WEST", tier: "C", items: [
+    { id: "i141", name: "Adult books, textbooks, puzzle, photos", zone: "GARAGE" },
+    { id: "i142", name: "Chinese-language pop-up books", zone: "GARAGE" },
+    { id: "i051", name: "Cooking books ← move from kitchen", zone: "GARAGE" },
+    { id: "i132", name: "Children's games, wall art, misc books", zone: "GARAGE" },
+  ]},
+  { name: "Health & Medical", zone: "GARAGE-SHELF-WEST", tier: "C", items: [
+    { id: "i138", name: "Neti pot, ovulation tests, pregnancy tests, thermometer", zone: "GARAGE" },
+    { id: "i145", name: "Intubation tubes (x2), personal items", zone: "GARAGE" },
+  ]},
+  // Tier D
+  { name: "Keepsake Clothing", zone: "BSMT-RAISED-W", tier: "D", items: [
+    { id: "i124", name: "Sentimental t-shirts (shared)", zone: "BASEMENT" },
+    { id: "i125", name: "Brendan's travel t-shirts", zone: "BASEMENT" },
+    { id: "i126", name: "Erin's keepsake t-shirts & sweatshirts", zone: "BASEMENT" },
+    { id: "i127", name: "Erin's old keepsake clothing", zone: "BASEMENT" },
+  ]},
+  { name: "Baby Keepsakes & Memorabilia", zone: "BSMT-RAISED-W", tier: "D", items: [
+    { id: "i134", name: "Baptismal candle, hospital records, newborn clothing", zone: "BASEMENT" },
+    { id: "i136", name: "Outgrown infant clothing + infant stuffed animals", zone: "BASEMENT" },
+    { id: "i137", name: "Large Hello Kitty Squishmallow (unopened)", zone: "BASEMENT" },
+    { id: "i135", name: "Baby play gym/mat", zone: "BASEMENT" },
+  ]},
+  { name: "Décor — Asian & Seasonal", zone: "BSMT-RAISED-E", tier: "D", items: [
+    { id: "i128", name: "Asian decorations (name stamp, rice cooker candle, vase)", zone: "BASEMENT" },
+    { id: "i133", name: "Holiday books, picture frames, art wall decorations", zone: "BASEMENT" },
+    { id: "i131", name: "Picture frame + bubble-wrapped items", zone: "BASEMENT" },
+  ]},
+];
+
+const CONTAINERS: ContainerSpec[] = [
+  { type: "Large Black/Yellow Bin", label: "SPEECH THERAPY", zone: "GARAGE-SHELF-NORTH", items: "i120–i123" },
+  { type: "Large Black/Yellow Bin", label: "KEEPSAKE CLOTHING", zone: "BSMT-RAISED-W", items: "i124–i127" },
+  { type: "Large Black/Yellow Bin", label: "BABY KEEPSAKES", zone: "BSMT-RAISED-W", items: "i134–i137" },
+  { type: "Clear Bin (medium)", label: "ELECTRONICS", zone: "GARAGE-SHELF-NE", items: "i106–i119 (14 items)" },
+  { type: "Clear Bin (medium)", label: "BAR DECOR & EXTRAS", zone: "GARAGE-SHELF-NORTH", items: "i140" },
+  { type: "Clear Bin (medium)", label: "BOOKS", zone: "GARAGE-SHELF-WEST", items: "i051, i132, i141, i142" },
+  { type: "Clear Bin (medium)", label: "DÉCOR - SEASONAL", zone: "BSMT-RAISED-E", items: "i128, i131, i133" },
+  { type: "Black Small Crate", label: "HEALTH & MEDICAL", zone: "GARAGE-SHELF-WEST", items: "i138, i145" },
+];
+
+const MOVES: MoveStep[] = [
+  { id: 1, description: "Curling iron, hairbrush, etc.", from: "box c9", to: "BATH-CLOSET", category: "unpack" },
+  { id: 2, description: "Red light therapy mask", from: "box c14", to: "BATH-CLOSET", category: "unpack" },
+  { id: 3, description: "Gift wrapping materials", from: "box c5", to: "KITCHEN-LOWER-CAB (consolidate with i053)", category: "unpack" },
+  { id: 4, description: "Window garden herb kit", from: "box c7", to: "KITCHEN-NOOK-SOUTH", category: "unpack" },
+  { id: 5, description: "House docs, wedding stuff, games", from: "box c13", to: "WORKHALL-DRAWERS-S + LIVING-ENTRY-SHELF", category: "unpack" },
+  { id: 6, description: "External hard drive + USB", from: "UNASSIGNED", to: "WORKHALL-MID-CAB", category: "unpack" },
+  { id: 7, description: "Old baby stuff & clothes", from: "LIVING-HALL-CLOSET", to: "FOYER-COAT-CLOSET", category: "rearrange" },
+  { id: 8, description: "Stroller", from: "FOYER-COAT-CLOSET", to: "BSMT-RAISED-E", category: "rearrange" },
+  { id: 9, description: "Cooking books", from: "KITCHEN-LOWER-CAB", to: "BOOKS bin → GARAGE-SHELF-WEST", category: "rearrange" },
+  { id: 10, description: "Speech therapy items (boxes c4/c10/c16/c19)", from: "Packed boxes", to: "SPEECH THERAPY bin → GARAGE-SHELF-NORTH", category: "repack" },
+  { id: 11, description: "Electronics (14 items)", from: "Bags", to: "ELECTRONICS bin → GARAGE-SHELF-NE", category: "repack" },
+  { id: 12, description: "Bar extras (box c11)", from: "box c11", to: "BAR DECOR bin → GARAGE-SHELF-NORTH", category: "repack" },
+  { id: 13, description: "Books (boxes c22/c17)", from: "Packed boxes", to: "BOOKS bin → GARAGE-SHELF-WEST", category: "repack" },
+  { id: 14, description: "Health items (boxes c8/c3)", from: "Packed boxes", to: "HEALTH & MEDICAL crate → GARAGE-SHELF-WEST", category: "repack" },
+  { id: 15, description: "Keepsake clothes (boxes c1/c20/c21/c25)", from: "Packed boxes", to: "KEEPSAKE CLOTHING bin → BSMT-RAISED-W", category: "repack" },
+  { id: 16, description: "Baby keepsakes (boxes c12/c23/c24/c26)", from: "Packed boxes", to: "BABY KEEPSAKES bin → BSMT-RAISED-W", category: "repack" },
+  { id: 17, description: "Décor (boxes c6/c7/c15)", from: "Packed boxes", to: "DÉCOR - SEASONAL bin → BSMT-RAISED-E", category: "repack" },
+];
+
+type TabKey = "overview" | "tiers" | "containers" | "moves" | "disposal";
+
+export default function PlanPage() {
+  const { loading } = useOutletContext<LayoutContext>();
+  const [activeTab, setActiveTab] = useState<TabKey>("overview");
+  const [expandedTier, setExpandedTier] = useState<string | null>("A");
+  const [completedMoves, setCompletedMoves] = useState<Set<number>>(new Set());
+
+  const toggleMove = (id: number) => {
+    setCompletedMoves((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  if (loading) {
+    return <div className="plan-page"><div style={{ padding: 40, color: "var(--text-dim)" }}>Loading...</div></div>;
+  }
+
+  const tierGroups = (tier: string) => GROUPS.filter((g) => g.tier === tier);
+  const totalGroupItems = GROUPS.reduce((s, g) => s + g.items.length, 0);
+
+  const tabs: { key: TabKey; label: string }[] = [
+    { key: "overview", label: "Overview" },
+    { key: "tiers", label: "Tier Groups" },
+    { key: "containers", label: "Containers" },
+    { key: "moves", label: "Move Checklist" },
+    { key: "disposal", label: "Disposal" },
+  ];
+
+  return (
+    <div className="plan-page">
+      <div className="plan-header">
+        <h2>Organization Plan</h2>
+        <p className="plan-subtitle">
+          {totalGroupItems} items across {GROUPS.length} groups in 4 access tiers
+        </p>
+      </div>
+
+      {/* Tabs */}
+      <div className="plan-tabs">
+        {tabs.map((tab) => (
+          <button
+            key={tab.key}
+            className={`plan-tab ${activeTab === tab.key ? "active" : ""}`}
+            onClick={() => setActiveTab(tab.key)}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Tab content */}
+      <div className="plan-content">
+        {activeTab === "overview" && (
+          <div className="plan-overview">
+            {/* Tier summary cards */}
+            <div className="tier-summary-grid">
+              {(["A", "B", "C", "D"] as const).map((tier) => {
+                const meta = TIER_META[tier];
+                const groups = tierGroups(tier);
+                const itemCount = groups.reduce((s, g) => s + g.items.length, 0);
+                return (
+                  <div
+                    key={tier}
+                    className="tier-summary-card"
+                    style={{ borderLeftColor: meta.color }}
+                    onClick={() => { setActiveTab("tiers"); setExpandedTier(tier); }}
+                  >
+                    <div className="tier-card-header">
+                      <span className="tier-icon">{meta.icon}</span>
+                      <span className="tier-label">Tier {tier}</span>
+                    </div>
+                    <div className="tier-card-title">{meta.label}</div>
+                    <div className="tier-card-desc">{meta.desc}</div>
+                    <div className="tier-card-stats">
+                      <span>{groups.length} groups</span>
+                      <span>{itemCount} items</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Flow diagram */}
+            <div className="plan-flow">
+              <h3>How It Works</h3>
+              <div className="flow-steps">
+                <div className="flow-step">
+                  <div className="flow-num">1</div>
+                  <div className="flow-text">
+                    <strong>Dispose / Give Away</strong>
+                    <span>{DISPOSAL_ITEMS.length} items flagged for review, disposal, or regifting</span>
+                  </div>
+                </div>
+                <div className="flow-arrow">→</div>
+                <div className="flow-step">
+                  <div className="flow-num">2</div>
+                  <div className="flow-text">
+                    <strong>Unpack Boxes</strong>
+                    <span>6 items to unpack from moving boxes into the house</span>
+                  </div>
+                </div>
+                <div className="flow-arrow">→</div>
+                <div className="flow-step">
+                  <div className="flow-num">3</div>
+                  <div className="flow-text">
+                    <strong>Rearrange In-House</strong>
+                    <span>3 items to move between rooms for better access</span>
+                  </div>
+                </div>
+                <div className="flow-arrow">→</div>
+                <div className="flow-step">
+                  <div className="flow-num">4</div>
+                  <div className="flow-text">
+                    <strong>Repack into Bins</strong>
+                    <span>8 labeled containers for garage & basement storage</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Container summary */}
+            <div className="plan-containers-mini">
+              <h3>Containers Needed</h3>
+              <div className="container-counts">
+                <div className="container-count-card">
+                  <span className="count-num">3</span>
+                  <span className="count-label">Large Black/Yellow Bins</span>
+                </div>
+                <div className="container-count-card">
+                  <span className="count-num">4</span>
+                  <span className="count-label">Clear Plastic Bins (medium)</span>
+                </div>
+                <div className="container-count-card">
+                  <span className="count-num">1</span>
+                  <span className="count-label">Black Small Crate</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === "tiers" && (
+          <div className="plan-tiers">
+            {(["A", "B", "C", "D"] as const).map((tier) => {
+              const meta = TIER_META[tier];
+              const groups = tierGroups(tier);
+              const isExpanded = expandedTier === tier;
+              return (
+                <div key={tier} className="tier-section">
+                  <div
+                    className="tier-section-header"
+                    style={{ borderLeftColor: meta.color }}
+                    onClick={() => setExpandedTier(isExpanded ? null : tier)}
+                  >
+                    <span className="tier-icon">{meta.icon}</span>
+                    <div>
+                      <span className="tier-section-title">Tier {tier} — {meta.label}</span>
+                      <span className="tier-section-desc">{meta.desc}</span>
+                    </div>
+                    <span className="tier-toggle">{isExpanded ? "▼" : "▶"}</span>
+                  </div>
+                  {isExpanded && (
+                    <div className="tier-groups">
+                      {groups.map((group) => (
+                        <div key={group.name} className="group-card">
+                          <div className="group-header">
+                            <span className="group-name">{group.name}</span>
+                            <span className="group-zone">{group.zone}</span>
+                          </div>
+                          <div className="group-items">
+                            {group.items.map((item) => (
+                              <div key={item.id} className="group-item">
+                                <span className="item-id">{item.id}</span>
+                                <span className="item-label">{item.name}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {activeTab === "containers" && (
+          <div className="plan-containers-full">
+            <p className="plan-note">
+              Each container gets a printed label. Clear bins let you see contents; large bins hold bulky items.
+            </p>
+            <div className="container-grid">
+              {CONTAINERS.map((c) => (
+                <div key={c.label} className="container-card">
+                  <div className="container-type">{c.type}</div>
+                  <div className="container-label-tag">{c.label}</div>
+                  <div className="container-zone">{c.zone}</div>
+                  <div className="container-items">{c.items}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {activeTab === "moves" && (
+          <div className="plan-moves">
+            <p className="plan-note">
+              {completedMoves.size} of {MOVES.length} moves completed. Check off as you go.
+            </p>
+            <div className="move-progress-bar">
+              <div
+                className="move-progress-fill"
+                style={{ width: `${(completedMoves.size / MOVES.length) * 100}%` }}
+              />
+            </div>
+
+            {(["unpack", "rearrange", "repack"] as const).map((cat) => {
+              const moves = MOVES.filter((m) => m.category === cat);
+              const catLabels = { unpack: "Unpack from Boxes → Into House", rearrange: "Rearrange Within House", repack: "Repack into Labeled Containers" };
+              return (
+                <div key={cat} className="move-category">
+                  <h4 className="move-cat-title">{catLabels[cat]}</h4>
+                  {moves.map((move) => (
+                    <div
+                      key={move.id}
+                      className={`move-row ${completedMoves.has(move.id) ? "done" : ""}`}
+                      onClick={() => toggleMove(move.id)}
+                    >
+                      <span className="move-check">
+                        {completedMoves.has(move.id) ? "✓" : "○"}
+                      </span>
+                      <div className="move-info">
+                        <span className="move-desc">{move.description}</span>
+                        <span className="move-path">
+                          {move.from} → {move.to}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {activeTab === "disposal" && (
+          <div className="plan-disposal">
+            <p className="plan-note">
+              Items flagged for disposal, review, or gifting. Confirm yes/no for each.
+            </p>
+            <div className="disposal-list">
+              {DISPOSAL_ITEMS.map((item) => (
+                <div key={item.id} className="disposal-row">
+                  <div className={`disposal-badge badge-${item.recommendation?.toLowerCase()}`}>
+                    {item.recommendation}
+                  </div>
+                  <div className="disposal-info">
+                    <span className="disposal-name">
+                      <span className="disposal-id">{item.id}</span> {item.name}
+                    </span>
+                    <span className="disposal-reason">{item.reasoning}</span>
+                  </div>
+                  <span className="disposal-zone">{item.zone}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

@@ -35,7 +35,25 @@
  */
 
 import { createClient } from "@supabase/supabase-js";
-import { readFileSync } from "fs";
+import { readFileSync, existsSync } from "fs";
+import { resolve, dirname } from "path";
+
+// Load .env file manually (no dotenv dependency needed)
+function loadEnv() {
+  const envPath = resolve(dirname(new URL(import.meta.url).pathname), "../.env");
+  if (existsSync(envPath)) {
+    const lines = readFileSync(envPath, "utf-8").split("\n");
+    for (const line of lines) {
+      const match = line.match(/^([^#=]+)=(.*)$/);
+      if (match) {
+        const key = match[1].trim();
+        const val = match[2].trim().replace(/^["']|["']$/g, "");
+        if (!process.env[key]) process.env[key] = val;
+      }
+    }
+  }
+}
+loadEnv();
 
 async function main() {
   const jsonPath = process.argv[2];

@@ -1,0 +1,1096 @@
+{
+  "meta": {
+    "version": 2,
+    "updatedAt": "2026-03-11T16:14:24.896Z",
+    "sources": [
+      "IMG_0529.mov",
+      "IMG_0530.mov",
+      "IMG_0531.mov",
+      "IMG_0533.mov",
+      "IMG_0534.mov",
+      "IMG_0535.mov",
+      "IMG_5349.mov",
+      "IMG_5350.mov",
+      "IMG_5351.mov"
+    ],
+    "notes": "Unified home inventory. 'zone' = current storage zone label from house-3d.html. 'PACKED-BOX:cN' = in a packed moving box. 'UNASSIGNED' = not yet placed.",
+    "itemCount": 147
+  },
+  "items": [
+    {
+      "id": "i001",
+      "name": "Sodas & canned drinks (Fanta, Sprite, etc.)",
+      "category": "beverages",
+      "zone": "LIVING-BAR-CABINETS",
+      "source": "IMG_5349",
+      "notes": "Drawer 1 below bar"
+    },
+    {
+      "id": "i002",
+      "name": "Incense sticks",
+      "category": "home-fragrance",
+      "zone": "LIVING-BAR-CABINETS",
+      "source": "IMG_5349",
+      "notes": "Drawer 3"
+    },
+    {
+      "id": "i003",
+      "name": "Wine aerator/deaerator",
+      "category": "bar-supplies",
+      "zone": "LIVING-BAR-CABINETS",
+      "source": "IMG_5349"
+    },
+    {
+      "id": "i004",
+      "name": "Wine bottle sealer",
+      "category": "bar-supplies",
+      "zone": "LIVING-BAR-CABINETS",
+      "source": "IMG_5349"
+    },
+    {
+      "id": "i005",
+      "name": "Cocktail smoking torch + wood chips",
+      "category": "bar-supplies",
+      "zone": "LIVING-BAR-CABINETS",
+      "source": "IMG_5349",
+      "notes": "For smoking drinks"
+    },
+    {
+      "id": "i006",
+      "name": "Wine toppers",
+      "category": "bar-supplies",
+      "zone": "LIVING-BAR-CABINETS",
+      "source": "IMG_5349"
+    },
+    {
+      "id": "i007",
+      "name": "Extra paper towels",
+      "category": "cleaning",
+      "zone": "LIVING-HALL-CLOSET",
+      "source": "IMG_5349"
+    },
+    {
+      "id": "i008",
+      "name": "Light bulb replacer (extended hand)",
+      "category": "tools",
+      "zone": "LIVING-HALL-CLOSET",
+      "source": "IMG_5349"
+    },
+    {
+      "id": "i009",
+      "name": "Swiffer WetJet",
+      "category": "cleaning",
+      "zone": "LIVING-HALL-CLOSET",
+      "source": "IMG_5349"
+    },
+    {
+      "id": "i010",
+      "name": "Broom",
+      "category": "cleaning",
+      "zone": "LIVING-HALL-CLOSET",
+      "source": "IMG_5349"
+    },
+    {
+      "id": "i011",
+      "name": "Old baby stuff & clothes",
+      "category": "baby",
+      "zone": "FOYER-COAT-CLOSET",
+      "source": "IMG_5349"
+    },
+    {
+      "id": "i013",
+      "name": "Metal stools (x2)",
+      "category": "furniture",
+      "zone": "LIVING-HALL-CLOSET",
+      "source": "IMG_5349"
+    },
+    {
+      "id": "i014",
+      "name": "Pots and pans",
+      "category": "cookware",
+      "zone": "KITCHEN-LOWER-CAB",
+      "source": "IMG_5349"
+    },
+    {
+      "id": "i015",
+      "name": "Spices",
+      "category": "food-supplies",
+      "zone": "KITCHEN-LOWER-CAB",
+      "source": "IMG_5349"
+    },
+    {
+      "id": "i016",
+      "name": "Cleaning products (Drano, ceramic cleaner, Granite Gold, Barkeeper's Friend, Windex)",
+      "category": "cleaning",
+      "zone": "KITCHEN-NOOK-SOUTH",
+      "source": "IMG_5349"
+    },
+    {
+      "id": "i017",
+      "name": "Dishwasher pads (Cascade)",
+      "category": "cleaning",
+      "zone": "KITCHEN-NOOK-SOUTH",
+      "source": "IMG_5349"
+    },
+    {
+      "id": "i018",
+      "name": "Plant watering can",
+      "category": "garden",
+      "zone": "KITCHEN-NOOK-SOUTH",
+      "source": "IMG_5349"
+    },
+    {
+      "id": "i019",
+      "name": "Soaps (assorted)",
+      "category": "cleaning",
+      "zone": "KITCHEN-NOOK-SOUTH",
+      "source": "IMG_5349"
+    },
+    {
+      "id": "i020",
+      "name": "Mosquito electric zapper",
+      "category": "pest-control",
+      "zone": "KITCHEN-NOOK-SOUTH",
+      "source": "IMG_5349"
+    },
+    {
+      "id": "i021",
+      "name": "Big bowls and sieve",
+      "category": "cookware",
+      "zone": "KITCHEN-NOOK",
+      "source": "IMG_5349"
+    },
+    {
+      "id": "i022",
+      "name": "Kimchi fermenting container",
+      "category": "cookware",
+      "zone": "KITCHEN-NOOK",
+      "source": "IMG_5349"
+    },
+    {
+      "id": "i023",
+      "name": "Big thermoses (x2)",
+      "category": "drinkware",
+      "zone": "KITCHEN-NOOK",
+      "source": "IMG_5349"
+    },
+    {
+      "id": "i024",
+      "name": "Cups",
+      "category": "drinkware",
+      "zone": "KITCHEN-NOOK",
+      "source": "IMG_5349"
+    },
+    {
+      "id": "i025",
+      "name": "Mixer",
+      "category": "appliance",
+      "zone": "KITCHEN-NOOK",
+      "source": "IMG_5349"
+    },
+    {
+      "id": "i026",
+      "name": "Trinken lids (alcohol-hiding bottles)",
+      "category": "bar-supplies",
+      "zone": "KITCHEN-NOOK",
+      "source": "IMG_5349"
+    },
+    {
+      "id": "i027",
+      "name": "Light bulbs and candles",
+      "category": "lighting",
+      "zone": "KITCHEN-UPPER-CAB",
+      "source": "IMG_5349"
+    },
+    {
+      "id": "i028",
+      "name": "Twinkle lights",
+      "category": "decor",
+      "zone": "KITCHEN-UPPER-CAB",
+      "source": "IMG_5349"
+    },
+    {
+      "id": "i029",
+      "name": "Decorational bulbs",
+      "category": "lighting",
+      "zone": "KITCHEN-UPPER-CAB",
+      "source": "IMG_5349"
+    },
+    {
+      "id": "i030",
+      "name": "Gorilla tape",
+      "category": "tools-supplies",
+      "zone": "KITCHEN-UPPER-CAB",
+      "source": "IMG_5349"
+    },
+    {
+      "id": "i031",
+      "name": "Tea candles",
+      "category": "home-fragrance",
+      "zone": "KITCHEN-UPPER-CAB",
+      "source": "IMG_5349"
+    },
+    {
+      "id": "i032",
+      "name": "Packing tape",
+      "category": "tools-supplies",
+      "zone": "KITCHEN-UPPER-CAB",
+      "source": "IMG_5349"
+    },
+    {
+      "id": "i033",
+      "name": "Black duct tape",
+      "category": "tools-supplies",
+      "zone": "KITCHEN-UPPER-CAB",
+      "source": "IMG_5349"
+    },
+    {
+      "id": "i034",
+      "name": "Rechargeable battery charger",
+      "category": "electronics",
+      "zone": "KITCHEN-UPPER-CAB",
+      "source": "IMG_5349"
+    },
+    {
+      "id": "i035",
+      "name": "Duracell batteries",
+      "category": "electronics",
+      "zone": "KITCHEN-UPPER-CAB",
+      "source": "IMG_5349"
+    },
+    {
+      "id": "i036",
+      "name": "Fishing line",
+      "category": "misc",
+      "zone": "KITCHEN-UPPER-CAB",
+      "source": "IMG_5349"
+    },
+    {
+      "id": "i037",
+      "name": "Glue",
+      "category": "tools-supplies",
+      "zone": "KITCHEN-UPPER-CAB",
+      "source": "IMG_5349"
+    },
+    {
+      "id": "i038",
+      "name": "Assorted batteries",
+      "category": "electronics",
+      "zone": "KITCHEN-UPPER-CAB",
+      "source": "IMG_5349"
+    },
+    {
+      "id": "i039",
+      "name": "Double-sided tape",
+      "category": "tools-supplies",
+      "zone": "KITCHEN-UPPER-CAB",
+      "source": "IMG_5349"
+    },
+    {
+      "id": "i040",
+      "name": "Corner protectors",
+      "category": "baby-proofing",
+      "zone": "KITCHEN-UPPER-CAB",
+      "source": "IMG_5349"
+    },
+    {
+      "id": "i041",
+      "name": "Nanny cams",
+      "category": "electronics",
+      "zone": "KITCHEN-UPPER-CAB",
+      "source": "IMG_5349"
+    },
+    {
+      "id": "i042",
+      "name": "White duct tape",
+      "category": "tools-supplies",
+      "zone": "KITCHEN-UPPER-CAB",
+      "source": "IMG_5349"
+    },
+    {
+      "id": "i043",
+      "name": "Scissors",
+      "category": "tools-supplies",
+      "zone": "KITCHEN-UPPER-CAB",
+      "source": "IMG_5349"
+    },
+    {
+      "id": "i044",
+      "name": "Lighter",
+      "category": "misc",
+      "zone": "KITCHEN-UPPER-CAB",
+      "source": "IMG_5349"
+    },
+    {
+      "id": "i045",
+      "name": "Sharpies",
+      "category": "office",
+      "zone": "KITCHEN-UPPER-CAB",
+      "source": "IMG_5349"
+    },
+    {
+      "id": "i047",
+      "name": "Receipts & warranties",
+      "category": "documents",
+      "zone": "KITCHEN-UPPER-CAB",
+      "source": "IMG_5349"
+    },
+    {
+      "id": "i048",
+      "name": "Twist ties & rubber bands",
+      "category": "tools-supplies",
+      "zone": "KITCHEN-UPPER-CAB",
+      "source": "IMG_5349"
+    },
+    {
+      "id": "i049",
+      "name": "Magnetic cabinet locks",
+      "category": "baby-proofing",
+      "zone": "KITCHEN-UPPER-CAB",
+      "source": "IMG_5349"
+    },
+    {
+      "id": "i050",
+      "name": "Cryptography equipment (Ledger wallets)",
+      "category": "electronics",
+      "zone": "KITCHEN-UPPER-CAB",
+      "source": "IMG_5349",
+      "notes": "Crypto hardware wallets"
+    },
+    {
+      "id": "i051",
+      "name": "Cooking books",
+      "category": "books",
+      "zone": "GARAGE-BIN-BOOKS",
+      "source": "IMG_5349"
+    },
+    {
+      "id": "i052",
+      "name": "Stuffed animal gifts",
+      "category": "gifts",
+      "zone": "KITCHEN-LOWER-CAB",
+      "source": "IMG_5349"
+    },
+    {
+      "id": "i053",
+      "name": "Gift wrapping materials (bags, paper, bows)",
+      "category": "gift-supplies",
+      "zone": "KITCHEN-LOWER-CAB",
+      "source": "IMG_5349"
+    },
+    {
+      "id": "i054",
+      "name": "Spare keys (multiple sets)",
+      "category": "household",
+      "zone": "WORKHALL-SOUTH-CAB",
+      "source": "IMG_5349"
+    },
+    {
+      "id": "i055",
+      "name": "Old glasses",
+      "category": "personal",
+      "zone": "WORKHALL-SOUTH-CAB",
+      "source": "IMG_5349"
+    },
+    {
+      "id": "i056",
+      "name": "Empty containers (reusable)",
+      "category": "storage",
+      "zone": "WORKHALL-SOUTH-CAB",
+      "source": "IMG_5349"
+    },
+    {
+      "id": "i057",
+      "name": "Stationery (notes, letters, envelopes)",
+      "category": "office",
+      "zone": "WORKHALL-MID-CAB",
+      "source": "IMG_5349"
+    },
+    {
+      "id": "i058",
+      "name": "Pins, paper, notepads",
+      "category": "office",
+      "zone": "WORKHALL-MID-CAB",
+      "source": "IMG_5349"
+    },
+    {
+      "id": "i059",
+      "name": "Tax documents",
+      "category": "documents",
+      "zone": "WORKHALL-DRAWERS-S",
+      "source": "IMG_5349"
+    },
+    {
+      "id": "i060",
+      "name": "More spare keys",
+      "category": "household",
+      "zone": "WORKHALL-DRAWERS-S",
+      "source": "IMG_5349",
+      "notes": "Dedicated key area in WORKHALL-DRAWERS-S zone"
+    },
+    {
+      "id": "i061",
+      "name": "Ronin travel art supplies (finger paint)",
+      "category": "baby",
+      "zone": "WORKHALL-DRAWERS-N",
+      "source": "IMG_5349"
+    },
+    {
+      "id": "i062",
+      "name": "Gift cup for parents",
+      "category": "gifts",
+      "zone": "WORKHALL-DRAWERS-N",
+      "source": "IMG_5349",
+      "disposition": "give"
+    },
+    {
+      "id": "i063",
+      "name": "Ronin stickers & unused little gifts",
+      "category": "baby",
+      "zone": "WORKHALL-DRAWERS-N",
+      "source": "IMG_5349"
+    },
+    {
+      "id": "i064",
+      "name": "Old photos / early life memories",
+      "category": "memorabilia",
+      "zone": "WORKHALL-DRAWERS-N",
+      "source": "IMG_5349"
+    },
+    {
+      "id": "i065",
+      "name": "Dog ball",
+      "category": "pet",
+      "zone": "FOYER-COAT-CLOSET",
+      "source": "IMG_5349",
+      "disposition": "return"
+    },
+    {
+      "id": "i066",
+      "name": "Winter clothes & jackets",
+      "category": "clothing",
+      "zone": "FOYER-COAT-CLOSET",
+      "source": "IMG_5349"
+    },
+    {
+      "id": "i067",
+      "name": "Old stroller",
+      "category": "baby-gear",
+      "zone": "BSMT-RAISED-E",
+      "source": "IMG_5349",
+      "notes": "Pack away — not needed until baby two"
+    },
+    {
+      "id": "i068",
+      "name": "Eucalyptus hand soap",
+      "category": "cleaning",
+      "zone": "BATH-VANITY",
+      "source": "IMG_5349",
+      "notes": "Under-cabinet bathroom"
+    },
+    {
+      "id": "i069",
+      "name": "Plunger (downstairs)",
+      "category": "plumbing",
+      "zone": "BATH-VANITY",
+      "source": "IMG_5349"
+    },
+    {
+      "id": "i070",
+      "name": "Hair dryer & curler",
+      "category": "personal-care",
+      "zone": "BATH-VANITY",
+      "source": "IMG_5349"
+    },
+    {
+      "id": "i071",
+      "name": "Toilet bowl cleaner & brush",
+      "category": "cleaning",
+      "zone": "BATH-VANITY",
+      "source": "IMG_5349"
+    },
+    {
+      "id": "i072",
+      "name": "Laundry detergent & supplies",
+      "category": "laundry",
+      "zone": "HALL-LAUNDRY",
+      "source": "IMG_5349"
+    },
+    {
+      "id": "i073",
+      "name": "Stain stick",
+      "category": "laundry",
+      "zone": "HALL-LAUNDRY",
+      "source": "IMG_5349"
+    },
+    {
+      "id": "i074",
+      "name": "Iron",
+      "category": "laundry",
+      "zone": "HALL-LAUNDRY",
+      "source": "IMG_5349"
+    },
+    {
+      "id": "i075",
+      "name": "Little Green Machine parts (floor cleaner)",
+      "category": "cleaning",
+      "zone": "HALL-LAUNDRY",
+      "source": "IMG_5349"
+    },
+    {
+      "id": "i076",
+      "name": "Blankets, towels, sheets, bedding",
+      "category": "linens",
+      "zone": "HALL-LINEN",
+      "source": "IMG_5349"
+    },
+    {
+      "id": "i077",
+      "name": "Old light fixture",
+      "category": "lighting",
+      "zone": "BABY-CLOSET",
+      "source": "IMG_5349"
+    },
+    {
+      "id": "i078",
+      "name": "Ronin's old/current clothing",
+      "category": "baby-clothing",
+      "zone": "BABY-CLOSET",
+      "source": "IMG_5349"
+    },
+    {
+      "id": "i079",
+      "name": "Calendars",
+      "category": "office",
+      "zone": "BABY-CLOSET",
+      "source": "IMG_5349"
+    },
+    {
+      "id": "i080",
+      "name": "Erin's work clothing",
+      "category": "clothing",
+      "zone": "BABY-CLOSET",
+      "source": "IMG_5349"
+    },
+    {
+      "id": "i082",
+      "name": "Baby blankets",
+      "category": "baby",
+      "zone": "BABY-CLOSET",
+      "source": "IMG_5349"
+    },
+    {
+      "id": "i083",
+      "name": "Old shoes",
+      "category": "shoes",
+      "zone": "BABY-CLOSET",
+      "source": "IMG_5349"
+    },
+    {
+      "id": "i084",
+      "name": "Plunger (upstairs)",
+      "category": "plumbing",
+      "zone": "BATH-CLOSET",
+      "source": "IMG_5349"
+    },
+    {
+      "id": "i085",
+      "name": "Paper towel rack",
+      "category": "household",
+      "zone": "BATH-CLOSET",
+      "source": "IMG_5349"
+    },
+    {
+      "id": "i086",
+      "name": "Hair dryer (upstairs)",
+      "category": "personal-care",
+      "zone": "BATH-CLOSET",
+      "source": "IMG_5349"
+    },
+    {
+      "id": "i087",
+      "name": "Barkeeper's Friend (upstairs)",
+      "category": "cleaning",
+      "zone": "BATH-CLOSET",
+      "source": "IMG_5349"
+    },
+    {
+      "id": "i088",
+      "name": "Scrubber",
+      "category": "cleaning",
+      "zone": "BATH-CLOSET",
+      "source": "IMG_5349"
+    },
+    {
+      "id": "i089",
+      "name": "Drain clog tools (snake + plunger tool)",
+      "category": "plumbing",
+      "zone": "BATH-CLOSET",
+      "source": "IMG_5349",
+      "notes": "For hair clogs — want easy access to these"
+    },
+    {
+      "id": "i090",
+      "name": "Erin's toiletries",
+      "category": "personal-care",
+      "zone": "BATH-CLOSET",
+      "source": "IMG_5349"
+    },
+    {
+      "id": "i091",
+      "name": "Brendan's toiletries",
+      "category": "personal-care",
+      "zone": "BATH-CLOSET",
+      "source": "IMG_5349"
+    },
+    {
+      "id": "i092",
+      "name": "Hair clippers",
+      "category": "personal-care",
+      "zone": "BATH-CLOSET",
+      "source": "IMG_5349"
+    },
+    {
+      "id": "i093",
+      "name": "Extra toiletries (razor blades, toothpaste, soaps, mouthwash, Q-tips, hair gel)",
+      "category": "personal-care",
+      "zone": "BATH-CLOSET",
+      "source": "IMG_5349"
+    },
+    {
+      "id": "i094",
+      "name": "Erin's makeup",
+      "category": "personal-care",
+      "zone": "BATH-CLOSET",
+      "source": "IMG_5349",
+      "notes": "Labeled bin: MAKEUP & TRAVEL"
+    },
+    {
+      "id": "i095",
+      "name": "First aid kits",
+      "category": "health",
+      "zone": "BATH-CLOSET",
+      "source": "IMG_5349"
+    },
+    {
+      "id": "i096",
+      "name": "Baby health supplies (vitamin D, gripe water, etc.)",
+      "category": "baby-health",
+      "zone": "BATH-CLOSET",
+      "source": "IMG_5349",
+      "notes": "Labeled bin: BABYHEALTH"
+    },
+    {
+      "id": "i097",
+      "name": "Erin's clothes",
+      "category": "clothing",
+      "zone": "MASTER-CLOSET-W",
+      "source": "IMG_5349"
+    },
+    {
+      "id": "i098",
+      "name": "Brendan's clothes",
+      "category": "clothing",
+      "zone": "MASTER-CLOSET-E",
+      "source": "IMG_5349"
+    },
+    {
+      "id": "i099",
+      "name": "Old shoes (various)",
+      "category": "shoes",
+      "zone": "MASTER-CLOSET-E",
+      "source": "IMG_5349"
+    },
+    {
+      "id": "i100",
+      "name": "Dress items (tuxedo clips, tie clips, nice watches, dress shoes)",
+      "category": "formal-wear",
+      "zone": "MASTER-CLOSET-E",
+      "source": "IMG_5349"
+    },
+    {
+      "id": "i101",
+      "name": "Outdoor table & chairs",
+      "category": "outdoor-furniture",
+      "zone": "BALCONY",
+      "source": "IMG_5350",
+      "notes": "New area: 2nd floor balcony, same footprint as garage"
+    },
+    {
+      "id": "i102",
+      "name": "String lights (balcony)",
+      "category": "decor",
+      "zone": "BALCONY",
+      "source": "IMG_5350"
+    },
+    {
+      "id": "i103",
+      "name": "Grill",
+      "category": "outdoor",
+      "zone": "BALCONY",
+      "source": "IMG_5350"
+    },
+    {
+      "id": "i104",
+      "name": "Trash can (outdoor)",
+      "category": "outdoor",
+      "zone": "BALCONY",
+      "source": "IMG_5350"
+    },
+    {
+      "id": "i105",
+      "name": "Deck box (8 chair pillows inside)",
+      "category": "outdoor-storage",
+      "zone": "BALCONY-DECKBOX",
+      "source": "IMG_5350",
+      "notes": "Storage space — could store more than just pillows"
+    },
+    {
+      "id": "i106",
+      "name": "Screwdriver kit (Strebito, electronics)",
+      "category": "electronics-tools",
+      "zone": "GARAGE-BIN-ELECTRONICS",
+      "source": "IMG_5351",
+      "notes": "Bagged, not yet packed away"
+    },
+    {
+      "id": "i107",
+      "name": "USB plugs (USB-A & USB-C, bag)",
+      "category": "electronics-cables",
+      "zone": "GARAGE-BIN-ELECTRONICS",
+      "source": "IMG_5351"
+    },
+    {
+      "id": "i108",
+      "name": "Headphones & ear tips bag",
+      "category": "electronics-audio",
+      "zone": "GARAGE-BIN-ELECTRONICS",
+      "source": "IMG_5351"
+    },
+    {
+      "id": "i109",
+      "name": "Internet cameras (x2)",
+      "category": "electronics-cameras",
+      "zone": "GARAGE-BIN-ELECTRONICS",
+      "source": "IMG_5351",
+      "notes": "Labeled bag: Cameras"
+    },
+    {
+      "id": "i110",
+      "name": "USB-C cords (bag)",
+      "category": "electronics-cables",
+      "zone": "GARAGE-BIN-ELECTRONICS",
+      "source": "IMG_5351"
+    },
+    {
+      "id": "i111",
+      "name": "External hard drive + USB",
+      "category": "electronics-storage",
+      "zone": "WORKHALL-MID-CAB",
+      "source": "IMG_5351"
+    },
+    {
+      "id": "i112",
+      "name": "USB-C adapter plugs (bag)",
+      "category": "electronics-adapters",
+      "zone": "GARAGE-BIN-ELECTRONICS",
+      "source": "IMG_5351"
+    },
+    {
+      "id": "i113",
+      "name": "Power banks",
+      "category": "electronics-power",
+      "zone": "GARAGE-BIN-ELECTRONICS",
+      "source": "IMG_5351"
+    },
+    {
+      "id": "i114",
+      "name": "Micro USB cords (bag)",
+      "category": "electronics-cables",
+      "zone": "GARAGE-BIN-ELECTRONICS",
+      "source": "IMG_5351"
+    },
+    {
+      "id": "i115",
+      "name": "Google Chromecast dongle",
+      "category": "electronics-media",
+      "zone": "GARAGE-BIN-ELECTRONICS",
+      "source": "IMG_5351"
+    },
+    {
+      "id": "i116",
+      "name": "HDMI cord + universal adapter",
+      "category": "electronics-cables",
+      "zone": "GARAGE-BIN-ELECTRONICS",
+      "source": "IMG_5351"
+    },
+    {
+      "id": "i117",
+      "name": "Cord organizers (wall stickers + small zip ties)",
+      "category": "electronics-organizers",
+      "zone": "GARAGE-BIN-ELECTRONICS",
+      "source": "IMG_5351",
+      "notes": "Keep track of these — cord stickers for walls"
+    },
+    {
+      "id": "i118",
+      "name": "Power strips + outlet converters (1-to-6, 1-to-3) + extension cord",
+      "category": "electronics-power",
+      "zone": "GARAGE-BIN-ELECTRONICS",
+      "source": "IMG_5351"
+    },
+    {
+      "id": "i119",
+      "name": "USB adapters (individual converter pieces)",
+      "category": "electronics-adapters",
+      "zone": "GARAGE-BIN-ELECTRONICS",
+      "source": "IMG_5351"
+    },
+    {
+      "id": "i120",
+      "name": "Flashcards, notebooks, therapy toys, puppets (incl. chef puppet), markers",
+      "category": "work-speech-therapy",
+      "zone": "GARAGE-BIN-SPEECH",
+      "source": "IMG_0529"
+    },
+    {
+      "id": "i121",
+      "name": "Felt letterboard + pins, 2 games, Velcro dots, finger paints, mini erasers, mug, flashcards, magnetic sand garden",
+      "category": "work-speech-therapy",
+      "zone": "GARAGE-BIN-SPEECH",
+      "source": "IMG_0530"
+    },
+    {
+      "id": "i122",
+      "name": "Speech pathology desk supplies, CVC Objects game, CliftonStrengths book, Emily Oster Cribsheet, flashcards, binders, notebooks",
+      "category": "work-speech-therapy",
+      "zone": "GARAGE-BIN-SPEECH",
+      "source": "IMG_0533"
+    },
+    {
+      "id": "i123",
+      "name": "Work paperwork, test materials, assessment protocol binder",
+      "category": "work-speech-therapy",
+      "zone": "GARAGE-BIN-SPEECH",
+      "source": "IMG_0533"
+    },
+    {
+      "id": "i124",
+      "name": "Sentimental t-shirts (shared)",
+      "category": "clothing-keepsake",
+      "zone": "BSMT-BIN-CLOTHING",
+      "source": "IMG_0529",
+      "disposition": "keep-sentimental"
+    },
+    {
+      "id": "i125",
+      "name": "Brendan's travel t-shirts (Argentina, Asia) + textile",
+      "category": "clothing-keepsake",
+      "zone": "BSMT-BIN-CLOTHING",
+      "source": "IMG_0533",
+      "disposition": "keep-sentimental"
+    },
+    {
+      "id": "i126",
+      "name": "Erin's keepsake t-shirts & sweatshirts",
+      "category": "clothing-keepsake",
+      "zone": "BSMT-BIN-CLOTHING",
+      "source": "IMG_0533",
+      "disposition": "keep-sentimental"
+    },
+    {
+      "id": "i127",
+      "name": "Erin's old keepsake clothing",
+      "category": "clothing-keepsake",
+      "zone": "BSMT-BIN-CLOTHING",
+      "source": "IMG_0535",
+      "disposition": "keep-sentimental"
+    },
+    {
+      "id": "i128",
+      "name": "Asian decorations (name stamp, rice cooker candle, vase, calendar, bamboo steamer, leather pouch, textile, misc)",
+      "category": "decor-asian",
+      "zone": "BSMT-RAISED-E",
+      "source": "IMG_0529"
+    },
+    {
+      "id": "i129",
+      "name": "Window garden herb kit",
+      "category": "garden",
+      "zone": "KITCHEN-NOOK-SOUTH",
+      "source": "IMG_0529"
+    },
+    {
+      "id": "i130",
+      "name": "3 LED lights",
+      "category": "décor-seasonal",
+      "zone": "BSMT-BIN-DECOR",
+      "source": "IMG_0529",
+      "disposition": "keep"
+    },
+    {
+      "id": "i131",
+      "name": "Picture frame + bubble-wrapped electronics/HDMI items",
+      "category": "decor",
+      "zone": "BSMT-BIN-DECOR",
+      "source": "IMG_0529"
+    },
+    {
+      "id": "i132",
+      "name": "Children's games, doomsday life-countdown wall art, misc books",
+      "category": "decor",
+      "zone": "GARAGE-BIN-BOOKS",
+      "source": "IMG_0533"
+    },
+    {
+      "id": "i133",
+      "name": "Holiday books, picture frames, art wall decorations (for Ronin's room)",
+      "category": "kids-decor",
+      "zone": "BSMT-BIN-DECOR",
+      "source": "IMG_0531"
+    },
+    {
+      "id": "i134",
+      "name": "Baptismal candle, hospital records, newborn clothing, first spoon/pacifier, hospital name tag, father's memorabilia",
+      "category": "baby-memorabilia",
+      "zone": "BSMT-BIN-BABY",
+      "source": "IMG_0530"
+    },
+    {
+      "id": "i135",
+      "name": "Baby play gym/mat (infant toy)",
+      "category": "baby-gear",
+      "zone": "BSMT-BIN-BABY",
+      "source": "IMG_0534"
+    },
+    {
+      "id": "i136",
+      "name": "Outgrown infant clothing + infant stuffed animals",
+      "category": "baby-clothing",
+      "zone": "BSMT-BIN-BABY",
+      "source": "IMG_0535"
+    },
+    {
+      "id": "i137",
+      "name": "Large Hello Kitty Squishmallow (unopened)",
+      "category": "baby-toys",
+      "zone": "BSMT-BIN-BABY",
+      "source": "IMG_0535"
+    },
+    {
+      "id": "i138",
+      "name": "Neti pot, ovulation tests, pregnancy tests, postpartum care supplies, thermometer",
+      "category": "health",
+      "zone": "GARAGE-BIN-HEALTH",
+      "source": "IMG_0529"
+    },
+    {
+      "id": "i140",
+      "name": "Bar towel, bar sign, kettle, decorative plate, signs, cups, shot glasses, Disney coaster set",
+      "category": "bar-supplies",
+      "zone": "GARAGE-BIN-BARDECOR",
+      "source": "IMG_0530"
+    },
+    {
+      "id": "i141",
+      "name": "Adult books, textbooks, puzzle, photos",
+      "category": "books",
+      "zone": "GARAGE-BIN-BOOKS",
+      "source": "IMG_0534"
+    },
+    {
+      "id": "i142",
+      "name": "Chinese-language pop-up books (Hong Kong, Taipei), Young Children with Autism textbook",
+      "category": "books",
+      "zone": "GARAGE-BIN-BOOKS",
+      "source": "IMG_0534"
+    },
+    {
+      "id": "i143",
+      "name": "Gift wrapping materials",
+      "category": "gift-supplies",
+      "zone": "KITCHEN-LOWER-CAB",
+      "source": "IMG_0529"
+    },
+    {
+      "id": "i144",
+      "name": "House purchase binder, real estate binder, old van plates, sewing kit, wedding stamp, wedding memorabilia, coffee table games",
+      "category": "documents-household",
+      "zone": "WORKHALL-DRAWERS-S",
+      "source": "IMG_0530"
+    },
+    {
+      "id": "i145",
+      "name": "Intubation tubes (x2), personal items",
+      "category": "medical",
+      "zone": "GARAGE-BIN-HEALTH",
+      "source": "IMG_0529"
+    },
+    {
+      "id": "i146",
+      "name": "Curling iron, head massager, hairbrush, loofah",
+      "category": "personal-care",
+      "zone": "BATH-CLOSET",
+      "source": "IMG_0530"
+    },
+    {
+      "id": "i147",
+      "name": "Red light therapy mask",
+      "category": "personal-care",
+      "zone": "BATH-CLOSET",
+      "source": "IMG_0530"
+    },
+    {
+      "id": "i149",
+      "name": "Labels and decor for van",
+      "category": "memorabilia",
+      "zone": "BSMT-RAISED-W",
+      "source": "IMG_0529"
+    },
+    {
+      "id": "i148b",
+      "name": "Travel hammocks",
+      "category": "memorabilia",
+      "zone": "BSMT-RAISED-W",
+      "source": "IMG_0533"
+    },
+    {
+      "id": "i148c",
+      "name": "Decorative folk art doll",
+      "category": "memorabilia",
+      "zone": "BSMT-RAISED-W",
+      "source": "IMG_0533"
+    },
+    {
+      "id": "i148d",
+      "name": "Misc paperwork",
+      "category": "documents",
+      "zone": "PACKED-BOX:c18",
+      "source": "IMG_0533"
+    },
+    {
+      "id": "i150",
+      "name": "Charcoal lighter fluid",
+      "category": "outdoor-cooking",
+      "zone": "BALCONY-DECKBOX",
+      "source": "user-input",
+      "notes": "Stored in deck box"
+    },
+    {
+      "id": "i151",
+      "name": "Grill basket",
+      "category": "outdoor-cooking",
+      "zone": "BALCONY-DECKBOX",
+      "source": "user-input",
+      "notes": "Stored in deck box"
+    },
+    {
+      "id": "i152",
+      "name": "Grill tools (tongs, spatula, brush)",
+      "category": "outdoor-cooking",
+      "zone": "BALCONY-DECKBOX",
+      "source": "user-input",
+      "notes": "Stored in deck box"
+    }
+  ]
+}

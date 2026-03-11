@@ -5,7 +5,7 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const src = fs.readFileSync(join(__dirname, 'public/test.html'), 'utf8');
+const src = fs.readFileSync(join(__dirname, 'public/house-3d.html'), 'utf8');
 
 // Extract ROOMS array
 const match = src.match(/const ROOMS = \[([\s\S]*?)\n\];/);

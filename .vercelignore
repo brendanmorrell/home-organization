@@ -1,0 +1,9 @@
+.whisper-models/
+video-work/
+*.wav
+.git/
+scripts/
+*.md
+inventory.json
+inv.cjs
+validate-room.js

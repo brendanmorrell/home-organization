@@ -299,6 +299,19 @@ canvas#scene { width: 100% !important; height: 100% !important; display: block; 
 </style>
 </head>
 <body>
+<script>
+  // Hide sidebar when embedded as iframe in React app
+  if (window.parent !== window) {
+    document.documentElement.classList.add('in-iframe');
+  }
+</script>
+<style>
+  .in-iframe .sidebar { display: none !important; }
+  .in-iframe .topbar { display: none !important; }
+  .in-iframe .stats { display: none !important; }
+  .in-iframe #canvas { width: 100vw !important; }
+  .in-iframe .content { top: 0 !important; }
+</style>
 <div id="app" class="app">
   <div class="sidebar" id="sidebar">
     <div class="sidebar-header">
@@ -384,16 +397,42 @@ const ROOMS = [
         capacity: { slots: 8, slotDesc: "cabinet sections and drawers" },
         x: 1.85, y: -0.95, z: 0, w: 0.6, h: 0.9, d: 3.0, color: "#8d6e63",
         items: [
-          { name: "Pots & pans", location: "NW lower cabinet" },
-          { name: "Baking sheets", location: "Under counter, near stove" },
-          { name: "Mixing bowls", location: "NW cabinet, lower shelf" },
-        ]},
+            { name: "Pots and pans", id: "i014" },
+            { name: "Spices", id: "i015" },
+            { name: "Stuffed animal gifts", id: "i052" },
+            { name: "Gift wrapping materials (bags, paper, bows)", id: "i053" },
+            { name: "Gift wrapping materials", id: "i143" }
+          ]},
       // Upper cabinets (above counter, against west wall)
       { type: "cabinet", name: "West Wall Upper Cabinets", category: "Kitchenware",
         storageZone: true, zoneLabel: "KITCHEN-UPPER-CAB", zoneType: "cabinet",
         capacity: { slots: 6, slotDesc: "3-4 cabinet doors" },
         x: 2.1, y: 0.35, z: 0, w: 0.35, h: 0.8, d: 3.0, color: "#5d4037",
-        items: []},
+        items: [
+            { name: "Light bulbs and candles", id: "i027" },
+            { name: "Twinkle lights", id: "i028" },
+            { name: "Decorational bulbs", id: "i029" },
+            { name: "Gorilla tape", id: "i030" },
+            { name: "Tea candles", id: "i031" },
+            { name: "Packing tape", id: "i032" },
+            { name: "Black duct tape", id: "i033" },
+            { name: "Rechargeable battery charger", id: "i034" },
+            { name: "Duracell batteries", id: "i035" },
+            { name: "Fishing line", id: "i036" },
+            { name: "Glue", id: "i037" },
+            { name: "Assorted batteries", id: "i038" },
+            { name: "Double-sided tape", id: "i039" },
+            { name: "Corner protectors", id: "i040" },
+            { name: "Nanny cams", id: "i041" },
+            { name: "White duct tape", id: "i042" },
+            { name: "Scissors", id: "i043" },
+            { name: "Lighter", id: "i044" },
+            { name: "Sharpies", id: "i045" },
+            { name: "Receipts & warranties", id: "i047" },
+            { name: "Twist ties & rubber bands", id: "i048" },
+            { name: "Magnetic cabinet locks", id: "i049" },
+            { name: "Cryptography equipment (Ledger wallets)", id: "i050" }
+          ]},
       // Stove/Range (electric, stainless) — middle of west wall
       { type: "appliance", name: "Stove/Range (Electric)", category: "Kitchen",
         storageZone: false,
@@ -431,10 +470,7 @@ const ROOMS = [
         storageZone: true, zoneLabel: "KITCHEN-ABOVE-FRIDGE", zoneType: "cabinet",
         capacity: { slots: 2, slotDesc: "deep cabinet above fridge" },
         x: 0.3, y: 0.7, z: 1.9, w: 0.9, h: 0.5, d: 0.8, color: "#5d4037",
-        items: [
-          { name: "Serving platters (large)", location: "Back" },
-          { name: "Seasonal cookware", location: "Front" },
-        ]},
+        items: []},
 
       // === BREAKFAST NOOK (south edge, runs E-W) ===
       // Bar-height counter running west-to-east along the south wall.
@@ -446,7 +482,28 @@ const ROOMS = [
         storageZone: true, zoneLabel: "KITCHEN-NOOK", zoneType: "cabinet",
         capacity: { slots: 6, slotDesc: "lower cabinets under breakfast bar" },
         x: 0.5, y: -0.95, z: -1.8, w: 3.5, h: 0.9, d: 0.9, color: "#78909c",
-        items: []},
+        items: [
+            { name: "Big bowls and sieve", id: "i021" },
+            { name: "Kimchi fermenting container", id: "i022" },
+            { name: "Big thermoses (x2)", id: "i023" },
+            { name: "Cups", id: "i024" },
+            { name: "Mixer", id: "i025" },
+            { name: "Trinken lids (alcohol-hiding bottles)", id: "i026" }
+          ]},
+      // South-facing cabinets under breakfast nook (accessed from living room side)
+      { type: "cabinet", name: "Breakfast Nook South Cabinets", category: "Kitchen",
+        storageZone: true, zoneLabel: "KITCHEN-NOOK-SOUTH", zoneType: "cabinet",
+        capacity: { slots: 4, slotDesc: "south-facing cabinets under breakfast bar" },
+        x: 0.5, y: -0.95, z: -2.35, w: 3.0, h: 0.9, d: 0.15, color: "#607d8b",
+        doorFace: "-z",
+        items: [
+            { name: "Cleaning products (Drano, ceramic cleaner, Granite Gold, Barkeeper's Friend, Windex)", id: "i016" },
+            { name: "Dishwasher pads (Cascade)", id: "i017" },
+            { name: "Plant watering can", id: "i018" },
+            { name: "Soaps (assorted)", id: "i019" },
+            { name: "Mosquito electric zapper", id: "i020" },
+            { name: "Window garden herb kit", id: "i129" }
+          ]},
       // Sink (on the breakfast nook, south face, centered E-W)
       { type: "appliance", name: "Kitchen Sink", category: "Kitchen",
         storageZone: false,
@@ -544,9 +601,10 @@ const ROOMS = [
         capacity: { slots: 2, slotDesc: "cupboard + drawer above" },
         x: -0.8, y: -0.98, z: -1.5, w: 0.7, h: 0.85, d: 0.55, color: "#78909c",
         items: [
-          { name: "Printer paper (reams)", location: "Cupboard" },
-          { name: "Envelopes & labels", location: "Drawer" },
-        ]},
+            { name: "Spare keys (multiple sets)", id: "i054" },
+            { name: "Old glasses", id: "i055" },
+            { name: "Empty containers (reusable)", id: "i056" }
+          ]},
 
       // 2. Covered cabinet + 2 drawers above (left/right)
       { type: "cabinet", name: "Cabinet + Double Drawers", category: "Office/Utility",
@@ -554,10 +612,10 @@ const ROOMS = [
         capacity: { slots: 3, slotDesc: "cabinet + 2 drawers" },
         x: -0.8, y: -0.98, z: -0.85, w: 0.7, h: 0.85, d: 0.65, color: "#78909c",
         items: [
-          { name: "Filing folders", location: "Cabinet" },
-          { name: "Office supplies (pens, tape)", location: "Left drawer" },
-          { name: "Stamps & shipping supplies", location: "Right drawer" },
-        ]},
+            { name: "Stationery (notes, letters, envelopes)", id: "i057" },
+            { name: "Pins, paper, notepads", id: "i058" },
+            { name: "External hard drive + USB", id: "i111" }
+          ]},
 
       // 3. Three drawers (south of chair / closer to chair from south)
       { type: "cabinet", name: "Three Drawers (South of Chair)", category: "Office/Utility",
@@ -565,10 +623,10 @@ const ROOMS = [
         capacity: { slots: 3, slotDesc: "3 stacked drawers" },
         x: -0.8, y: -0.98, z: -0.25, w: 0.7, h: 0.85, d: 0.5, color: "#78909c",
         items: [
-          { name: "Notebooks & notepads", location: "Top drawer" },
-          { name: "Chargers & cables", location: "Middle drawer" },
-          { name: "Miscellaneous tools", location: "Bottom drawer" },
-        ]},
+            { name: "Tax documents", id: "i059" },
+            { name: "More spare keys", id: "i060" },
+            { name: "House purchase binder, real estate binder, old van plates, sewing kit, wedding stamp, wedding memorabilia, coffee table games", id: "i144" }
+          ]},
 
       // 4. Chair (knee-hole) — centered in the run
       { type: "chair", name: "Office Chair (wheeled)", category: "Office/Utility",
@@ -583,21 +641,18 @@ const ROOMS = [
         capacity: { slots: 3, slotDesc: "3 stacked drawers" },
         x: -0.8, y: -0.98, z: 0.85, w: 0.7, h: 0.85, d: 0.5, color: "#78909c",
         items: [
-          { name: "Stationery & notebooks", location: "Top drawer" },
-          { name: "Tools & small hardware", location: "Middle drawer" },
-          { name: "Batteries & adapters", location: "Bottom drawer" },
-        ]},
+            { name: "Ronin travel art supplies (finger paint)", id: "i061" },
+            { name: "Gift cup for parents", id: "i062" },
+            { name: "Ronin stickers & unused little gifts", id: "i063" },
+            { name: "Old photos / early life memories", id: "i064" }
+          ]},
 
       // Upper cabinets — stay touching south wall (above south cabinetry section)
       { type: "cabinet", name: "Desk Upper Cabinets", category: "Office/Utility",
         storageZone: true, zoneLabel: "WORKHALL-UPPER", zoneType: "cabinet",
         capacity: { slots: 4, slotDesc: "3 cabinet doors" },
         x: -1.05, y: 0.35, z: -1.2, w: 0.35, h: 0.8, d: 1.2, color: "#5d4037",
-        items: [
-          { name: "Reference binders", location: "Left cabinet" },
-          { name: "Electronics (cables, chargers)", location: "Middle cabinet" },
-          { name: "Miscellaneous office supplies", location: "Right cabinet" },
-        ]},
+        items: []},
 
       // Canon Printer on south end of counter
       { type: "appliance", name: "Canon Printer", category: "Office/Utility",
@@ -631,7 +686,11 @@ const ROOMS = [
         storageZone: true, zoneLabel: "BSMT-RAISED-W", zoneType: "platform",
         capacity: { slots: 4, slotDesc: "open platform area" },
         x: 1.69, y: -0.72, z: 3.195, w: 3.125, h: 1.07, d: 1.89, color: "#5c4033",
-        items: []},
+        items: [
+            { name: "Labels and decor for van", id: "i149" },
+            { name: "Travel hammocks", id: "i148b" },
+            { name: "Decorative folk art doll", id: "i148c" }
+          ]},
 
       // East raised concrete platform — against north wall, east of dividing wall
       // Extended to new north wall (halfD=4.14). d: 1.2→1.89, z shifted.
@@ -639,11 +698,7 @@ const ROOMS = [
         storageZone: true, zoneLabel: "BSMT-RAISED-E", zoneType: "platform",
         capacity: { slots: 6, slotDesc: "open platform area" },
         x: -1.64, y: -0.72, z: 3.195, w: 3.225, h: 1.07, d: 1.89, color: "#5c4033",
-        items: [
-          { name: "Amazon shipping boxes", location: "Left end" },
-          { name: "Seasonal storage boxes", location: "Center" },
-          { name: "Holiday decorations", location: "Right end" },
-        ]},
+        items: [{ name: "Old stroller", id: "i067" }, { name: "Asian decorations (name stamp, rice cooker candle, vase, calendar, bamboo steamer, leather pouch, textile, misc)", id: "i128" }]},
 
       // NOTE: East platform shelf removed — user doesn't recognize it.
       // Items on east platform stored as platform inventory instead.
@@ -708,9 +763,7 @@ const ROOMS = [
         storageZone: true, zoneLabel: "BSMT-CLOTHES", zoneType: "box",
         capacity: { slots: 1, slotDesc: "large moving box" },
         x: -0.40, y: -0.50, z: 0.23, w: 0.7, h: 1.5, d: 0.9, color: "#795548",
-        items: [
-          { name: "Off-season clothes", location: "Inside" },
-        ]},
+        items: []},
 
       // ============================================================
       //  SOUTH SECTION: STAIRWELL + PAINT CLOSET + OPEN SHELVING
@@ -764,12 +817,7 @@ const ROOMS = [
         doorFace: "-x",
         capacity: { slots: 6, slotDesc: "closet shelves" },
         x: -0.76, y: 0, z: -2.13, w: 1.475, h: 2.5, d: 0.875, color: "#455a64",
-        items: [
-          { name: "Touch-up paint cans", location: "Bottom shelf" },
-          { name: "Paint rollers & brushes", location: "Middle shelf" },
-          { name: "Drop cloths", location: "Top shelf" },
-          { name: "Painter's tape", location: "Middle shelf, right" },
-        ]},
+        items: []},
 
       // Open shelving — L-shaped along south face of paint closet + east partition wall
       // Paint closet south edge at local z = -2.57. Room south wall at z = -3.45.
@@ -808,6 +856,45 @@ const ROOMS = [
         storageZone: false,
         x: 3.25, y: 0.5, z: -1.15, w: 0.05, h: 0.5, d: 0.7, color: "#4fc3f7",
         items: []},
+
+      // ============================================================
+      //  STORAGE CONTAINERS ON BASEMENT RAISED PLATFORMS
+      // ============================================================
+
+      // KEEPSAKE CLOTHING (Large B&Y) on WEST platform
+      { type: "box", name: "KEEPSAKE CLOTHING", category: "Deep Storage",
+        storageZone: true, zoneLabel: "BSMT-BIN-CLOTHING", zoneType: "box",
+        capacity: { slots: 4, slotDesc: "packed items" },
+        x: 2.2, y: -0.005, z: 3.195, w: 0.61, h: 0.36, d: 0.41, color: "#fdd835",
+        items: [
+            { name: "Sentimental t-shirts (shared)", id: "i124" },
+            { name: "Brendan's travel t-shirts (Argentina, Asia) + textile", id: "i125" },
+            { name: "Erin's keepsake t-shirts & sweatshirts", id: "i126" },
+            { name: "Erin's old keepsake clothing", id: "i127" }
+          ]},
+
+      // BABY KEEPSAKES (Large B&Y) on WEST platform
+      { type: "box", name: "BABY KEEPSAKES", category: "Deep Storage",
+        storageZone: true, zoneLabel: "BSMT-BIN-BABY", zoneType: "box",
+        capacity: { slots: 4, slotDesc: "packed items" },
+        x: 1.0, y: -0.005, z: 3.195, w: 0.61, h: 0.36, d: 0.41, color: "#fdd835",
+        items: [
+            { name: "Baptismal candle, hospital records, newborn clothing, first spoon/pacifier, hospital name tag, father's memorabilia", id: "i134" },
+            { name: "Baby play gym/mat (infant toy)", id: "i135" },
+            { name: "Outgrown infant clothing + infant stuffed animals", id: "i136" },
+            { name: "Large Hello Kitty Squishmallow (unopened)", id: "i137" }
+          ]},
+
+      // DÉCOR - SEASONAL (Clear medium) on EAST platform
+      { type: "box", name: "DÉCOR - SEASONAL", category: "Deep Storage",
+        storageZone: true, zoneLabel: "BSMT-BIN-DECOR", zoneType: "box",
+        capacity: { slots: 3, slotDesc: "packed items" },
+        x: -1.64, y: -0.035, z: 3.195, w: 0.51, h: 0.30, d: 0.36, color: "#b3e5fc",
+        items: [
+            { name: "3 LED lights", id: "i130" },
+            { name: "Picture frame + bubble-wrapped electronics/HDMI items", id: "i131" },
+            { name: "Holiday books, picture frames, art wall decorations (for Ronin's room)", id: "i133" }
+          ]},
     ]
   },
   {
@@ -835,13 +922,7 @@ const ROOMS = [
         storageZone: true, zoneLabel: "GARAGE-SHELF-WEST", zoneType: "shelf",
         capacity: { slots: 8, slotDesc: "bins across (0.45m each), single depth row" },
         x: 2.85, y: 1.0, z: 0.3, w: 0.6, h: 0.15, d: 4.5, color: "#78909c",
-        items: [
-          { name: "Igloo cooler", location: "South end" },
-          { name: "STOR-ALL storage boxes", location: "Center-south" },
-          { name: "Black storage totes", location: "Center" },
-          { name: "Lumber / wood scraps", location: "Center-north" },
-          { name: "Black organizer drawers", location: "North end" },
-        ]},
+        items: []},
 
       // ---- NORTH WALL SHELF: from door (x≈-1.3) to west wall (x≈+2.85) ----
       // Connects with west wall shelves at the NW corner
@@ -864,21 +945,14 @@ const ROOMS = [
         capacity: { slots: 15, slotDesc: "hook positions across pegboard" },
         badgeOffsetY: -1.2, badgeOffsetZ: 0.5,
         x: -2.85, y: 0, z: 0.2, w: 0.1, h: 1.2, d: 1.5, color: "#607d8b",
-        items: [
-          { name: "Clamps (various)", location: "Hooks, upper row" },
-          { name: "Hand tools", location: "Hooks, lower row" },
-          { name: "Scissors & pliers", location: "Center hooks" },
-        ]},
+        items: []},
 
       // ---- WALL HOOKS (west wall, same N-S position) ----
       { type: "shelf", name: "Wall Hook Rack", category: "Garage Storage",
         storageZone: true, zoneLabel: "GARAGE-HOOKS-WEST", zoneType: "wall-hooks",
         capacity: { slots: 6, slotDesc: "individual hooks" },
         x: 2.85, y: 0.2, z: 0.2, w: 0.15, h: 0.05, d: 1.2, color: "#607d8b",
-        items: [
-          { name: "Folding chairs", location: "Hanging from hooks" },
-          { name: "Bags", location: "Hanging from hooks" },
-        ]},
+        items: []},
 
       // ---- FLOOR ZONE: open garage floor ----
       { type: "appliance", name: "Garage Floor — Open Area", category: "Garage Storage",
@@ -994,6 +1068,69 @@ const ROOMS = [
       // Bench crossbar (runs E-W under pad)
       { type: "appliance", name: "Bench Crossbar", category: "Fitness", storageZone: false,
         x: 1.1, y: -1.7, z: 2.2, w: 1.0, h: 0.06, d: 0.06, color: "#444444", items: []},
+
+      // ============================================================
+      //  STORAGE CONTAINERS ON GARAGE SHELVES
+      // ============================================================
+
+      // SPEECH THERAPY (Large B&Y) on NORTH shelf
+      { type: "box", name: "SPEECH THERAPY", category: "Packed Storage",
+        storageZone: true, zoneLabel: "GARAGE-BIN-SPEECH", zoneType: "box",
+        capacity: { slots: 4, slotDesc: "packed items" },
+        x: 2.0, y: 1.255, z: 2.85, w: 0.61, h: 0.36, d: 0.41, color: "#fdd835",
+        items: [
+            { name: "Flashcards, notebooks, therapy toys, puppets (incl. chef puppet), markers", id: "i120" },
+            { name: "Felt letterboard + pins, 2 games, Velcro dots, finger paints, mini erasers, mug, flashcards, magnetic sand garden", id: "i121" },
+            { name: "Speech pathology desk supplies, CVC Objects game, CliftonStrengths book, Emily Oster Cribsheet, flashcards, binders, notebooks", id: "i122" },
+            { name: "Work paperwork, test materials, assessment protocol binder", id: "i123" }
+          ]},
+
+      // BAR DECOR & EXTRAS (Clear medium) on NORTH shelf
+      { type: "box", name: "BAR DECOR & EXTRAS", category: "Packed Storage",
+        storageZone: true, zoneLabel: "GARAGE-BIN-BARDECOR", zoneType: "box",
+        capacity: { slots: 1, slotDesc: "packed items" },
+        x: 0.0, y: 1.225, z: 2.85, w: 0.51, h: 0.30, d: 0.36, color: "#b3e5fc",
+        items: [{ name: "Bar towel, bar sign, kettle, decorative plate, signs, cups, shot glasses, Disney coaster set", id: "i140" }]},
+
+      // ELECTRONICS (Clear medium) on NE shelf
+      { type: "box", name: "ELECTRONICS", category: "Packed Storage",
+        storageZone: true, zoneLabel: "GARAGE-BIN-ELECTRONICS", zoneType: "box",
+        capacity: { slots: 13, slotDesc: "packed items" },
+        x: -2.85, y: 1.225, z: 1.5, w: 0.36, h: 0.30, d: 0.51, color: "#b3e5fc",
+        items: [
+            { name: "Screwdriver kit (Strebito, electronics)", id: "i106" },
+            { name: "USB plugs (USB-A & USB-C, bag)", id: "i107" },
+            { name: "Headphones & ear tips bag", id: "i108" },
+            { name: "Internet cameras (x2)", id: "i109" },
+            { name: "USB-C cords (bag)", id: "i110" },
+            { name: "USB-C adapter plugs (bag)", id: "i112" },
+            { name: "Power banks", id: "i113" },
+            { name: "Micro USB cords (bag)", id: "i114" },
+            { name: "Google Chromecast dongle", id: "i115" },
+            { name: "HDMI cord + universal adapter", id: "i116" },
+            { name: "Cord organizers (wall stickers + small zip ties)", id: "i117" },
+            { name: "Power strips + outlet converters (1-to-6, 1-to-3) + extension cord", id: "i118" },
+            { name: "USB adapters (individual converter pieces)", id: "i119" }
+          ]},
+
+      // BOOKS (Clear medium) on WEST shelf
+      { type: "box", name: "BOOKS", category: "Packed Storage",
+        storageZone: true, zoneLabel: "GARAGE-BIN-BOOKS", zoneType: "box",
+        capacity: { slots: 4, slotDesc: "packed items" },
+        x: 2.85, y: 1.225, z: 1.0, w: 0.36, h: 0.30, d: 0.51, color: "#b3e5fc",
+        items: [
+            { name: "Cooking books", id: "i051" },
+            { name: "Children's games, doomsday life-countdown wall art, misc books", id: "i132" },
+            { name: "Adult books, textbooks, puzzle, photos", id: "i141" },
+            { name: "Chinese-language pop-up books (Hong Kong, Taipei), Young Children with Autism textbook", id: "i142" }
+          ]},
+
+      // HEALTH & MEDICAL (Black small crate) on WEST shelf
+      { type: "box", name: "HEALTH & MEDICAL", category: "Packed Storage",
+        storageZone: true, zoneLabel: "GARAGE-BIN-HEALTH", zoneType: "box",
+        capacity: { slots: 2, slotDesc: "packed items" },
+        x: 2.85, y: 1.175, z: -0.5, w: 0.25, h: 0.20, d: 0.36, color: "#37474f",
+        items: [{ name: "Neti pot, ovulation tests, pregnancy tests, postpartum care supplies, thermometer", id: "i138" }, { name: "Intubation tubes (x2), personal items", id: "i145" }]},
     ]
   },
   // ================================================================
@@ -1040,10 +1177,7 @@ const ROOMS = [
         storageZone: true, zoneLabel: "MASTER-DESK", zoneType: "cabinet",
         capacity: { slots: 4, slotDesc: "desk sections + drawers" },
         x: 2.59, y: -0.21, z: 0.46, w: 0.61, h: 0.05, d: 1.52, color: "#9e9e9e",
-        items: [
-          { name: "Computer monitors", location: "Desktop" },
-          { name: "Office supplies", location: "Drawers" },
-        ]},
+        items: []},
       // Desk legs (4)
       { type: "appliance", name: "Desk Leg — NW", category: "Furniture",
         storageZone: false,
@@ -1066,11 +1200,11 @@ const ROOMS = [
       { type: "shelf", name: "Nightstand — North", category: "Bedroom",
         storageZone: false,
         x: 2.57, y: -1.1, z: 1.55, w: 0.46, h: 0.6, d: 0.24, color: "#5d4037",
-        items: [{ name: "Reading lamp", location: "Top" }]},
+        items: []},
       { type: "shelf", name: "Nightstand — South", category: "Bedroom",
         storageZone: false,
         x: 2.57, y: -1.1, z: -0.64, w: 0.46, h: 0.6, d: 0.24, color: "#5d4037",
-        items: [{ name: "Phone charger", location: "Top" }]},
+        items: []},
 
       // === CONSOLE TABLE (black, 4 legs) on N wall ===
       // 6ft E-W × 1ft N-S × 3ft tall
@@ -1117,20 +1251,14 @@ const ROOMS = [
         storageZone: true, zoneLabel: "MASTER-MANTEL", zoneType: "shelf",
         capacity: { slots: 2, slotDesc: "mantel top" },
         x: 0, y: 0.43, z: -1.96, w: 2.0, h: 0.08, d: 0.30, color: "#6d4c41",
-        items: [
-          { name: "Family photos", location: "Mantel" },
-          { name: "Decorative items", location: "Mantel" },
-        ]},
+        items: []},
 
       // === CREDENZA (brown wood, with drawers) + TV above — E wall ===
       { type: "cabinet", name: "Credenza", category: "Entertainment",
         storageZone: true, zoneLabel: "MASTER-CREDENZA", zoneType: "cabinet",
         capacity: { slots: 4, slotDesc: "drawers + shelves" },
         x: -3.17, y: -1.1, z: 0.46, w: 0.55, h: 0.6, d: 1.52, color: "#5d4037",
-        items: [
-          { name: "Board games", location: "Left drawer" },
-          { name: "Blankets", location: "Right cabinet" },
-        ]},
+        items: []},
       // Drawer lines on credenza front face (3 horizontal dividers)
       { type: "appliance", name: "Credenza Drawer Line 1", category: "Furniture",
         x: -2.89, y: -0.95, z: 0.46, w: 0.02, h: 0.02, d: 1.48, color: "#3e2723", items: []},
@@ -1214,11 +1342,7 @@ const ROOMS = [
         storageZone: true, zoneLabel: "LIVING-ENTRY-SHELF", zoneType: "shelf",
         capacity: { slots: 5, slotDesc: "5 open shelves" },
         x: 2.3, y: -0.875, z: -5.25, w: 0.7, h: 1.6, d: 0.4, color: "#5d4037",
-        items: [
-          { name: "Clay pot / vase", location: "Top shelf" },
-          { name: "Framed photo", location: "Second shelf" },
-          { name: "Decorative bowl", location: "Third shelf" },
-        ]},
+        items: []},
 
       // ============================================================
       // ZONE B: STONE FIREPLACE (back wall center, z ≈ -5.5)
@@ -1250,10 +1374,7 @@ const ROOMS = [
         storageZone: false,
         badgeOffsetY: 0.6, badgeOffsetZ: 0.4,
         x: 0, y: -0.455, z: -4.85, w: 1.2, h: 0.08, d: 0.25, color: "#8d6e63",
-        items: [
-          { name: "Candles", location: "Left side" },
-          { name: "Trailing ivy / greenery", location: "Draped across" },
-        ]},
+        items: []},
 
       // TV — mounted on stone above mantel, ~5.5ft center
       { type: "appliance", name: "Wall-Mounted TV", category: "Electronics",
@@ -1337,23 +1458,19 @@ const ROOMS = [
         doorFace: "-z",  // door opens south into living room
         x: -2.4, y: -0.475, z: -1.5, w: 1.22, h: 2.4, d: 1.22, color: "#fafafa",
         items: [
-          { name: "Charmin toilet paper (bulk)", location: "Top shelf" },
-          { name: "Paper towels", location: "Top shelf, left" },
-          { name: "Cleaning supplies & bottles", location: "Top shelf, right" },
-          { name: "Step stool + bin on top", location: "Middle" },
-          { name: "Broom, mop (yellow handle)", location: "Left side, leaning" },
-          { name: "Dustpan, trash bag box", location: "Floor" },
-        ]},
+            { name: "Extra paper towels", id: "i007" },
+            { name: "Light bulb replacer (extended hand)", id: "i008" },
+            { name: "Swiffer WetJet", id: "i009" },
+            { name: "Broom", id: "i010" },
+            { name: "Metal stools (x2)", id: "i013" }
+          ]},
 
       // Shoe storage bench — against right wall, between closet and staircase area
       { type: "cabinet", name: "Shoe Storage Bench", category: "Household",
         storageZone: true, zoneLabel: "LIVING-SHOE-STORAGE", zoneType: "cabinet",
         capacity: { slots: 6, slotDesc: "cubby compartments" },
         x: -2.8, y: -1.425, z: -3.3, w: 0.4, h: 0.5, d: 1.5, color: "#212121",
-        items: [
-          { name: "Sneakers", location: "Left cubbies" },
-          { name: "Slippers", location: "Right cubbies" },
-        ]},
+        items: []},
 
       // ============================================================
       // ZONE E: STAIRCASE TO UPPER FLOOR (right wall, z = 0 to +3)
@@ -1379,12 +1496,13 @@ const ROOMS = [
         capacity: { slots: 6, slotDesc: "mini fridge + glass-front cab + 3 drawers" },
         x: -2.8, y: -1.225, z: 0.5, w: 0.46, h: 0.9, d: 2.0, color: "#d7ccc8",
         items: [
-          { name: "Mini fridge (stainless, with alphabet magnets)", location: "Left end" },
-          { name: "Liquor bottles (glass-front cabinet)", location: "Center-left" },
-          { name: "Sprite, Fanta cans, mixers", location: "Bottom drawer" },
-          { name: "Bar tools, accessories", location: "Middle drawer" },
-          { name: "Misc bar items", location: "Top drawer" },
-        ]},
+            { name: "Sodas & canned drinks (Fanta, Sprite, etc.)", id: "i001" },
+            { name: "Incense sticks", id: "i002" },
+            { name: "Wine aerator/deaerator", id: "i003" },
+            { name: "Wine bottle sealer", id: "i004" },
+            { name: "Cocktail smoking torch + wood chips", id: "i005" },
+            { name: "Wine toppers", id: "i006" }
+          ]},
 
       // Upper cabinets — shallower, on wall above counter
       { type: "cabinet", name: "Bar Nook — Upper Cabinets", category: "Bar / Entertaining",
@@ -1399,22 +1517,13 @@ const ROOMS = [
         capacity: { slots: 8, slotDesc: "counter surface positions" },
         badgeOffsetY: -0.5, badgeOffsetX: 0.3,
         x: -2.8, y: -0.775, z: 0.5, w: 0.46, h: 0.05, d: 2.0, color: "#8d6e63",
-        items: [
-          { name: "Spirits bottles (various)", location: "Back left" },
-          { name: "Moscow mule mugs (copper)", location: "Back center, on shelf" },
-          { name: "Glass decanter", location: "Center" },
-          { name: "Wine bottle", location: "Left" },
-        ]},
+        items: []},
 
       // Arched nook back wall with vintage tin signs — on the right wall
       { type: "appliance", name: "Bar Nook Arch & Signs", category: "Decor",
         storageZone: false,
         x: -3, y: -0.305, z: 0.5, w: 0.1, h: 1.0, d: 1.5, color: "#757575",
-        items: [
-          { name: "Fernet-Branca tin sign", location: "Left" },
-          { name: "Bitter Branca tin sign", location: "Center" },
-          { name: "Quilmes beer tin sign", location: "Right" },
-        ]},
+        items: []},
 
       // ============================================================
       // ZONE G: DINING AREA (toward kitchen end, z = +3 to +5)
@@ -1432,10 +1541,7 @@ const ROOMS = [
         storageZone: true, zoneLabel: "LIVING-WINE-RACK", zoneType: "shelf",
         capacity: { slots: 4, slotDesc: "wine bottle slots + glass hooks" },
         x: 2.9, y: -0.155, z: 3.5, w: 0.2, h: 0.6, d: 0.8, color: "#5d4037",
-        items: [
-          { name: "Wine bottles (3-4)", location: "Top row" },
-          { name: "Wine glasses (hanging)", location: "Bottom hooks" },
-        ]},
+        items: []},
 
       // 4 dining chairs — 2 on each long side (z-axis sides)
       { type: "chair", name: "Dining Chair 1", category: "Furniture",
@@ -1556,10 +1662,10 @@ const ROOMS = [
         doorFace: "+z",  // door opens north into foyer
         x: -2.05, y: -0.225, z: -2.2, w: 0.75, h: 2.35, d: 0.7, color: "#78909c",
         items: [
-          { name: "Winter coats", location: "Hanging rod" },
-          { name: "Umbrellas", location: "Floor, right side" },
-          { name: "Hats & scarves", location: "Top shelf" },
-        ]},
+            { name: "Old baby stuff & clothes", id: "i011" },
+            { name: "Dog ball", id: "i065" },
+            { name: "Winter clothes & jackets", id: "i066" }
+          ]},
 
       // === CEILING ===
       // Pendant light (NE corner)
@@ -1597,10 +1703,11 @@ const ROOMS = [
         capacity: { slots: 3, slotDesc: "drawers and under-sink" },
         x: -0.76, y: -0.95, z: 0.55, w: 0.55, h: 0.9, d: 0.4, color: "#8d6e63",
         items: [
-          { name: "Toiletries & hygiene products", location: "Top drawer" },
-          { name: "Cleaning supplies", location: "Under sink" },
-          { name: "Extra towels", location: "Bottom drawer" },
-        ]},
+            { name: "Eucalyptus hand soap", id: "i068" },
+            { name: "Plunger (downstairs)", id: "i069" },
+            { name: "Hair dryer & curler", id: "i070" },
+            { name: "Toilet bowl cleaner & brush", id: "i071" }
+          ]},
 
       // Mirror above vanity (wall-mounted on north wall, aligned with vanity)
       { type: "appliance", name: "Mirror", category: "Bathroom",
@@ -1673,10 +1780,7 @@ const ROOMS = [
         storageZone: true, zoneLabel: "BABY-BOOKSHELF", zoneType: "shelf",
         capacity: { slots: 4, slotDesc: "shelves" },
         x: -2.74, y: -0.65, z: -0.30, w: 0.30, h: 1.5, d: 0.61, color: "#212121",
-        items: [
-          { name: "Children's books", location: "All shelves" },
-          { name: "Photo albums", location: "Bottom shelf" },
-        ]},
+        items: []},
 
       // --- GLIDER (gray) — NE corner, 1ft from N+E walls ---
       // Rotated 135° CCW (from top-down view) = 2.356 rad
@@ -1750,10 +1854,7 @@ const ROOMS = [
         storageZone: true, zoneLabel: "BABY-DRESSER", zoneType: "cabinet",
         capacity: { slots: 6, slotDesc: "dresser drawers" },
         x: -0.91, y: -0.95, z: -1.83, w: 1.22, h: 0.91, d: 0.40, color: "#8d6e63",
-        items: [
-          { name: "Baby clothes", location: "Top drawers" },
-          { name: "Blankets & swaddles", location: "Bottom drawers" },
-        ]},
+        items: []},
       // Drawer lines on dresser front face (4 horizontal dividers)
       { type: "appliance", name: "Dresser Drawer Line 1", category: "Furniture",
         x: -0.91, y: -0.66, z: -1.62, w: 1.18, h: 0.02, d: 0.02, color: "#5d4037", items: []},
@@ -1786,10 +1887,107 @@ const ROOMS = [
         x: 0, y: -0.15, z: 0, w: 0.7, h: 2.4, d: 1.2, color: "#66bb6a",
         doorFace: "+x",
         items: [
-          { name: "Baby coats", location: "Hanging rod" },
-          { name: "Extra sheets", location: "Top shelf" },
-          { name: "Diaper boxes", location: "Floor" },
-        ]},
+            { name: "Old light fixture", id: "i077" },
+            { name: "Ronin's old/current clothing", id: "i078" },
+            { name: "Calendars", id: "i079" },
+            { name: "Erin's work clothing", id: "i080" },
+            { name: "Baby blankets", id: "i082" },
+            { name: "Old shoes", id: "i083" }
+          ]},
+    ]
+  },
+
+  // ================================================================
+  //  r15 — BALCONY (6.1×6.1m, 2nd floor, above garage area)
+  //  Outdoor balcony with patio furniture and grill
+  //  Shares fireplace with living room below
+  //  center: pos_x=8.0, pos_y=3.0, pos_z=0.0
+  // ================================================================
+  {
+    id: "r15", name: "Balcony", icon: "B", color: "#a1887f",
+    pos_x: 8.0, pos_y: 0, pos_z: -15,
+    width: 6.1, depth: 6.1, height: 2.8,
+    noCeiling: true,
+    skipWalls: ['back', 'left', 'right'],  // open sides — only north wall remains
+    aframeGable: true,  // triangle gable on top of north wall
+    aframeApexY: 2.9,   // local Y of A-frame peak (above wall top of 1.4)
+    wallOpenings: {
+      front: [ // north wall (+z) — door opening
+        { x: 0, y: -0.35, w: 1.5, h: 2.1 },
+      ],
+    },
+    furniture: [
+      // --- ROUND PATIO TABLE & 4 CHAIRS ---
+      { type: "round-table", name: "Patio Table", category: "Furniture",
+        x: 0, y: -0.95, z: 0, w: 1.2, h: 0.75, d: 1.2, color: "#5d4037", items: [] },
+      { type: "chair", name: "Patio Chair N", category: "Furniture",
+        x: 0, y: -0.95, z: 1.0, w: 0.5, h: 0.8, d: 0.5, color: "#5d4037", rotY: Math.PI, items: [] },
+      { type: "chair", name: "Patio Chair S", category: "Furniture",
+        x: 0, y: -0.95, z: -1.0, w: 0.5, h: 0.8, d: 0.5, color: "#5d4037", items: [] },
+      { type: "chair", name: "Patio Chair W", category: "Furniture",
+        x: 1.0, y: -0.95, z: 0, w: 0.5, h: 0.8, d: 0.5, color: "#5d4037", rotY: -Math.PI/2, items: [] },
+      { type: "chair", name: "Patio Chair E", category: "Furniture",
+        x: -1.0, y: -0.95, z: 0, w: 0.5, h: 0.8, d: 0.5, color: "#5d4037", rotY: Math.PI/2, items: [] },
+
+      // --- GRILL (west wall, middle, facing east) ---
+      { type: "grill", name: "Grill", category: "Outdoor Cooking",
+        x: 2.75, y: -0.75, z: 0, w: 0.8, h: 1.3, d: 0.6, color: "#37474f", rotY: Math.PI/2, items: [] },
+      // --- TRASH CAN (west wall, south of grill) ---
+      { type: "cylinder", name: "Trash Can", category: "Maintenance",
+        x: 2.75, y: -0.85, z: -1.2, w: 0.4, h: 1.1, d: 0.4, color: "#424242", items: [] },
+
+      // --- DECK STORAGE BOX (middle of south side) ---
+      { type: "box", name: "Deck Storage Box", category: "Storage",
+        storageZone: true, zoneLabel: "BALCONY-DECKBOX", zoneType: "box",
+        capacity: { slots: 1, slotDesc: "large deck box" },
+        x: 0, y: -1.05, z: -2.75, w: 1.2, h: 0.7, d: 0.6, color: "#6d4c41", items: [
+            { name: "Deck box (8 chair pillows inside)", id: "i105" },
+            { name: "Charcoal lighter fluid", id: "i150" },
+            { name: "Grill basket", id: "i151" },
+            { name: "Grill tools (tongs, spatula, brush)", id: "i152" }
+          ] },
+
+      // --- BANNISTER RAILING (west, east, south sides — 4ft/1.22m tall) ---
+      // Railing top at y = -1.4 + 1.22 = -0.18
+      // WEST RAILING (x = +3.05, runs N-S)
+      { type: "appliance", name: "West Railing Post 1", x: 3.05, y: -0.79, z: -3.05, w: 0.06, h: 1.22, d: 0.06, color: "#5d4037", items: [] },
+      { type: "appliance", name: "West Railing Post 2", x: 3.05, y: -0.79, z: -2.05, w: 0.06, h: 1.22, d: 0.06, color: "#5d4037", items: [] },
+      { type: "appliance", name: "West Railing Post 3", x: 3.05, y: -0.79, z: -1.05, w: 0.06, h: 1.22, d: 0.06, color: "#5d4037", items: [] },
+      { type: "appliance", name: "West Railing Post 4", x: 3.05, y: -0.79, z: -0.05, w: 0.06, h: 1.22, d: 0.06, color: "#5d4037", items: [] },
+      { type: "appliance", name: "West Railing Post 5", x: 3.05, y: -0.79, z: 0.95, w: 0.06, h: 1.22, d: 0.06, color: "#5d4037", items: [] },
+      { type: "appliance", name: "West Railing Post 6", x: 3.05, y: -0.79, z: 1.95, w: 0.06, h: 1.22, d: 0.06, color: "#5d4037", items: [] },
+      { type: "appliance", name: "West Railing Post 7", x: 3.05, y: -0.79, z: 3.05, w: 0.06, h: 1.22, d: 0.06, color: "#5d4037", items: [] },
+      { type: "appliance", name: "West Handrail", x: 3.05, y: -0.18, z: 0, w: 0.06, h: 0.06, d: 6.1, color: "#4e342e", items: [] },
+      // EAST RAILING (x = -3.05, runs N-S)
+      { type: "appliance", name: "East Railing Post 1", x: -3.05, y: -0.79, z: -3.05, w: 0.06, h: 1.22, d: 0.06, color: "#5d4037", items: [] },
+      { type: "appliance", name: "East Railing Post 2", x: -3.05, y: -0.79, z: -2.05, w: 0.06, h: 1.22, d: 0.06, color: "#5d4037", items: [] },
+      { type: "appliance", name: "East Railing Post 3", x: -3.05, y: -0.79, z: -1.05, w: 0.06, h: 1.22, d: 0.06, color: "#5d4037", items: [] },
+      { type: "appliance", name: "East Railing Post 4", x: -3.05, y: -0.79, z: -0.05, w: 0.06, h: 1.22, d: 0.06, color: "#5d4037", items: [] },
+      { type: "appliance", name: "East Railing Post 5", x: -3.05, y: -0.79, z: 0.95, w: 0.06, h: 1.22, d: 0.06, color: "#5d4037", items: [] },
+      { type: "appliance", name: "East Railing Post 6", x: -3.05, y: -0.79, z: 1.95, w: 0.06, h: 1.22, d: 0.06, color: "#5d4037", items: [] },
+      { type: "appliance", name: "East Railing Post 7", x: -3.05, y: -0.79, z: 3.05, w: 0.06, h: 1.22, d: 0.06, color: "#5d4037", items: [] },
+      { type: "appliance", name: "East Handrail", x: -3.05, y: -0.18, z: 0, w: 0.06, h: 0.06, d: 6.1, color: "#4e342e", items: [] },
+      // SOUTH RAILING (z = -3.05, runs E-W)
+      { type: "appliance", name: "South Railing Post 1", x: -2.55, y: -0.79, z: -3.05, w: 0.06, h: 1.22, d: 0.06, color: "#5d4037", items: [] },
+      { type: "appliance", name: "South Railing Post 2", x: -1.55, y: -0.79, z: -3.05, w: 0.06, h: 1.22, d: 0.06, color: "#5d4037", items: [] },
+      { type: "appliance", name: "South Railing Post 3", x: -0.55, y: -0.79, z: -3.05, w: 0.06, h: 1.22, d: 0.06, color: "#5d4037", items: [] },
+      { type: "appliance", name: "South Railing Post 4", x: 0.45, y: -0.79, z: -3.05, w: 0.06, h: 1.22, d: 0.06, color: "#5d4037", items: [] },
+      { type: "appliance", name: "South Railing Post 5", x: 1.45, y: -0.79, z: -3.05, w: 0.06, h: 1.22, d: 0.06, color: "#5d4037", items: [] },
+      { type: "appliance", name: "South Railing Post 6", x: 2.55, y: -0.79, z: -3.05, w: 0.06, h: 1.22, d: 0.06, color: "#5d4037", items: [] },
+      { type: "appliance", name: "South Handrail", x: 0, y: -0.18, z: -3.05, w: 6.1, h: 0.06, d: 0.06, color: "#4e342e", items: [] },
+
+      // --- STRING LIGHTS (SW corner at railing height → north A-frame apex) ---
+      // Start at railing top (y = -0.18), end at A-frame apex (y = 2.9)
+      { type: "stringlight", name: "String Light SW→Apex", category: "Decoration",
+        x: 0, y: 0, z: 0, w: 0.02, h: 0.02, d: 0.02, color: "#fff59d",
+        x1: 3.05, y1: -0.18, z1: -3.05,  x2: 0, y2: 2.9, z2: 3.05, items: [] },
+      { type: "stringlight", name: "String Light SE→Apex", category: "Decoration",
+        x: 0, y: 0, z: 0, w: 0.02, h: 0.02, d: 0.02, color: "#fff59d",
+        x1: -3.05, y1: -0.18, z1: -3.05,  x2: 0, y2: 2.9, z2: 3.05, items: [] },
+
+      // --- SHARED FIREPLACE (north wall, flush against it) ---
+      { type: "appliance", name: "Shared Fireplace (Upper Level)", category: "Fireplace",
+        x: 0, y: -0.4, z: 2.9, w: 1.8, h: 2.0, d: 0.3, color: "#8d6e63", items: [] }
     ]
   },
 
@@ -1856,10 +2054,11 @@ const ROOMS = [
         x: 1.83, y: -0.15, z: -1.47, w: 0.91, h: 2.4, d: 1.42, color: "#ef6c00",
         doorFace: "-x",
         items: [
-          { name: "Washer", location: "Left side" },
-          { name: "Dryer", location: "Right side" },
-          { name: "Detergent & supplies", location: "Top shelf" },
-        ]},
+            { name: "Laundry detergent & supplies", id: "i072" },
+            { name: "Stain stick", id: "i073" },
+            { name: "Iron", id: "i074" },
+            { name: "Little Green Machine parts (floor cleaner)", id: "i075" }
+          ]},
 
       // --- MIDDLE ZONE: LINEN CLOSET (bp y=27..29, 2ft) ---
       // Accessed from hallway. On hallway's west wall.
@@ -1868,11 +2067,7 @@ const ROOMS = [
         capacity: { slots: 4, slotDesc: "shelves" },
         x: 1.83, y: -0.15, z: 0.15, w: 0.91, h: 2.4, d: 0.61, color: "#ef6c00",
         doorFace: "-x",
-        items: [
-          { name: "Towels", location: "Middle shelf" },
-          { name: "Sheets", location: "Top shelf" },
-          { name: "Pillowcases", location: "Bottom shelf" },
-        ]},
+        items: [{ name: "Blankets, towels, sheets, bedding", id: "i076" }]},
 
       // --- MIDDLE ZONE: BATH CLOSET (bp y=29..31, 2ft) ---
       // Accessed from bath corridor (west). Extrudes east from corridor.
@@ -1883,9 +2078,22 @@ const ROOMS = [
         x: 1.83, y: -0.15, z: -0.46, w: 0.91, h: 2.4, d: 0.58, color: "#ef6c00",
         doorFace: "+x",
         items: [
-          { name: "Cleaning supplies", location: "Bottom shelf" },
-          { name: "Extra toiletries", location: "Middle shelf" },
-        ]},
+            { name: "Plunger (upstairs)", id: "i084" },
+            { name: "Paper towel rack", id: "i085" },
+            { name: "Hair dryer (upstairs)", id: "i086" },
+            { name: "Barkeeper's Friend (upstairs)", id: "i087" },
+            { name: "Scrubber", id: "i088" },
+            { name: "Drain clog tools (snake + plunger tool)", id: "i089" },
+            { name: "Erin's toiletries", id: "i090" },
+            { name: "Brendan's toiletries", id: "i091" },
+            { name: "Hair clippers", id: "i092" },
+            { name: "Extra toiletries (razor blades, toothpaste, soaps, mouthwash, Q-tips, hair gel)", id: "i093" },
+            { name: "Erin's makeup", id: "i094" },
+            { name: "First aid kits", id: "i095" },
+            { name: "Baby health supplies (vitamin D, gripe water, etc.)", id: "i096" },
+            { name: "Curling iron, head massager, hairbrush, loofah", id: "i146" },
+            { name: "Red light therapy mask", id: "i147" }
+          ]},
 
       // --- MIDDLE ZONE: VANITY AREA (bp y=21..27, 6ft, N end) ---
       // Accessed from bath corridor (west). Extrudes east from corridor.
@@ -2001,21 +2209,17 @@ const ROOMS = [
         capacity: { slots: 4, slotDesc: "hanging rod + shelves" },
         x: 0.61, y: -0.15, z: 0, w: 0.61, h: 2.4, d: 1.83, color: "#795548",
         doorFace: "-x",
-        items: [
-          { name: "Dress clothes", location: "Hanging rod" },
-          { name: "Extra pillows", location: "Top shelf" },
-          { name: "Luggage set", location: "Floor" },
-        ]},
+        items: [{ name: "Erin's clothes", id: "i097" }]},
       { type: "cabinet", name: "Walk-in Closet — East Rod", category: "Clothing & Bedding",
         storageZone: true, zoneLabel: "MASTER-CLOSET-E", zoneType: "cabinet",
         capacity: { slots: 4, slotDesc: "hanging rod + shelves" },
         x: -0.61, y: -0.15, z: 0, w: 0.61, h: 2.4, d: 1.83, color: "#6d4c41",
         doorFace: "+x",
         items: [
-          { name: "Winter blankets", location: "Top shelf" },
-          { name: "Shoes", location: "Floor rack" },
-          { name: "Scarves & accessories", location: "Side hooks" },
-        ]},
+            { name: "Brendan's clothes", id: "i098" },
+            { name: "Old shoes (various)", id: "i099" },
+            { name: "Dress items (tuxedo clips, tie clips, nice watches, dress shoes)", id: "i100" }
+          ]},
     ]
   },
 ];
@@ -2348,26 +2552,64 @@ ROOMS.forEach(room => {
   const wallOpacity = 0.3;
   const wo = room.wallOpenings || {};
 
-  const backWall = wo.back
-    ? createWallWithOpenings(W, H, wo.back, 0, 0, -D/2, 0, wallColor, wallOpacity, new THREE.Vector3(0,0,-1))
-    : createWall(W, H, 0, 0, -D/2, 0, wallColor, wallOpacity, new THREE.Vector3(0, 0, -1));
-  const frontWall = wo.front
-    ? createWallWithOpenings(W, H, wo.front, 0, 0, D/2, 0, wallColor, wallOpacity, new THREE.Vector3(0,0,1))
-    : createWall(W, H, 0, 0, D/2, 0, wallColor, wallOpacity, new THREE.Vector3(0, 0, 1));
-  const leftWall = wo.left
-    ? createWallWithOpenings(D, H, wo.left, -W/2, 0, 0, Math.PI/2, wallColor, wallOpacity, new THREE.Vector3(-1,0,0))
-    : createWall(D, H, -W/2, 0, 0, Math.PI/2, wallColor, wallOpacity, new THREE.Vector3(-1, 0, 0));
-  const rightWall = wo.right
-    ? createWallWithOpenings(D, H, wo.right, W/2, 0, 0, Math.PI/2, wallColor, wallOpacity, new THREE.Vector3(1,0,0))
-    : createWall(D, H, W/2, 0, 0, Math.PI/2, wallColor, wallOpacity, new THREE.Vector3(1, 0, 0));
-
-  // Store room reference on each wall for smart visibility calc
-  [backWall, frontWall, leftWall, rightWall].forEach(w => {
+  const skip = new Set(room.skipWalls || []);
+  const wallDefs = [
+    { key: 'back',  build: () => wo.back
+      ? createWallWithOpenings(W, H, wo.back, 0, 0, -D/2, 0, wallColor, wallOpacity, new THREE.Vector3(0,0,-1))
+      : createWall(W, H, 0, 0, -D/2, 0, wallColor, wallOpacity, new THREE.Vector3(0, 0, -1)) },
+    { key: 'front', build: () => wo.front
+      ? createWallWithOpenings(W, H, wo.front, 0, 0, D/2, 0, wallColor, wallOpacity, new THREE.Vector3(0,0,1))
+      : createWall(W, H, 0, 0, D/2, 0, wallColor, wallOpacity, new THREE.Vector3(0, 0, 1)) },
+    { key: 'left',  build: () => wo.left
+      ? createWallWithOpenings(D, H, wo.left, -W/2, 0, 0, Math.PI/2, wallColor, wallOpacity, new THREE.Vector3(-1,0,0))
+      : createWall(D, H, -W/2, 0, 0, Math.PI/2, wallColor, wallOpacity, new THREE.Vector3(-1, 0, 0)) },
+    { key: 'right', build: () => wo.right
+      ? createWallWithOpenings(D, H, wo.right, W/2, 0, 0, Math.PI/2, wallColor, wallOpacity, new THREE.Vector3(1,0,0))
+      : createWall(D, H, W/2, 0, 0, Math.PI/2, wallColor, wallOpacity, new THREE.Vector3(1, 0, 0)) },
+  ];
+  wallDefs.forEach(({ key, build }) => {
+    if (skip.has(key)) return; // skip this wall entirely
+    const w = build();
     w.userData._roomPos = new THREE.Vector3(room.pos_x, room.pos_y, room.pos_z);
     group.add(w);
     wallMeshes.push(w);
     roomWalls.push(w);
   });
+
+  // A-frame gable on the north (front/+z) wall — triangle above the rectangular wall
+  if (room.aframeGable) {
+    const apexY = room.aframeApexY || (H / 2 + 1.5);  // local Y of peak
+    const wallTopY = H / 2;   // top of rectangular wall
+    // Triangle: left corner (-W/2, wallTopY, D/2), right corner (W/2, wallTopY, D/2), apex (0, apexY, D/2)
+    const triShape = new THREE.Shape();
+    triShape.moveTo(-W / 2, wallTopY);
+    triShape.lineTo(W / 2, wallTopY);
+    triShape.lineTo(0, apexY);
+    triShape.closePath();
+    const triGeo = new THREE.ShapeGeometry(triShape);
+    const triMat = new THREE.MeshStandardMaterial({
+      color: wallColor, transparent: true, opacity: wallOpacity,
+      side: THREE.DoubleSide,
+    });
+    const triMesh = new THREE.Mesh(triGeo, triMat);
+    triMesh.position.z = D / 2;  // north wall position
+    triMesh.userData._outwardNormal = new THREE.Vector3(0, 0, 1);
+    triMesh.userData._roomPos = new THREE.Vector3(room.pos_x, room.pos_y, room.pos_z);
+    group.add(triMesh);
+    wallMeshes.push(triMesh);
+    roomWalls.push(triMesh);
+    // A-frame edge outline
+    const gableEdgePts = [
+      new THREE.Vector3(-W / 2, wallTopY, D / 2),
+      new THREE.Vector3(0, apexY, D / 2),
+      new THREE.Vector3(W / 2, wallTopY, D / 2),
+    ];
+    const gableEdge = new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints(gableEdgePts),
+      new THREE.LineBasicMaterial({ color: 0x90caf9 })
+    );
+    group.add(gableEdge);
+  }
 
   // Ceiling — very subtle (skip if noCeiling flag is set)
   let ceil = null;
@@ -2394,31 +2636,53 @@ ROOMS.forEach(room => {
   });
   const wo2 = room.wallOpenings || {};
   const hasOpenings = Object.keys(wo2).length > 0;
+  const hasSkipWalls = skip.size > 0;
   let edgeLines;
-  if (!hasOpenings) {
-    // No openings: draw full box wireframe
+  if (!hasOpenings && !hasSkipWalls) {
+    // No openings and no skipped walls: draw full box wireframe
     const boxGeo = new THREE.BoxGeometry(W, H, D);
     const edges = new THREE.EdgesGeometry(boxGeo);
     edgeLines = new THREE.LineSegments(edges, edgeMat);
   } else {
-    // Has openings: draw edges per wall, skipping opening areas
+    // Has openings or skipped walls: draw edges selectively
     edgeLines = new THREE.Group();
-    // Floor rectangle
-    const floorPts = [
-      new THREE.Vector3(-W/2, -H/2, -D/2), new THREE.Vector3(W/2, -H/2, -D/2),
-      new THREE.Vector3(W/2, -H/2, D/2), new THREE.Vector3(-W/2, -H/2, D/2),
-      new THREE.Vector3(-W/2, -H/2, -D/2),
+    // Floor edges — each side is a separate segment so we can skip removed walls
+    // back(-z/south): SW→SE, front(+z/north): NE→NW, left(-x/east): SE→NE, right(+x/west): NW→SW
+    const floorEdges = [
+      { key: 'back',  pts: [new THREE.Vector3(-W/2,-H/2,-D/2), new THREE.Vector3(W/2,-H/2,-D/2)] },
+      { key: 'right', pts: [new THREE.Vector3(W/2,-H/2,-D/2), new THREE.Vector3(W/2,-H/2,D/2)] },
+      { key: 'front', pts: [new THREE.Vector3(W/2,-H/2,D/2), new THREE.Vector3(-W/2,-H/2,D/2)] },
+      { key: 'left',  pts: [new THREE.Vector3(-W/2,-H/2,D/2), new THREE.Vector3(-W/2,-H/2,-D/2)] },
     ];
-    edgeLines.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(floorPts), edgeMat));
-    // Ceiling rectangle (skip if noCeiling)
+    floorEdges.forEach(({ key, pts }) => {
+      if (!skip.has(key)) {
+        edgeLines.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), edgeMat));
+      }
+    });
+    // Ceiling rectangle edges (skip if noCeiling)
     if (!room.noCeiling) {
-      const ceilPts = floorPts.map(p => new THREE.Vector3(p.x, H/2, p.z));
-      edgeLines.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(ceilPts), edgeMat));
+      floorEdges.forEach(({ key, pts }) => {
+        if (!skip.has(key)) {
+          const ceilPts = pts.map(p => new THREE.Vector3(p.x, H/2, p.z));
+          edgeLines.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(ceilPts), edgeMat));
+        }
+      });
     }
-    // 4 vertical corner lines (shorter if noCeiling — stop at wall height instead)
-    [[-W/2,-D/2],[W/2,-D/2],[W/2,D/2],[-W/2,D/2]].forEach(([cx,cz]) => {
-      const pts = [new THREE.Vector3(cx,-H/2,cz), new THREE.Vector3(cx, room.noCeiling ? H/4 : H/2, cz)];
-      edgeLines.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), edgeMat));
+    // 4 vertical corner lines — only draw if BOTH adjacent walls exist
+    // corners: SW(-W/2,-D/2)=left+back, SE(W/2,-D/2)=right+back, NE(W/2,D/2)=right+front, NW(-W/2,D/2)=left+front
+    const cornerAdj = [
+      { cx: -W/2, cz: -D/2, adj: ['left','back'] },
+      { cx: W/2,  cz: -D/2, adj: ['right','back'] },
+      { cx: W/2,  cz: D/2,  adj: ['right','front'] },
+      { cx: -W/2, cz: D/2,  adj: ['left','front'] },
+    ];
+    const topY = room.noCeiling ? H/4 : H/2;
+    cornerAdj.forEach(({ cx, cz, adj }) => {
+      // Draw corner post if at least one adjacent wall exists
+      if (!skip.has(adj[0]) || !skip.has(adj[1])) {
+        const pts = [new THREE.Vector3(cx,-H/2,cz), new THREE.Vector3(cx, topY, cz)];
+        edgeLines.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), edgeMat));
+      }
     });
   }
   group.add(edgeLines);
@@ -2714,6 +2978,132 @@ ROOMS.forEach(room => {
       const handle = new THREE.Mesh(handleGeo, porcelainEdge);
       handle.position.set(tankW * 0.3, tankTopY + 0.015, fd/2 - tankD/2);
       fGroup.add(handle);
+
+    } else if (furn.type === 'cylinder') {
+      // Cylinder (trash cans, planters, etc.)
+      const radius = Math.min(fw, fd) / 2;
+      const cylGeo = new THREE.CylinderGeometry(radius, radius, fh, 20);
+      const cylMat = new THREE.MeshStandardMaterial({
+        color: furnColor, roughness: 0.5, metalness: 0.3,
+        transparent: true, opacity: 0.9,
+      });
+      const cyl = new THREE.Mesh(cylGeo, cylMat);
+      cyl.castShadow = true;
+      fGroup.add(cyl);
+      // Lid ring
+      const lidGeo = new THREE.CylinderGeometry(radius * 1.05, radius * 1.05, 0.02, 20);
+      const lid = new THREE.Mesh(lidGeo, cylMat);
+      lid.position.y = fh / 2;
+      fGroup.add(lid);
+
+    } else if (furn.type === 'round-table') {
+      // Circular table: disc top + central pedestal or 4 legs
+      const tMat = new THREE.MeshStandardMaterial({
+        color: furnColor, roughness: 0.6, metalness: 0.1,
+        transparent: true, opacity: 0.9,
+      });
+      const tableR = Math.min(fw, fd) / 2;
+      const topThick = 0.05;
+      const topY = fh / 2 - topThick / 2;
+      // Circular top
+      const topGeo = new THREE.CylinderGeometry(tableR, tableR, topThick, 24);
+      const top = new THREE.Mesh(topGeo, tMat);
+      top.position.y = topY;
+      top.castShadow = true;
+      fGroup.add(top);
+      // 4 legs
+      const legH = fh - topThick;
+      const legGeo = new THREE.CylinderGeometry(0.03, 0.03, legH, 8);
+      const legR = tableR * 0.7;
+      for (let li = 0; li < 4; li++) {
+        const ang = (li / 4) * Math.PI * 2 + Math.PI / 4;
+        const leg = new THREE.Mesh(legGeo, tMat);
+        leg.position.set(Math.cos(ang) * legR, -topThick / 2, Math.sin(ang) * legR);
+        fGroup.add(leg);
+      }
+
+    } else if (furn.type === 'grill') {
+      // BBQ grill: firebox body + dome lid + 4 legs + side handle
+      const metalMat = new THREE.MeshStandardMaterial({
+        color: furnColor, roughness: 0.3, metalness: 0.6,
+        transparent: true, opacity: 0.9,
+      });
+      const grateColor = new THREE.Color(0x555555);
+      const grateMat = new THREE.MeshStandardMaterial({
+        color: grateColor, roughness: 0.4, metalness: 0.5,
+        transparent: true, opacity: 0.9,
+      });
+      // Firebox (main body)
+      const boxH = fh * 0.35;
+      const boxY = fh * 0.05; // slightly above center-bottom
+      const boxGeo = new THREE.BoxGeometry(fw * 0.9, boxH, fd * 0.85);
+      const box = new THREE.Mesh(boxGeo, metalMat);
+      box.position.y = boxY;
+      box.castShadow = true;
+      fGroup.add(box);
+      // Dome lid (half-cylinder)
+      const lidH = fh * 0.25;
+      const lidR = fw * 0.45;
+      const lidGeo = new THREE.CylinderGeometry(lidR, lidR, fd * 0.85, 16, 1, false, 0, Math.PI);
+      const lid = new THREE.Mesh(lidGeo, metalMat);
+      lid.rotation.z = Math.PI / 2;
+      lid.rotation.y = Math.PI / 2;
+      lid.position.y = boxY + boxH / 2 + lidR * 0.3;
+      lid.castShadow = true;
+      fGroup.add(lid);
+      // Lid handle
+      const handleGeo = new THREE.CylinderGeometry(0.015, 0.015, fw * 0.3, 8);
+      const handle = new THREE.Mesh(handleGeo, grateMat);
+      handle.position.y = boxY + boxH / 2 + lidR * 0.7;
+      fGroup.add(handle);
+      // 4 Legs
+      const legH = fh * 0.35;
+      const legGeo = new THREE.CylinderGeometry(0.025, 0.025, legH, 8);
+      const legPositions = [
+        [-fw * 0.35, -fd * 0.35], [fw * 0.35, -fd * 0.35],
+        [-fw * 0.35, fd * 0.35], [fw * 0.35, fd * 0.35],
+      ];
+      legPositions.forEach(([lx, lz]) => {
+        const leg = new THREE.Mesh(legGeo, metalMat);
+        leg.position.set(lx, -fh / 2 + legH / 2, lz);
+        fGroup.add(leg);
+      });
+      // Grill grate lines on top
+      const grateY = boxY + boxH / 2 + 0.01;
+      for (let gi = -3; gi <= 3; gi++) {
+        const barGeo = new THREE.BoxGeometry(fw * 0.8, 0.01, 0.015);
+        const bar = new THREE.Mesh(barGeo, grateMat);
+        bar.position.set(0, grateY, gi * fd * 0.1);
+        fGroup.add(bar);
+      }
+
+    } else if (furn.type === 'stringlight') {
+      // Diagonal string light line from (x1,y1,z1) to (x2,y2,z2) in local room coords
+      const x1 = furn.x1 || 0, y1 = furn.y1 || 0, z1 = furn.z1 || 0;
+      const x2 = furn.x2 || 0, y2 = furn.y2 || 0, z2 = furn.z2 || 0;
+      const pts = [new THREE.Vector3(x1, y1, z1), new THREE.Vector3(x2, y2, z2)];
+      const lineGeo = new THREE.BufferGeometry().setFromPoints(pts);
+      const lineMat = new THREE.LineBasicMaterial({ color: furnColor, linewidth: 2 });
+      const line = new THREE.Line(lineGeo, lineMat);
+      fGroup.add(line);
+      // Small bulb spheres along the line
+      const bulbGeo = new THREE.SphereGeometry(0.04, 8, 8);
+      const bulbMat = new THREE.MeshStandardMaterial({
+        color: 0xfff59d, emissive: 0xfff59d, emissiveIntensity: 0.5,
+        transparent: true, opacity: 0.9,
+      });
+      const numBulbs = 10;
+      for (let bi = 0; bi <= numBulbs; bi++) {
+        const t = bi / numBulbs;
+        const bx = x1 + (x2 - x1) * t;
+        const by = y1 + (y2 - y1) * t - Math.sin(t * Math.PI) * 0.15; // slight droop
+        const bz = z1 + (z2 - z1) * t;
+        const bulb = new THREE.Mesh(bulbGeo, bulbMat);
+        bulb.position.set(bx, by, bz);
+        fGroup.add(bulb);
+      }
+      // Override position — stringlight handles its own local coords
+      fGroup.position.set(0, 0, 0);
 
     } else if (furn.type === 'appliance') {
       // Solid block with slightly different shading
@@ -3090,6 +3480,10 @@ canvas.addEventListener('click', e => {
     if (entry) {
       setActiveRoom(entry.room.id);
       flyToRoom(entry.room.id);
+      // Notify parent (if in iframe)
+      if (window.parent !== window) {
+        window.parent.postMessage({ type: 'roomClicked', roomId: entry.room.id }, '*');
+      }
     }
     closeFlyout();
     return;
@@ -3475,6 +3869,47 @@ function animate() {
 }
 
 animate();
+
+// ---- POSTMESSAGE BRIDGE (iframe ↔ React parent) ----
+const isInIframe = window.parent !== window;
+
+// Double-click on room floor → navigate to room detail in parent
+canvas.addEventListener('dblclick', e => {
+  const rect = canvas.getBoundingClientRect();
+  mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+  mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+  raycaster.setFromCamera(mouse, camera);
+  const roomFloors = Object.values(roomGroups).map(rg => rg.floor);
+  const roomHits = raycaster.intersectObjects(roomFloors);
+  if (roomHits.length > 0) {
+    const entry = Object.values(roomGroups).find(rg => rg.floor === roomHits[0].object);
+    if (entry && isInIframe) {
+      window.parent.postMessage({ type: 'roomDoubleClicked', roomId: entry.room.id }, '*');
+    }
+  }
+});
+
+// Listen for commands from React parent
+window.addEventListener('message', e => {
+  if (!e.data || !e.data.type) return;
+  if (e.data.type === 'flyToRoom') {
+    setActiveRoom(e.data.roomId);
+    flyToRoom(e.data.roomId);
+  }
+  if (e.data.type === 'setHighlight') {
+    // Highlight a set of rooms (e.g. from search results)
+    const ids = e.data.roomIds || [];
+    Object.values(roomGroups).forEach(rg => {
+      const isHighlighted = ids.includes(rg.room.id);
+      if (rg.fill) rg.fill.material.opacity = isHighlighted ? 0.25 : 0.08;
+    });
+  }
+});
+
+// Signal to parent that we're ready
+if (isInIframe) {
+  window.parent.postMessage({ type: 'ready' }, '*');
+}
 </script>
 </body>
 </html>

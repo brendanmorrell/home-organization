@@ -502,6 +502,13 @@ export default function InventoryPage() {
                         >
                           Edit
                         </button>
+                        <Link
+                          to={`/?room=${item.roomId}`}
+                          className="btn btn-sm"
+                          title="View in 3D"
+                        >
+                          3D
+                        </Link>
                       </td>
                     </>
                   )}

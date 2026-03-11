@@ -128,6 +128,53 @@ export async function searchItems(query: string): Promise<SearchResult[]> {
   return data || [];
 }
 
+/**
+ * Client-side search across in-memory rooms (works with local inventory fallback).
+ * Searches item names and locations with fuzzy substring matching.
+ */
+export function searchItemsLocal(
+  rooms: RoomWithFrames[],
+  query: string
+): SearchResult[] {
+  const q = query.toLowerCase().trim();
+  if (!q) return [];
+
+  const results: SearchResult[] = [];
+
+  for (const room of rooms) {
+    for (const frame of room.frames) {
+      for (const item of frame.items) {
+        const nameMatch = item.name.toLowerCase().includes(q);
+        const locMatch = item.location.toLowerCase().includes(q);
+        if (nameMatch || locMatch) {
+          // Simple relevance: exact start match > contains
+          let rank = 0;
+          if (item.name.toLowerCase().startsWith(q)) rank = 2;
+          else if (nameMatch) rank = 1;
+          else rank = 0.5;
+
+          results.push({
+            item_id: item.id,
+            item_name: item.name,
+            item_location: item.location,
+            frame_id: frame.id,
+            frame_image_url: frame.image_url,
+            frame_timestamp: frame.timestamp,
+            room_id: room.id,
+            room_name: room.name,
+            room_icon: room.icon,
+            rank,
+          });
+        }
+      }
+    }
+  }
+
+  // Sort by rank descending, then name alphabetically
+  results.sort((a, b) => b.rank - a.rank || a.item_name.localeCompare(b.item_name));
+  return results;
+}
+
 // ---- Mutations ----
 
 export async function createRoom(

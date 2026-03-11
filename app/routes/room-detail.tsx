@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, useOutletContext } from "react-router";
+import { useParams, useOutletContext, Link } from "react-router";
 import type { RoomWithFrames, SearchResult, FrameWithItems } from "~/lib/supabase";
 
 interface LayoutContext {
@@ -51,71 +51,86 @@ export default function RoomDetailPage() {
               {room.frames.reduce((s, f) => s + f.items.length, 0)} items
             </p>
           </div>
+          <Link
+            to={`/?room=${room.id}`}
+            className="btn btn-sm"
+            style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 6 }}
+          >
+            <span style={{ fontSize: 14 }}>&#x1F3E0;</span> View in 3D
+          </Link>
         </div>
 
-        <div className="frame-grid">
-          {room.frames.map((frame) => {
-            const matchingItems = q
-              ? frame.items.filter(
-                  (item) =>
-                    item.name.toLowerCase().includes(q) ||
-                    item.location.toLowerCase().includes(q)
-                )
-              : [];
-            const isHighlighted = matchingItems.length > 0;
+        {/* Show frames with images as cards, or if all local, show item list */}
+        {room.frames.some((f) => f.image_url) ? (
+          <div className="frame-grid">
+            {room.frames.filter((f) => f.image_url).map((frame) => {
+              const matchingItems = q
+                ? frame.items.filter(
+                    (item) =>
+                      item.name.toLowerCase().includes(q) ||
+                      item.location.toLowerCase().includes(q)
+                  )
+                : [];
+              const isHighlighted = matchingItems.length > 0;
 
-            return (
-              <div
-                key={frame.id}
-                className={`frame-card ${isHighlighted ? "highlighted" : ""}`}
-                onClick={() => setSelectedFrame(frame)}
-              >
-                <div className="frame-img-wrap">
-                  {frame.image_url ? (
-                    <img src={frame.image_url} alt={`Frame ${frame.timestamp}`} />
-                  ) : (
-                    <div
-                      className="placeholder-img"
-                      style={{
-                        background: `linear-gradient(135deg, ${room.color}, ${room.color}cc)`,
-                      }}
-                    >
-                      <span className="emoji">&#x1F4F7;</span>
-                      <span className="label">
-                        Frame {frame.sort_order}
-                      </span>
-                    </div>
-                  )}
-                  <span className="frame-time">{frame.timestamp}</span>
-                </div>
-                <div className="frame-info">
-                  <div className="frame-items">
-                    {frame.items.map((item) => (
-                      <span
-                        key={item.id}
-                        className={`item-tag ${
-                          q &&
-                          (item.name.toLowerCase().includes(q) ||
-                            item.location.toLowerCase().includes(q))
-                            ? "match"
-                            : ""
-                        }`}
-                      >
-                        {item.name}
-                      </span>
-                    ))}
+              return (
+                <div
+                  key={frame.id}
+                  className={`frame-card ${isHighlighted ? "highlighted" : ""}`}
+                  onClick={() => setSelectedFrame(frame)}
+                >
+                  <div className="frame-img-wrap">
+                    <img src={frame.image_url!} alt={`Frame ${frame.timestamp}`} />
+                    <span className="frame-time">{frame.timestamp}</span>
                   </div>
-                  {isHighlighted && matchingItems[0] && (
-                    <div className="frame-location">
-                      <span style={{ color: "var(--highlight)" }}>&#x25B6;</span>
-                      {matchingItems[0].location}
+                  <div className="frame-info">
+                    <div className="frame-items">
+                      {frame.items.map((item) => (
+                        <span
+                          key={item.id}
+                          className={`item-tag ${
+                            q &&
+                            (item.name.toLowerCase().includes(q) ||
+                              item.location.toLowerCase().includes(q))
+                              ? "match"
+                              : ""
+                          }`}
+                        >
+                          {item.name}
+                        </span>
+                      ))}
                     </div>
-                  )}
+                    {isHighlighted && matchingItems[0] && (
+                      <div className="frame-location">
+                        <span style={{ color: "var(--highlight)" }}>&#x25B6;</span>
+                        {matchingItems[0].location}
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        ) : (
+          /* All items are from local inventory — show a clean item list */
+          <div className="room-items-list">
+            {room.frames.flatMap((f) => f.items).map((item) => {
+              const isMatch =
+                q &&
+                (item.name.toLowerCase().includes(q) ||
+                  item.location.toLowerCase().includes(q));
+              return (
+                <div
+                  key={item.id}
+                  className={`room-item-row ${isMatch ? "match" : ""}`}
+                >
+                  <span className="room-item-name">{item.name}</span>
+                  <span className="room-item-loc">{item.location}</span>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Frame detail overlay */}

@@ -1,6 +1,6 @@
 # Home Organization — 3D Home Inventory Navigator
 
-React Router v7 SPA + Three.js r128 (CDN, in `public/test.html`) + Supabase.
+React Router v7 SPA + Three.js r128 (CDN, in `public/house-3d.html`) + Supabase.
 
 ## CRITICAL: Camera Flip Rule
 
@@ -8,10 +8,10 @@ Camera at (22,18,28) → lookAt(4,-0.5,2). **+x = WEST = LEFT on screen**, -x = 
 
 ## Workstreams
 
-1. **3D Modeling (ACTIVE)** — Build rooms in `public/test.html`
+1. **3D Modeling (ACTIVE)** — Build rooms in `public/house-3d.html`
 2. **Item Cataloging (NOT STARTED)** — Process videos, categorize items
 
-**Completed:** Living Room (r5), Kitchen (r1), Work Hallway (r6), Garage (r3), Foyer (r7), Bathroom (r8), Master Bedroom (r4), Baby's Room (r9), Upstairs Hallway (r10), Bath Corridor (r11), Bath Alcove (r12), Walk-in Closet (r13), Baby Closet (r14), Basement (r2)
+**Completed:** Living Room (r5), Kitchen (r1), Work Hallway (r6), Garage (r3), Foyer (r7), Bathroom (r8), Master Bedroom (r4), Baby's Room (r9), Upstairs Hallway (r10), Bath Corridor (r11), Bath Alcove (r12), Walk-in Closet (r13), Baby Closet (r14), Basement (r2), Balcony (r15)
 **Next:** Item cataloging phase.
 
 ## Room Data Structure
@@ -63,6 +63,7 @@ Camera at (22,18,28) → lookAt(4,-0.5,2). **+x = WEST = LEFT on screen**, -x = 
 | Bath Corridor    | r11 | -1.49 | 0     | 11.0  | 1.52 | 4.57 | 2.8  |
 | Bath Alcove      | r12 | 0.19  | 0     | 12.07 | 1.83 | 2.44 | 2.8  |
 | Walk-in Closet   | r13 | 0.19  | 0     | 9.78  | 1.83 | 2.13 | 2.8  |
+| Balcony          | r15 | 8.0   | 0     | -15   | 6.1  | 6.1  | 2.8  |
 
 ## Furniture Types
 
@@ -236,7 +237,7 @@ Ground plane: y=-2.5. Grid: y=-2.48.
 
 ## Key Files
 
-- `public/test.html` — All 3D model code (~3300 lines)
+- `public/house-3d.html` — All 3D model code (~3300 lines)
 - `validate-room.js` — Room validator
 - `scripts/push-to-supabase.ts` — DB push script
-- `check.js` — Quick syntax checker for test.html
+- `check.js` — Quick syntax checker for house-3d.html

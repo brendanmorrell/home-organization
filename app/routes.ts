@@ -6,5 +6,6 @@ export default [
     route("/rooms/:roomId", "routes/room-detail.tsx"),
     route("/admin", "routes/admin.tsx"),
     route("/inventory", "routes/inventory.tsx"),
+    route("/plan", "routes/plan.tsx"),
   ]),
 ] satisfies RouteConfig;

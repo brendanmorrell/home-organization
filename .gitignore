@@ -6,3 +6,7 @@ build/
 .DS_Store
 *.log
 .react-router/
+.vercel
+.whisper-models/
+video-work/
+*.wav
