@@ -3608,6 +3608,8 @@ let activeRoomId = null;
 let highlightedRooms = new Set();
 let highlightedFurn = new Set();
 let highlightedItemNames = new Set();
+let pulsingFurn = new Set();
+let pulseStartTime = 0;
 
 function searchItems(query) {
   if (!query.trim()) return [];
@@ -3660,6 +3662,8 @@ searchInput.addEventListener('input', () => {
   highlightedRooms = new Set(results.map(r => r.roomId));
   highlightedFurn = new Set(results.map(r => r.furnId));
   highlightedItemNames = new Set(results.map(r => r.name.toLowerCase()));
+  pulsingFurn = new Set(results.map(r => r.furnId));
+  pulseStartTime = performance.now();
   updateHighlights();
   renderSidebar();
   closeFlyout();
@@ -3837,12 +3841,27 @@ function animate() {
     }
   }
 
-  // Pulsing glow
+  // Pulsing glow for rooms
   Object.entries(roomGroups).forEach(([id, rg]) => {
     if (highlightedRooms.has(id)) {
       rg.glowMesh.material.opacity = Math.sin(elapsed * 2.5) * 0.08 + 0.12;
     }
   });
+
+  // Pulsing glow for furniture (search results)
+  if (pulsingFurn.size > 0) {
+    const pulse = Math.sin(elapsed * 4) * 0.3 + 0.5; // 0.2 to 0.8
+    Object.entries(furnitureMeshes).forEach(([id, fm]) => {
+      if (pulsingFurn.has(id)) {
+        fm.group.traverse(child => {
+          if (child.isMesh && child.material && child.material.isMeshStandardMaterial) {
+            child.material.emissive.set(0xf5a623);
+            child.material.emissiveIntensity = pulse;
+          }
+        });
+      }
+    });
+  }
 
   // Billboard labels
   scene.traverse(child => {
@@ -3904,12 +3923,57 @@ window.addEventListener('message', e => {
       if (rg.fill) rg.fill.material.opacity = isHighlighted ? 0.25 : 0.08;
     });
   }
+  if (e.data.type === 'searchItem') {
+    // Run the 3D model's own search, highlight furniture, fly to it, show flyout
+    const q = e.data.query || '';
+    const results = searchItems(q);
+    if (results.length > 0) {
+      highlightedRooms = new Set(results.map(r => r.roomId));
+      highlightedFurn = new Set(results.map(r => r.furnId));
+      highlightedItemNames = new Set(results.map(r => r.name.toLowerCase()));
+      pulsingFurn = new Set(results.map(r => r.furnId));
+      pulseStartTime = performance.now();
+      updateHighlights();
+      // Fly to the first matching furniture piece and show flyout
+      const firstFurnId = results[0].furnId;
+      setActiveRoom(results[0].roomId);
+      flyToFurniture(firstFurnId, () => {
+        autoShowFlyout(firstFurnId);
+      });
+    }
+  }
+  if (e.data.type === 'clearSearch') {
+    highlightedRooms = new Set();
+    highlightedFurn = new Set();
+    highlightedItemNames = new Set();
+    pulsingFurn = new Set();
+    updateHighlights();
+    closeFlyout();
+  }
 });
 
-// Signal to parent that we're ready
+// Signal to parent that we're ready (repeat until ack'd to avoid race condition)
+let readyAcked = false;
 if (isInIframe) {
-  window.parent.postMessage({ type: 'ready' }, '*');
+  function sendReady() {
+    if (!readyAcked) {
+      window.parent.postMessage({ type: 'ready' }, '*');
+      setTimeout(sendReady, 200);
+    }
+  }
+  sendReady();
 }
+
+// Parent can also ping us to request a ready signal
+window.addEventListener('message', e => {
+  if (e.data && e.data.type === 'ping') {
+    readyAcked = true;
+    window.parent.postMessage({ type: 'ready' }, '*');
+  }
+  if (e.data && e.data.type === 'readyAck') {
+    readyAcked = true;
+  }
+});
 </script>
 </body>
 </html>

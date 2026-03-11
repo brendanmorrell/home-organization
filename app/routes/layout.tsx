@@ -65,6 +65,13 @@ export default function AppLayout() {
               // Existing Supabase item names for dedup
               const existingNames = new Set<string>();
               supaRooms.forEach(r => r.frames.forEach(f => f.items.forEach(i => existingNames.add(i.name))));
+              // Map room names to 3D model IDs (must match house-3d.html room ids)
+              const ROOM_3D_ID: Record<string, string> = {
+                'Kitchen': 'r1', 'Basement': 'r2', 'Garage': 'r3', 'Master Bedroom': 'r4',
+                'Living Room': 'r5', 'Work Hallway': 'r6', 'Foyer': 'r7', 'Bathroom': 'r8',
+                "Baby's Room": 'r9', 'Upstairs Hallway': 'r10', 'Bath Corridor': 'r11',
+                'Bath Alcove': 'r12', 'Walk-in Closet': 'r13', 'Baby Closet': 'r14', 'Balcony': 'r15',
+              };
               // Room metadata for creating missing rooms
               const ROOM_META: Record<string, { icon: string; color: string; pos_x: number; pos_y: number; pos_z: number; width: number; depth: number; height: number }> = {
                 'Kitchen':          { icon: 'K', color: '#8d6e63', pos_x: 8.8,  pos_y: 0,    pos_z: 16.8,  width: 4.57, depth: 4.57, height: 2.8 },
@@ -120,7 +127,7 @@ export default function AppLayout() {
                 if (supaRoomNames.has(roomName)) continue; // already merged above
                 const meta = ROOM_META[roomName];
                 if (!meta) continue;
-                const roomId = 'local-room-' + roomName.toLowerCase().replace(/[^a-z0-9]/g, '-');
+                const roomId = ROOM_3D_ID[roomName] || ('local-room-' + roomName.toLowerCase().replace(/[^a-z0-9]/g, '-'));
                 const frameId = 'local-frame-' + roomId;
                 const newItems = items
                   .filter(li => !existingNames.has(li.name))

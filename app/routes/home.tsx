@@ -11,6 +11,14 @@ interface LayoutContext {
   loading: boolean;
 }
 
+// Map room names → 3D model IDs used in house-3d.html
+const ROOM_NAME_TO_3D: Record<string, string> = {
+  'Kitchen': 'r1', 'Basement': 'r2', 'Garage': 'r3', 'Master Bedroom': 'r4',
+  'Living Room': 'r5', 'Work Hallway': 'r6', 'Foyer': 'r7', 'Bathroom': 'r8',
+  "Baby's Room": 'r9', 'Upstairs Hallway': 'r10', 'Bath Corridor': 'r11',
+  'Bath Alcove': 'r12', 'Walk-in Closet': 'r13', 'Baby Closet': 'r14', 'Balcony': 'r15',
+};
+
 export default function HomePage() {
   const {
     rooms,
@@ -27,6 +35,19 @@ export default function HomePage() {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [iframeReady, setIframeReady] = useState(false);
 
+  // Resolve any room ID to its 3D model ID (r1-r15)
+  const to3dId = useCallback((roomId: string): string => {
+    // Already a 3D ID?
+    if (/^r\d+$/.test(roomId)) return roomId;
+    // Look up by name from rooms list
+    const room = rooms.find(r => r.id === roomId);
+    if (room) {
+      const mapped = ROOM_NAME_TO_3D[room.name];
+      if (mapped) return mapped;
+    }
+    return roomId; // fallback
+  }, [rooms]);
+
   // Room to fly to on load (from ?room=r1 query param or search)
   const initialRoom = searchParams.get("room");
   const pendingFlyRef = useRef<string | null>(initialRoom);
@@ -38,10 +59,14 @@ export default function HomePage() {
 
       if (e.data.type === "ready") {
         setIframeReady(true);
+        // Ack so iframe stops repeating ready
+        if (iframeRef.current?.contentWindow) {
+          iframeRef.current.contentWindow.postMessage({ type: "readyAck" }, "*");
+        }
         // Send any pending fly-to
         if (pendingFlyRef.current && iframeRef.current?.contentWindow) {
           iframeRef.current.contentWindow.postMessage(
-            { type: "flyToRoom", roomId: pendingFlyRef.current },
+            { type: "flyToRoom", roomId: to3dId(pendingFlyRef.current) },
             "*"
           );
           pendingFlyRef.current = null;
@@ -59,35 +84,42 @@ export default function HomePage() {
 
     window.addEventListener("message", handler);
     return () => window.removeEventListener("message", handler);
-  }, [navigate, setActiveRoomId]);
+  }, [navigate, setActiveRoomId, to3dId]);
+
+  // When iframe loads, send a ping to trigger ready handshake
+  const onIframeLoad = useCallback(() => {
+    if (iframeRef.current?.contentWindow) {
+      iframeRef.current.contentWindow.postMessage({ type: "ping" }, "*");
+    }
+  }, []);
 
   // When activeRoomId changes (e.g. sidebar click), fly the 3D camera
   useEffect(() => {
     if (iframeReady && activeRoomId && iframeRef.current?.contentWindow) {
       iframeRef.current.contentWindow.postMessage(
-        { type: "flyToRoom", roomId: activeRoomId },
+        { type: "flyToRoom", roomId: to3dId(activeRoomId) },
         "*"
       );
     }
-  }, [activeRoomId, iframeReady]);
+  }, [activeRoomId, iframeReady, to3dId]);
 
-  // When search results change, highlight matching rooms in 3D
+  // When search query changes, send it to the 3D iframe for furniture-level search
   useEffect(() => {
     if (iframeReady && iframeRef.current?.contentWindow) {
-      const roomIds = [...new Set(searchResults.map((r) => r.room_id))];
-      iframeRef.current.contentWindow.postMessage(
-        { type: "setHighlight", roomIds },
-        "*"
-      );
-      // Fly to first result
-      if (roomIds.length > 0) {
+      if (searchQuery.trim()) {
+        // Let the 3D model run its own search — flies to furniture, shows flyout, pulses
         iframeRef.current.contentWindow.postMessage(
-          { type: "flyToRoom", roomId: roomIds[0] },
+          { type: "searchItem", query: searchQuery },
+          "*"
+        );
+      } else {
+        iframeRef.current.contentWindow.postMessage(
+          { type: "clearSearch" },
           "*"
         );
       }
     }
-  }, [searchResults, iframeReady]);
+  }, [searchQuery, iframeReady]);
 
   // Click on a search result → fly to that room
   const handleSearchResultClick = useCallback(
@@ -95,12 +127,12 @@ export default function HomePage() {
       setActiveRoomId(roomId);
       if (iframeReady && iframeRef.current?.contentWindow) {
         iframeRef.current.contentWindow.postMessage(
-          { type: "flyToRoom", roomId },
+          { type: "flyToRoom", roomId: to3dId(roomId) },
           "*"
         );
       }
     },
-    [setActiveRoomId, iframeReady]
+    [setActiveRoomId, iframeReady, to3dId]
   );
 
   if (loading) {
@@ -151,6 +183,7 @@ export default function HomePage() {
             src="/house-3d.html"
             className="house-iframe"
             title="3D House View"
+            onLoad={onIframeLoad}
           />
 
           {/* Search result overlay in 3D mode */}
