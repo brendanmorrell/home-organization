@@ -2196,24 +2196,109 @@ function handleSyncItems(items) {
 
   if (added > 0) {
     rebuildAllItems();
-    // Update badge counts
+    // Create or update badges + labels for all furniture with items
     Object.entries(furnitureMeshes).forEach(([id, fm]) => {
-      if (fm.badge && fm.furn.items) {
+      const count = fm.furn.items ? fm.furn.items.length : 0;
+      if (count === 0) return;
+
+      // Remove old badge/label/connector if they exist
+      if (fm.badge) {
         fm.badge.material.map.dispose();
-        const c = document.createElement('canvas');
-        c.width = 64; c.height = 32;
-        const ctx = c.getContext('2d');
-        ctx.fillStyle = '#5b8def';
-        ctx.beginPath();
-        ctx.roundRect(4, 2, 56, 28, 8);
-        ctx.fill();
-        ctx.font = 'bold 18px sans-serif';
-        ctx.fillStyle = '#fff';
-        ctx.textAlign = 'center';
-        ctx.fillText(fm.furn.items.length, 32, 22);
-        fm.badge.material.map = new THREE.CanvasTexture(c);
-        fm.badge.material.map.needsUpdate = true;
+        fm.group.remove(fm.badge);
       }
+      if (fm.label) {
+        fm.label.material.map.dispose();
+        fm.group.remove(fm.label);
+      }
+      if (fm.connector) {
+        fm.connector.geometry.dispose();
+        fm.connector.material.dispose();
+        fm.group.remove(fm.connector);
+      }
+
+      const byOff = fm.furn.badgeOffsetY || 0;
+      const bxOff = fm.furn.badgeOffsetX || 0;
+      const bzOff = fm.furn.badgeOffsetZ || 0;
+
+      // --- Smart badge positioning ---
+      // Furniture top in local coords
+      const furnTopY = fm.furn.h / 2;
+      // Room ceiling in local coords (furniture y is relative to room center)
+      const roomH = fm.room.height || 2.8;
+      const ceilY = roomH / 2 - fm.furn.y; // ceiling relative to furniture group origin
+
+      // Default badge height above furniture top
+      let labelY = furnTopY + 0.2;
+      let badgeY = furnTopY + 0.55;
+
+      // If badge would be within 0.35m of ceiling or above it, push above ceiling
+      if (badgeY + byOff > ceilY - 0.35) {
+        badgeY = ceilY + 0.4;
+        labelY = ceilY + 0.1;
+      }
+
+      // Wall proximity: nudge badge toward room center if furniture is against a wall
+      const roomW = fm.room.width || 4;
+      const roomD = fm.room.depth || 4;
+      const furnX = fm.furn.x || 0;
+      const furnZ = fm.furn.z || 0;
+      const furnW = fm.furn.w || 0.5;
+      const furnD = fm.furn.d || 0.5;
+      let nudgeX = 0, nudgeZ = 0;
+      const wallThresh = 0.3; // how close to wall edge triggers nudge
+      const nudgeAmt = 0.4;  // how far to push badge inward
+
+      // Check east wall (-x side)
+      if (furnX - furnW / 2 < -roomW / 2 + wallThresh) nudgeX += nudgeAmt;
+      // Check west wall (+x side)
+      if (furnX + furnW / 2 > roomW / 2 - wallThresh) nudgeX -= nudgeAmt;
+      // Check south wall (-z side)
+      if (furnZ - furnD / 2 < -roomD / 2 + wallThresh) nudgeZ += nudgeAmt;
+      // Check north wall (+z side)
+      if (furnZ + furnD / 2 > roomD / 2 - wallThresh) nudgeZ -= nudgeAmt;
+
+      const finalBX = bxOff + nudgeX;
+      const finalBZ = bzOff + nudgeZ;
+
+      // Create furniture label
+      const fLabel = makeLabel(fm.furn.name, 22, '#b0b3c8');
+      fLabel.position.set(finalBX, labelY + byOff, finalBZ);
+      fLabel.scale.set(1.4, 0.35, 1);
+      fm.group.add(fLabel);
+      fm.label = fLabel;
+
+      // Create badge
+      const badge = makeBadge(count, '#00e5ff');
+      badge.position.set(finalBX, badgeY + byOff, finalBZ);
+      badge.scale.set(0.5, 0.5, 1);
+      badge.userData._isBadge = true;
+      fm.group.add(badge);
+      fm.badge = badge;
+
+      // --- Connector line from badge down to furniture top ---
+      // Semi-transparent dashed line connecting badge to its furniture piece
+      const lineTopY = badgeY + byOff - 0.25; // just below badge circle
+      const lineBotY = furnTopY + 0.05;       // just above furniture surface
+      // Only draw connector if badge was displaced significantly (pushed above ceiling or nudged)
+      const displaced = (badgeY > furnTopY + 0.8) || Math.abs(nudgeX) > 0.1 || Math.abs(nudgeZ) > 0.1;
+      if (displaced) {
+        const linePts = [
+          new THREE.Vector3(finalBX, lineTopY, finalBZ),
+          new THREE.Vector3(0, lineBotY, 0),
+        ];
+        const lineGeo = new THREE.BufferGeometry().setFromPoints(linePts);
+        const lineMat = new THREE.LineDashedMaterial({
+          color: 0x00e5ff, transparent: true, opacity: 0.25,
+          dashSize: 0.08, gapSize: 0.06,
+        });
+        const connLine = new THREE.Line(lineGeo, lineMat);
+        connLine.computeLineDistances();
+        fm.group.add(connLine);
+        fm.connector = connLine;
+      }
+
+      // No longer decorative — it has items
+      fm.isDecorativeFurniture = false;
     });
     console.log('[inventory] Replaced all hardcoded items with ' + added + ' items from Supabase (single source of truth)');
     if (typeof renderSidebar === 'function') renderSidebar();
