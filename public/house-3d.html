@@ -1829,8 +1829,6 @@ const ROOMS = [
     furniture: [
       // --- ROUND PATIO TABLE & 4 CHAIRS ---
       { type: "round-table", name: "Patio Table", category: "Furniture",
-        storageZone: true, zoneLabel: "BALCONY", zoneType: "outdoor",
-        capacity: { slots: 4, slotDesc: "outdoor items" },
         x: 0, y: -0.95, z: 0, w: 1.2, h: 0.75, d: 1.2, color: "#5d4037", items: [] },
       { type: "chair", name: "Patio Chair N", category: "Furniture",
         x: 0, y: -0.95, z: 1.0, w: 0.5, h: 0.8, d: 0.5, color: "#5d4037", rotY: Math.PI, items: [] },
@@ -2153,7 +2151,7 @@ const ZONE_ROOM_MAP = {
   'BABY-CLOSET': 'r14',
   'BATH-CLOSET': 'r10', 'BATH-VANITY': 'r10',
   'HALL-LAUNDRY': 'r10', 'HALL-LINEN': 'r10',
-  'BALCONY': 'r15', 'BALCONY-DECKBOX': 'r15',
+  'BALCONY-DECKBOX': 'r15',
 };
 
 // Build zone → furniture ref for injection

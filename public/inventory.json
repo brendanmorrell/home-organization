@@ -712,35 +712,6 @@
       "source": "IMG_5349"
     },
     {
-      "id": "i101",
-      "name": "Outdoor table & chairs",
-      "category": "outdoor-furniture",
-      "zone": "BALCONY",
-      "source": "IMG_5350",
-      "notes": "New area: 2nd floor balcony, same footprint as garage"
-    },
-    {
-      "id": "i102",
-      "name": "String lights (balcony)",
-      "category": "decor",
-      "zone": "BALCONY",
-      "source": "IMG_5350"
-    },
-    {
-      "id": "i103",
-      "name": "Grill",
-      "category": "outdoor",
-      "zone": "BALCONY",
-      "source": "IMG_5350"
-    },
-    {
-      "id": "i104",
-      "name": "Trash can (outdoor)",
-      "category": "outdoor",
-      "zone": "BALCONY",
-      "source": "IMG_5350"
-    },
-    {
       "id": "i105",
       "name": "Deck box (8 chair pillows inside)",
       "category": "outdoor-storage",
