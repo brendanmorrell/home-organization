@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Basement v4b — Top-Down Sketch (for confirmation)</title>
+<style>
+  body { margin: 0; background: #1a1a2e; color: #eee; font-family: 'Segoe UI', system-ui, sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+  h1 { margin: 0 0 4px; font-size: 22px; color: #90caf9; }
+  .subtitle { color: #aaa; font-size: 13px; margin-bottom: 12px; }
+  .changes { max-width: 760px; background: #0d1117; border: 1px solid #333; border-radius: 6px; padding: 14px 18px; margin-bottom: 16px; font-size: 13px; line-height: 1.6; }
+  .changes h2 { font-size: 14px; color: #66bb6a; margin: 0 0 8px; }
+  .changes ul { padding-left: 18px; margin: 0; }
+  .changes li { margin-bottom: 4px; }
+  .changes .removed { color: #ef5350; }
+  .changes .changed { color: #ffb74d; }
+  .changes .added { color: #66bb6a; }
+  svg { border: 1px solid #333; border-radius: 6px; background: #0d1117; }
+  .notes { max-width: 760px; margin-top: 16px; font-size: 13px; color: #bbb; line-height: 1.6; }
+  .notes h3 { color: #90caf9; font-size: 14px; margin: 10px 0 4px; }
+</style>
+</head>
+<body>
+<h1>Basement v4b — Top-Down Sketch</h1>
+<div class="subtitle">Top = North | Left = West | Right = East | 6.5m × ~9.8m (~32ft N-S) | Floor at y = -3.2m</div>
+
+<div class="changes">
+  <h2>Changes from v3 → v4b:</h2>
+  <ul>
+    <li class="removed">✗ Removed: Shelving unit on NE raised concrete platform</li>
+    <li class="changed">↕ Bed: raised to 3ft high (was on floor)</li>
+    <li class="changed">↕ U-Haul Clothes Box: now 5ft tall</li>
+    <li class="changed">↓ HVAC: moved 1ft south (gap between it and concrete platform)</li>
+    <li class="added">+ Paint closet: door on NORTH side</li>
+    <li class="added">+ Shelving: flipped-L shape, ~7ft deep N-S</li>
+    <li class="changed">↓ South section stretched +5ft — shelves, stairs, open area all extended</li>
+  </ul>
+</div>
+
+<!-- SVG viewBox: room is 520px wide, now 786px tall. Extra margins for labels. -->
+<svg width="760" height="900" viewBox="-20 -40 760 900">
+  <defs>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1e2a3a" stroke-width="0.5"/>
+    </pattern>
+    <pattern id="hatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <line x1="0" y1="0" x2="0" y2="8" stroke="#5c4033" stroke-width="2" opacity="0.5"/>
+    </pattern>
+  </defs>
+
+  <!-- Scale labels -->
+  <text x="0" y="-18" font-size="11" fill="#666" text-anchor="start">0m</text>
+  <text x="260" y="-18" font-size="11" fill="#666" text-anchor="middle">3.25m</text>
+  <text x="520" y="-18" font-size="11" fill="#666" text-anchor="middle">6.5m</text>
+  <line x1="0" y1="-10" x2="520" y2="-10" stroke="#444" stroke-width="1"/>
+  <text x="-12" y="0" font-size="11" fill="#666" text-anchor="end">0m</text>
+  <text x="-12" y="393" font-size="11" fill="#666" text-anchor="end">~4.9m</text>
+  <text x="-12" y="786" font-size="11" fill="#666" text-anchor="end">~9.8m</text>
+
+  <!-- Compass -->
+  <g transform="translate(600, 40)">
+    <circle cx="0" cy="0" r="28" fill="none" stroke="#555" stroke-width="1"/>
+    <text x="0" y="-34" font-size="13" fill="#90caf9" text-anchor="middle" font-weight="bold">N</text>
+    <text x="0" y="48" font-size="11" fill="#777" text-anchor="middle">S</text>
+    <text x="42" y="5" font-size="11" fill="#777" text-anchor="start">E</text>
+    <text x="-42" y="5" font-size="11" fill="#777" text-anchor="end">W</text>
+    <polygon points="0,-22 -5,-10 5,-10" fill="#90caf9"/>
+    <polygon points="0,22 -5,10 5,10" fill="#555"/>
+  </g>
+
+  <!-- ============================================================ -->
+  <!--  ROOM OUTLINE (6.5m × ~9.8m)                                 -->
+  <!--  520px wide × 786px tall (80px/m scale)                      -->
+  <!--  5ft extra = ~1.52m = ~122px added to south                  -->
+  <!-- ============================================================ -->
+  <rect x="0" y="0" width="520" height="786" fill="url(#grid)" stroke="#90caf9" stroke-width="2"/>
+
+  <!-- ============================================================ -->
+  <!--  NORTH: RAISED CONCRETE PLATFORMS                            -->
+  <!-- ============================================================ -->
+  <!-- West raised area -->
+  <rect x="0" y="0" width="250" height="96" fill="url(#hatch)" stroke="#8d6e63" stroke-width="1.5"/>
+  <rect x="0" y="0" width="250" height="96" fill="#5c4033" opacity="0.3"/>
+  <text x="125" y="40" font-size="11" fill="#d7ccc8" text-anchor="middle" font-weight="bold">RAISED CONCRETE (W)</text>
+  <text x="125" y="58" font-size="10" fill="#ffb74d" text-anchor="middle">~3.1m × 1.2m, ~1.07m high</text>
+
+  <!-- East raised area — NO SHELF (removed) -->
+  <rect x="262" y="0" width="258" height="96" fill="url(#hatch)" stroke="#8d6e63" stroke-width="1.5"/>
+  <rect x="262" y="0" width="258" height="96" fill="#5c4033" opacity="0.3"/>
+  <text x="391" y="40" font-size="11" fill="#d7ccc8" text-anchor="middle" font-weight="bold">RAISED CONCRETE (E)</text>
+  <text x="391" y="58" font-size="10" fill="#ffb74d" text-anchor="middle">~3.2m × 1.2m, ~1.07m high</text>
+  <text x="391" y="76" font-size="9" fill="#ef5350" text-anchor="middle">(shelf REMOVED — empty for now)</text>
+
+  <!-- ============================================================ -->
+  <!--  DIVIDING WALL — L-shaped                                    -->
+  <!-- ============================================================ -->
+  <rect x="250" y="0" width="12" height="410" fill="#607d8b" opacity="0.8" stroke="#90a4ae" stroke-width="1"/>
+  <rect x="250" y="398" width="148" height="12" fill="#607d8b" opacity="0.8" stroke="#90a4ae" stroke-width="1"/>
+  <!-- Door frame opening -->
+  <rect x="314" y="398" width="84" height="12" fill="#1a2332" stroke="#26a69a" stroke-width="1.5" stroke-dasharray="3,2"/>
+  <text x="356" y="394" font-size="7" fill="#4db6ac" text-anchor="middle">DOOR (~3.5ft)</text>
+  <text x="256" y="210" font-size="8" fill="#cfd8dc" text-anchor="middle" transform="rotate(-90, 256, 210)">DIVIDING WALL (L-shape)</text>
+
+  <!-- ============================================================ -->
+  <!--  WEST: HVAC ROOM                                             -->
+  <!-- ============================================================ -->
+  <text x="125" y="148" font-size="13" fill="#4fc3f7" text-anchor="middle" font-weight="bold" opacity="0.4">HVAC ROOM</text>
+
+  <!-- HVAC — 1ft south of raised platform (gap shown) -->
+  <rect x="50" y="120" width="150" height="90" fill="#37474f" opacity="0.5" stroke="#607d8b" stroke-width="1.5" rx="3"/>
+  <text x="125" y="155" font-size="14" fill="#b0bec5" text-anchor="middle" font-weight="bold">HVAC</text>
+  <text x="125" y="172" font-size="10" fill="#b0bec5" text-anchor="middle">Furnace + Ductwork</text>
+  <!-- Gap annotation -->
+  <line x1="80" y1="96" x2="80" y2="120" stroke="#66bb6a" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="90" y="111" font-size="8" fill="#66bb6a" text-anchor="start">~1ft gap</text>
+
+  <!-- UTILITY SINK — west wall, double basin N-S -->
+  <rect x="4" y="350" width="48" height="100" fill="#546e7a" opacity="0.6" stroke="#78909c" stroke-width="1.5" rx="2"/>
+  <line x1="8" y1="400" x2="48" y2="400" stroke="#78909c" stroke-width="1"/>
+  <rect x="10" y="356" width="36" height="38" fill="none" stroke="#90a4ae" stroke-width="0.8" rx="2"/>
+  <text x="28" y="378" font-size="7" fill="#b0bec5" text-anchor="middle">N basin</text>
+  <rect x="10" y="406" width="36" height="38" fill="none" stroke="#90a4ae" stroke-width="0.8" rx="2"/>
+  <text x="28" y="428" font-size="7" fill="#b0bec5" text-anchor="middle">S basin</text>
+  <text x="28" y="466" font-size="10" fill="#b0bec5" text-anchor="middle" font-weight="bold">UTILITY SINK</text>
+  <text x="28" y="479" font-size="8" fill="#90a4ae" text-anchor="middle">(double basin)</text>
+
+  <!-- Window on west wall -->
+  <rect x="-4" y="370" width="8" height="56" fill="#263238" stroke="#4fc3f7" stroke-width="1.5" rx="1"/>
+  <text x="-14" y="402" font-size="8" fill="#4fc3f7" text-anchor="end">WIN</text>
+
+  <!-- ============================================================ -->
+  <!--  EAST: BEDROOM                                               -->
+  <!-- ============================================================ -->
+  <text x="391" y="310" font-size="13" fill="#4fc3f7" text-anchor="middle" font-weight="bold" opacity="0.4">BEDROOM</text>
+
+  <!-- BED — 3ft high, against dividing wall -->
+  <rect x="264" y="110" width="150" height="110" fill="#4a635a" opacity="0.6" stroke="#81c784" stroke-width="1.5" rx="2"/>
+  <text x="339" y="155" font-size="14" fill="#c8e6c9" text-anchor="middle" font-weight="bold">BED</text>
+  <text x="339" y="173" font-size="10" fill="#c8e6c9" text-anchor="middle">mattress + box spring</text>
+  <text x="339" y="190" font-size="10" fill="#66bb6a" text-anchor="middle" font-weight="bold">3ft high</text>
+
+  <!-- U-HAUL CLOTHES BOX — 5ft tall, south of bed -->
+  <rect x="264" y="228" width="56" height="72" fill="#795548" opacity="0.6" stroke="#a1887f" stroke-width="1" rx="2"/>
+  <text x="292" y="255" font-size="9" fill="#d7ccc8" text-anchor="middle">CLOTHES</text>
+  <text x="292" y="267" font-size="9" fill="#d7ccc8" text-anchor="middle">BOX (U-Haul)</text>
+  <text x="292" y="283" font-size="10" fill="#66bb6a" text-anchor="middle" font-weight="bold">5ft tall</text>
+
+  <!-- Gap label -->
+  <text x="290" y="380" font-size="8" fill="#888" text-anchor="middle">(gap / opening)</text>
+
+  <!-- ============================================================ -->
+  <!--  HALLWAY                                                     -->
+  <!-- ============================================================ -->
+  <rect x="262" y="410" width="258" height="85" fill="#151e2d" opacity="0.5" stroke="#455a64" stroke-width="1" stroke-dasharray="4,3"/>
+  <text x="391" y="458" font-size="12" fill="#78909c" text-anchor="middle" font-weight="bold">HALLWAY</text>
+  <text x="391" y="474" font-size="9" fill="#666" text-anchor="middle">~3.5ft (1.07m) N-S</text>
+
+  <!-- ============================================================ -->
+  <!--  SOUTH SECTION — stretched +5ft south                        -->
+  <!--  Paint closet + L-shaped shelving (~7ft deep) + Staircase    -->
+  <!-- ============================================================ -->
+
+  <!-- STAIRCASE (SE corner) — stretched to new south wall (y=786) -->
+  <rect x="440" y="530" width="80" height="256" fill="#37474f" opacity="0.6" stroke="#78909c" stroke-width="1.5"/>
+  <line x1="444" y1="544" x2="516" y2="544" stroke="#607d8b" stroke-width="1"/>
+  <line x1="444" y1="564" x2="516" y2="564" stroke="#607d8b" stroke-width="1"/>
+  <line x1="444" y1="584" x2="516" y2="584" stroke="#607d8b" stroke-width="1"/>
+  <line x1="444" y1="604" x2="516" y2="604" stroke="#607d8b" stroke-width="1"/>
+  <line x1="444" y1="624" x2="516" y2="624" stroke="#607d8b" stroke-width="1"/>
+  <line x1="444" y1="644" x2="516" y2="644" stroke="#607d8b" stroke-width="1"/>
+  <line x1="444" y1="664" x2="516" y2="664" stroke="#607d8b" stroke-width="1"/>
+  <line x1="444" y1="684" x2="516" y2="684" stroke="#607d8b" stroke-width="1"/>
+  <line x1="444" y1="704" x2="516" y2="704" stroke="#607d8b" stroke-width="1"/>
+  <line x1="444" y1="724" x2="516" y2="724" stroke="#607d8b" stroke-width="1"/>
+  <line x1="444" y1="744" x2="516" y2="744" stroke="#607d8b" stroke-width="1"/>
+  <line x1="444" y1="764" x2="516" y2="764" stroke="#607d8b" stroke-width="1"/>
+  <polygon points="480,534 474,548 486,548" fill="#90caf9" opacity="0.7"/>
+  <text x="480" y="660" font-size="11" fill="#b0bec5" text-anchor="middle" font-weight="bold">STAIRS</text>
+  <text x="480" y="676" font-size="9" fill="#90caf9" text-anchor="middle">↑ UP to LR</text>
+
+  <!-- Under-stair nook -->
+  <rect x="440" y="495" width="80" height="35" fill="#3e2723" opacity="0.4" stroke="#6d4c41" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="480" y="516" font-size="8" fill="#a1887f" text-anchor="middle">under-stair nook</text>
+
+  <!-- Open area / landing west of stairs — also stretched -->
+  <rect x="380" y="530" width="60" height="256" fill="#1a2332" stroke="#555" stroke-width="1" stroke-dasharray="4,3"/>
+  <text x="410" y="660" font-size="9" fill="#888" text-anchor="middle">OPEN</text>
+  <text x="410" y="676" font-size="9" fill="#888" text-anchor="middle">AREA</text>
+
+  <!-- ============================================================ -->
+  <!--  PAINT CLOSET — door on NORTH side                           -->
+  <!--  Position unchanged (y=495, h=84)                            -->
+  <!-- ============================================================ -->
+  <rect x="262" y="495" width="118" height="84" fill="#455a64" opacity="0.5" stroke="#78909c" stroke-width="1.5" rx="2"/>
+  <line x1="268" y1="515" x2="374" y2="515" stroke="#607d8b" stroke-width="0.8"/>
+  <line x1="268" y1="535" x2="374" y2="535" stroke="#607d8b" stroke-width="0.8"/>
+  <line x1="268" y1="555" x2="374" y2="555" stroke="#607d8b" stroke-width="0.8"/>
+  <text x="321" y="530" font-size="10" fill="#b0bec5" text-anchor="middle" font-weight="bold">PAINT CLOSET</text>
+  <text x="321" y="565" font-size="8" fill="#90a4ae" text-anchor="middle">(shelves inside)</text>
+  <!-- DOOR on north side -->
+  <rect x="300" y="491" width="50" height="4" fill="#26a69a" opacity="0.8"/>
+  <text x="325" y="488" font-size="7" fill="#4db6ac" text-anchor="middle">DOOR (north)</text>
+
+  <!-- ============================================================ -->
+  <!--  L-SHAPED SHELVING — south of paint closet                   -->
+  <!--  Now ~7ft deep (paint closet bottom y=579 to south wall 786) -->
+  <!--  = 207px ≈ 2.6m ≈ 8.5ft (generous ~7ft zone)               -->
+  <!--                                                              -->
+  <!--  Flipped L:                                                  -->
+  <!--    ┌─────────────────┐  ← north arm (full width, NW to E)   -->
+  <!--    └────────────┐    │                                       -->
+  <!--                 │    │  ← east arm (E side → S wall, ~7ft)   -->
+  <!--                 │    │                                       -->
+  <!--     (open to    │    │                                       -->
+  <!--      HVAC area) │    │                                       -->
+  <!--                 └────┘  ← south wall                        -->
+  <!-- ============================================================ -->
+
+  <!-- L-shape background fills -->
+  <!-- North arm: full width of section -->
+  <rect x="262" y="579" width="118" height="28" fill="#4a6741" opacity="0.4" stroke="none"/>
+  <!-- East arm: right portion going all the way to south wall -->
+  <rect x="340" y="579" width="40" height="207" fill="#4a6741" opacity="0.4" stroke="none"/>
+
+  <!-- North arm outline (NW→E) -->
+  <rect x="262" y="579" width="118" height="28" fill="none" stroke="#66bb6a" stroke-width="1.5"/>
+  <text x="321" y="597" font-size="9" fill="#a5d6a7" text-anchor="middle" font-weight="bold">SHELF (N arm → E)</text>
+
+  <!-- East arm outline (E side → S wall) -->
+  <rect x="340" y="607" width="40" height="179" fill="none" stroke="#66bb6a" stroke-width="1.5"/>
+  <text x="360" y="700" font-size="9" fill="#a5d6a7" text-anchor="middle" transform="rotate(-90, 360, 700)">SHELF (E arm ↓ S wall)</text>
+
+  <!-- Open SW area label -->
+  <rect x="262" y="607" width="78" height="179" fill="#1a2a1a" opacity="0.3" stroke="none"/>
+  <text x="301" y="690" font-size="10" fill="#66bb6a" text-anchor="middle">open</text>
+  <text x="301" y="704" font-size="9" fill="#66bb6a" text-anchor="middle">(to HVAC area)</text>
+  <text x="301" y="718" font-size="8" fill="#888" text-anchor="middle">no wall W</text>
+
+  <!-- 7ft depth dimension annotation -->
+  <line x1="248" y1="579" x2="248" y2="786" stroke="#66bb6a" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="240" y="685" font-size="9" fill="#66bb6a" text-anchor="end" transform="rotate(-90, 240, 685)">~7ft shelf depth</text>
+
+  <!-- ============================================================ -->
+  <!--  PARTITION WALLS (south section) — extended to new S wall    -->
+  <!-- ============================================================ -->
+  <line x1="440" y1="495" x2="440" y2="786" stroke="#607d8b" stroke-width="3"/>
+  <line x1="380" y1="495" x2="380" y2="786" stroke="#607d8b" stroke-width="3"/>
+  <line x1="262" y1="495" x2="380" y2="495" stroke="#607d8b" stroke-width="2"/>
+
+  <!-- ============================================================ -->
+  <!--  WINDOWS                                                     -->
+  <!-- ============================================================ -->
+  <rect x="84" y="-4" width="56" height="8" fill="#263238" stroke="#4fc3f7" stroke-width="1.5" rx="1"/>
+  <text x="112" y="-10" font-size="8" fill="#4fc3f7" text-anchor="middle">WINDOW</text>
+
+  <rect x="394" y="-4" width="56" height="8" fill="#263238" stroke="#4fc3f7" stroke-width="1.5" rx="1"/>
+  <text x="422" y="-10" font-size="8" fill="#4fc3f7" text-anchor="middle">WINDOW</text>
+
+  <rect x="516" y="200" width="8" height="48" fill="#263238" stroke="#4fc3f7" stroke-width="1.5" rx="1"/>
+  <text x="534" y="228" font-size="8" fill="#4fc3f7" text-anchor="start">WIN</text>
+
+  <!-- ============================================================ -->
+  <!--  DIMENSION LABELS                                            -->
+  <!-- ============================================================ -->
+  <text x="260" y="810" font-size="12" fill="#666" text-anchor="middle">← 6.5m (21.3ft) →</text>
+  <text x="548" y="393" font-size="12" fill="#666" text-anchor="start" transform="rotate(90, 548, 393)">← ~9.8m (~32ft) →</text>
+
+  <!-- Wall labels -->
+  <text x="260" y="-26" font-size="12" fill="#4fc3f7" text-anchor="middle" font-weight="bold">NORTH WALL (back)</text>
+  <text x="260" y="804" font-size="11" fill="#78909c" text-anchor="middle">SOUTH WALL (entry side)</text>
+  <text x="-8" y="-26" font-size="10" fill="#78909c" text-anchor="start">WEST</text>
+  <text x="525" y="-26" font-size="10" fill="#78909c" text-anchor="end">EAST</text>
+
+  <!-- ============================================================ -->
+  <!--  ANNOTATIONS                                                 -->
+  <!-- ============================================================ -->
+  <g opacity="0.8">
+    <text x="600" y="150" font-size="10" fill="#66bb6a" text-anchor="start" font-weight="bold">Key Changes (v4b):</text>
+    <text x="600" y="170" font-size="9" fill="#ef5350" text-anchor="start">✗ NE shelf removed</text>
+    <text x="600" y="188" font-size="9" fill="#66bb6a" text-anchor="start">• Bed: 3ft high</text>
+    <text x="600" y="206" font-size="9" fill="#66bb6a" text-anchor="start">• Clothes box: 5ft tall</text>
+    <text x="600" y="224" font-size="9" fill="#66bb6a" text-anchor="start">• HVAC: 1ft gap from concrete</text>
+    <text x="600" y="242" font-size="9" fill="#66bb6a" text-anchor="start">• Paint closet door: NORTH side</text>
+    <text x="600" y="260" font-size="9" fill="#66bb6a" text-anchor="start">• Shelving: flipped-L, ~7ft deep</text>
+    <text x="600" y="278" font-size="9" fill="#ffb74d" text-anchor="start">• South stretched +5ft</text>
+  </g>
+
+  <!-- L-shape diagram in annotations -->
+  <g transform="translate(610, 320)">
+    <text x="0" y="-5" font-size="9" fill="#66bb6a" font-weight="bold">L-shape (top view):</text>
+    <rect x="0" y="5" width="80" height="14" fill="#4a6741" opacity="0.6" stroke="#66bb6a" stroke-width="1"/>
+    <text x="40" y="16" font-size="7" fill="#a5d6a7" text-anchor="middle">N arm (W→E)</text>
+    <rect x="56" y="19" width="24" height="70" fill="#4a6741" opacity="0.6" stroke="#66bb6a" stroke-width="1"/>
+    <text x="68" y="58" font-size="7" fill="#a5d6a7" text-anchor="middle">E arm</text>
+    <text x="68" y="68" font-size="7" fill="#a5d6a7" text-anchor="middle">~7ft</text>
+    <text x="28" y="50" font-size="8" fill="#888" text-anchor="middle">(open)</text>
+    <text x="28" y="62" font-size="7" fill="#888" text-anchor="middle">→ HVAC area</text>
+    <rect x="0" y="89" width="80" height="1" fill="#78909c"/>
+    <text x="40" y="102" font-size="7" fill="#78909c" text-anchor="middle">south wall</text>
+  </g>
+
+  <g opacity="0.7">
+    <text x="600" y="460" font-size="10" fill="#78909c" text-anchor="start" font-weight="bold">Height Reference:</text>
+    <text x="600" y="478" font-size="9" fill="#aaa" text-anchor="start">Room: 8.2ft (2.5m)</text>
+    <text x="600" y="493" font-size="9" fill="#aaa" text-anchor="start">Raised platforms: 3.5ft</text>
+    <text x="600" y="508" font-size="9" fill="#aaa" text-anchor="start">Bed: 3ft</text>
+    <text x="600" y="523" font-size="9" fill="#aaa" text-anchor="start">U-Haul box: 5ft</text>
+    <text x="600" y="538" font-size="9" fill="#aaa" text-anchor="start">HVAC gap: 1ft from platform</text>
+  </g>
+
+  <g opacity="0.7">
+    <text x="600" y="580" font-size="10" fill="#ffb74d" text-anchor="start" font-weight="bold">Dimensions:</text>
+    <text x="600" y="598" font-size="9" fill="#ffb74d" text-anchor="start">Room: 6.5m × ~9.8m</text>
+    <text x="600" y="613" font-size="9" fill="#ffb74d" text-anchor="start">(21.3ft × ~32ft)</text>
+    <text x="600" y="631" font-size="9" fill="#ffb74d" text-anchor="start">Shelf zone depth: ~7ft</text>
+    <text x="600" y="646" font-size="9" fill="#ffb74d" text-anchor="start">Paint closet: ~4.8ft × ~3.4ft</text>
+  </g>
+</svg>
+
+<div class="notes">
+  <h3>Layout Summary (v4b)</h3>
+  <p><strong>North:</strong> Two raised concrete platforms (W and E), ~1.07m high. East platform empty (shelf removed). HVAC 1ft south of west platform.</p>
+  <p><strong>East/Bedroom:</strong> Bed (3ft high) against dividing wall. U-Haul clothes box (5ft tall) south of bed.</p>
+  <p><strong>West/HVAC Room:</strong> HVAC with 1ft gap from concrete. Utility sink on west wall, double basin (N and S).</p>
+  <p><strong>South section (stretched +5ft):</strong> Paint closet with door on <strong>north side</strong>. Below it: <strong>flipped-L shelving (~7ft deep)</strong> — north arm runs full width W→E, east arm runs south to the south wall. The southwest corner is open to the HVAC/sink area (no west wall). Stairs in SE corner, open landing west of stairs — both stretched to fill the new depth.</p>
+</div>
+
+</body>
+</html>

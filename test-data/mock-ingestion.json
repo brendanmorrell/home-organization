@@ -1,0 +1,77 @@
+{
+  "metadata": {
+    "session_id": "ingest-test-001-deadbeef",
+    "source_video": "/tmp/test-kitchen-walkthrough.mp4",
+    "room_name": "Kitchen",
+    "duration_seconds": 120,
+    "frames_extracted": 4,
+    "total_items_found": 6,
+    "ingested_at": "2026-03-08T10:00:00.000Z",
+    "whisper_model": "base",
+    "context_window_seconds": 15
+  },
+  "transcript": {
+    "full_text": "Alright, so in the kitchen here, the bottom left cabinet has the tea tray and some serving bowls. Moving to the right, we've got the blender and the food processor. Up top on the shelf, that's where I keep the spice rack. And over by the window, those are my herb pots.",
+    "segments": [
+      { "id": 0, "start": 0, "end": 8, "text": "Alright, so in the kitchen here, the bottom left cabinet has the tea tray and some serving bowls." },
+      { "id": 1, "start": 8, "end": 16, "text": "Moving to the right, we've got the blender and the food processor." },
+      { "id": 2, "start": 16, "end": 24, "text": "Up top on the shelf, that's where I keep the spice rack." },
+      { "id": 3, "start": 24, "end": 32, "text": "And over by the window, those are my herb pots." }
+    ]
+  },
+  "room": {
+    "name": "Kitchen",
+    "icon": "K",
+    "color": "#5d4037",
+    "width": 5,
+    "depth": 4,
+    "height": 2.7,
+    "pos_x": 0,
+    "pos_y": 0,
+    "pos_z": 0
+  },
+  "frames": [
+    {
+      "image_path": "/tmp/frames/frame_00001.jpg",
+      "timestamp": "0:00",
+      "transcript_context": "Alright, so in the kitchen here, the bottom left cabinet has the tea tray and some serving bowls.",
+      "items": [
+        { "name": "Tea tray", "location": "Bottom cabinet, left side", "category": "Kitchen", "confidence": "high", "source": "both" },
+        { "name": "Serving bowls (set of 4)", "location": "Bottom cabinet, left side, behind tea tray", "category": "Kitchen", "confidence": "high", "source": "both" }
+      ],
+      "scene_description": "View of kitchen lower cabinets, left door open showing tea tray and bowls",
+      "storage_units_visible": ["Bottom cabinet"]
+    },
+    {
+      "image_path": "/tmp/frames/frame_00002.jpg",
+      "timestamp": "0:08",
+      "transcript_context": "Moving to the right, we've got the blender and the food processor.",
+      "items": [
+        { "name": "Blender", "location": "Bottom cabinet, right side", "category": "Appliances", "confidence": "high", "source": "both" },
+        { "name": "Food processor", "location": "Bottom cabinet, right side, next to blender", "category": "Appliances", "confidence": "high", "source": "both" }
+      ],
+      "scene_description": "Kitchen counter area with small appliances visible in open cabinet",
+      "storage_units_visible": ["Bottom cabinet"]
+    },
+    {
+      "image_path": "/tmp/frames/frame_00003.jpg",
+      "timestamp": "0:16",
+      "transcript_context": "Up top on the shelf, that's where I keep the spice rack.",
+      "items": [
+        { "name": "Spice rack", "location": "Top shelf, center", "category": "Kitchen", "confidence": "high", "source": "both" }
+      ],
+      "scene_description": "Upper kitchen shelf with spice rack prominently displayed",
+      "storage_units_visible": ["Top shelf"]
+    },
+    {
+      "image_path": "/tmp/frames/frame_00004.jpg",
+      "timestamp": "0:24",
+      "transcript_context": "And over by the window, those are my herb pots.",
+      "items": [
+        { "name": "Herb pots (3)", "location": "Window sill, by the window", "category": "Plants", "confidence": "high", "source": "both" }
+      ],
+      "scene_description": "Kitchen window sill with small herb pots",
+      "storage_units_visible": ["Window sill"]
+    }
+  ]
+}

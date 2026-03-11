@@ -1,0 +1,250 @@
+{
+  "metadata": {
+    "session_id": "ingest-garage-20260308",
+    "mode": "structural",
+    "source_video": "IMG_5333.mov",
+    "duration_seconds": 136.47,
+    "frames_extracted": 34,
+    "ingested_at": "2026-03-08T23:30:00.000Z",
+    "whisper_model": "base",
+    "context_window_seconds": 15
+  },
+  "rooms": [
+    {
+      "name": "Garage",
+      "description": "Two-car garage at back of house. Concrete/rubber mat flooring with artificial turf sections. White drywall walls, exposed ceiling with garage door track hardware. Currently packed with moving boxes (temporary) and permanent gym equipment. Load-bearing pipe runs floor to ceiling near center.",
+      "estimated_dimensions": {
+        "width_ft": 20,
+        "depth_ft": 20,
+        "height_ft": 11.5,
+        "dimension_source": "narrated",
+        "notes": "You said '20 by 20 by 11 maybe 12'. Ceiling height varies slightly — standard area ~11ft, some sections up to 12ft near the peaked roof."
+      },
+      "storage_areas": [
+        {
+          "id": "garage-shelf-wall-1",
+          "name": "Upper wall shelves — back wall (left section)",
+          "type": "shelf",
+          "position_description": "Wall-mounted wire shelving running along the back wall, left of the load-bearing pipe. Starts from left corner.",
+          "estimated_length_ft": 15,
+          "estimated_depth_ft": 2,
+          "clearance_to_ceiling_ft": 3,
+          "approximate_position": {
+            "wall": "back",
+            "height": "high",
+            "x_offset": 0,
+            "z_offset": 0
+          },
+          "notes": "You said 'about 15 feet' for this section. Wire rack style, wall-mounted with brackets. Currently has storage bins, Igloo cooler, STOR-ALL boxes, lumber."
+        },
+        {
+          "id": "garage-shelf-wall-2",
+          "name": "Upper wall shelves — back wall (right section)",
+          "type": "shelf",
+          "position_description": "Continues right of the load-bearing pipe along the back wall, past the staircase area, wrapping to the right wall.",
+          "estimated_length_ft": 17,
+          "estimated_depth_ft": 2,
+          "clearance_to_ceiling_ft": 3.5,
+          "approximate_position": {
+            "wall": "back-right",
+            "height": "high",
+            "x_offset": 15,
+            "z_offset": 0
+          },
+          "notes": "You said 'about 18, 16, 17 feet' and 'this one's a little bit taller maybe three and a half feet'. Has a black storage organizer, boxes. Loses about 8 inches of clearance in one area."
+        },
+        {
+          "id": "garage-shelf-wall-3",
+          "name": "Upper wall shelves — right wall",
+          "type": "shelf",
+          "position_description": "Continues from the back-right section along the right wall toward the garage door.",
+          "estimated_length_ft": 11,
+          "estimated_depth_ft": 2,
+          "clearance_to_ceiling_ft": 3,
+          "approximate_position": {
+            "wall": "right",
+            "height": "high",
+            "x_offset": 20,
+            "z_offset": 5
+          },
+          "notes": "You said 'three feet again for another 10 feet that this spans maybe 11 feet'. Same wire rack style."
+        },
+        {
+          "id": "garage-shelf-door-wall",
+          "name": "Upper wall shelves — garage door wall",
+          "type": "shelf",
+          "position_description": "Wire shelving above the garage door wall area, visible in frames looking toward the door side. Has pegboard section below it with tools.",
+          "estimated_length_ft": 10,
+          "estimated_depth_ft": 2,
+          "clearance_to_ceiling_ft": 3,
+          "approximate_position": {
+            "wall": "front",
+            "height": "high",
+            "x_offset": 5,
+            "z_offset": 20
+          },
+          "notes": "Visible in frames 3 and 18. Has pegboard tool organizer mounted below shelves on this wall."
+        },
+        {
+          "id": "garage-pegboard",
+          "name": "Pegboard tool wall",
+          "type": "built_in",
+          "position_description": "Pegboard mounted on the wall near the door to the house/staircase side. Various tools, clamps, and small items hanging from it.",
+          "estimated_size": "medium",
+          "approximate_position": {
+            "wall": "front-left",
+            "height": "mid",
+            "x_offset": 2,
+            "z_offset": 18
+          },
+          "notes": "Visible in frames 3, 18. Has scissors, clamps, various hand tools organized on hooks."
+        },
+        {
+          "id": "garage-wall-hooks",
+          "name": "Wall-mounted hook rack",
+          "type": "built_in",
+          "position_description": "Rubbermaid-style wall hook system with folding chairs, bags hanging from it. On the wall opposite the garage door.",
+          "estimated_size": "medium",
+          "approximate_position": {
+            "wall": "back",
+            "height": "mid",
+            "x_offset": 8,
+            "z_offset": 0
+          },
+          "notes": "Visible in frame 13. Has folding chairs and bags hanging from heavy-duty hooks."
+        }
+      ],
+      "permanent_fixtures": [
+        {
+          "id": "garage-pipe",
+          "name": "Load-bearing pipe",
+          "type": "structural",
+          "description": "Metal pipe running floor to ceiling, roughly center of the garage. You explicitly called this out as permanent and load-bearing.",
+          "position": "center, slightly toward back wall"
+        },
+        {
+          "id": "garage-cable-tower",
+          "name": "Cable machine / weightlifting tower",
+          "type": "gym_equipment",
+          "description": "Large white/black cable tower with pulleys, pull-up bar, and various cable attachments. Positioned near the garage door opening.",
+          "position": "near garage door, center-right",
+          "estimated_footprint": "4ft x 4ft x 8ft tall"
+        },
+        {
+          "id": "garage-dumbbell-rack",
+          "name": "Dumbbell rack",
+          "type": "gym_equipment",
+          "description": "Multi-tier dumbbell rack on wheels with a full set of adjustable/fixed dumbbells.",
+          "position": "near center, left of pipe"
+        },
+        {
+          "id": "garage-weight-bench",
+          "name": "Weight bench",
+          "type": "gym_equipment",
+          "description": "Adjustable weight bench, black. Visible in frame 13 near the back wall.",
+          "position": "back wall, right side"
+        },
+        {
+          "id": "garage-plate-holder",
+          "name": "Weight plate holder with bars",
+          "type": "gym_equipment",
+          "description": "Weight plate tree/holder with Olympic bars stored on it.",
+          "position": "near center"
+        },
+        {
+          "id": "garage-jointer",
+          "name": "Joiner/Planar",
+          "type": "workshop_equipment",
+          "description": "Woodworking jointer/planer pushed against the wall. You said this stays permanently.",
+          "position": "against back wall, near staircase"
+        },
+        {
+          "id": "garage-electrical-panel",
+          "name": "Electrical panel",
+          "type": "structural",
+          "description": "Gray electrical breaker panel mounted on the right wall near the garage door track.",
+          "position": "right wall, upper area"
+        }
+      ],
+      "temporary_items_note": "All boxes, storage totes, moving supplies, furniture (couch, stroller, etc.) on the garage floor are TEMPORARY and will be moved. Ignore for permanent layout.",
+      "features": [
+        "Two-car garage door (open in video, faces driveway/street)",
+        "Artificial turf covering portions of the floor",
+        "Rubber gym mats on left side floor",
+        "Overhead garage door track and opener hardware",
+        "Two ceiling lights (bare bulb style)",
+        "Red emergency pull cord for garage door",
+        "Multiple electrical outlets on walls",
+        "Window on right wall near staircase"
+      ],
+      "connections": [
+        {
+          "leads_to": "Living Room",
+          "type": "stairs",
+          "position": "Back-right corner of garage",
+          "description": "Wooden staircase with 4-5 steps going UP from garage level into the house. Wooden railing/banister on left side. Door at top leads into the living room / main open-plan area. The garage is below the main floor level."
+        }
+      ]
+    },
+    {
+      "name": "Living Room",
+      "description": "Open-plan living area on the main floor, above the garage. You said 'one open area for the entire downstairs' (relative to upstairs). Stone fireplace with shelving visible on the left when entering. Warm-toned walls (burgundy/mauve accent wall). Large sectional sofa. Hardwood floors. Flows openly into kitchen area with pendant lights and island.",
+      "estimated_dimensions": {
+        "width_ft": 0,
+        "depth_ft": 0,
+        "height_ft": 9,
+        "dimension_source": "estimated",
+        "notes": "Dimensions not narrated for this room. Height estimated from standard construction. This is part of a larger open-plan area that includes the kitchen — full dimensions will come from a dedicated living room video."
+      },
+      "storage_areas": [
+        {
+          "id": "livingroom-closet",
+          "name": "Hall/utility closet",
+          "type": "closet",
+          "position_description": "Closet with white door visible on the right when entering from the garage. Currently has shelving with paper towels, cleaning supplies, Amazon boxes.",
+          "estimated_size": "small",
+          "approximate_position": {
+            "wall": "near garage entry",
+            "height": "floor-to-mid"
+          },
+          "notes": "Visible in frame 34. Has at least 2 shelves."
+        },
+        {
+          "id": "livingroom-fireplace-shelves",
+          "name": "Fireplace built-in shelving",
+          "type": "built_in",
+          "position_description": "Stone fireplace with built-in shelving/display area on the left when entering from garage stairs.",
+          "estimated_size": "medium",
+          "approximate_position": {
+            "wall": "left of entry",
+            "height": "floor-to-high"
+          },
+          "notes": "River rock stone surround with wood mantel and shelving. Visible in frame 33."
+        }
+      ],
+      "features": [
+        "Stone/river rock fireplace with shelving",
+        "Burgundy/mauve accent wall",
+        "Large sectional sofa (cream/beige)",
+        "Hardwood floors throughout",
+        "Open plan flowing into kitchen",
+        "Pendant lighting over kitchen island area",
+        "Fiddle leaf fig plant near fireplace"
+      ],
+      "connections": [
+        {
+          "leads_to": "Garage",
+          "type": "stairs",
+          "position": "Near entry, right side",
+          "description": "Stairs going DOWN to the garage"
+        },
+        {
+          "leads_to": "Kitchen",
+          "type": "open",
+          "position": "Straight ahead from garage entry",
+          "description": "Open-plan flow directly into kitchen area with island and pendant lights. No wall or door separating them."
+        }
+      ]
+    }
+  ]
+}

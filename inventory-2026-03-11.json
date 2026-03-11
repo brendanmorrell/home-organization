@@ -1,0 +1,362 @@
+{
+  "inventoryDate": "2026-03-11",
+  "sourceVideos": 6,
+  "containers": [
+    {
+      "id": "c1",
+      "sourceVideo": "IMG_0529.mov",
+      "containerType": "clear plastic bin",
+      "label": "Sentimental T-Shirts",
+      "category": "Clothing — Keepsakes",
+      "items": [
+        { "name": "Sentimental t-shirts (multiple)", "category": "clothing", "owner": "shared", "disposition": "keep", "notes": "Not to be given away" }
+      ]
+    },
+    {
+      "id": "c2",
+      "sourceVideo": "IMG_0529.mov",
+      "containerType": "bag/loose",
+      "label": "Van Labels & Decor",
+      "category": "Vehicle Accessories",
+      "items": [
+        { "name": "Labels and decor for van", "category": "vehicle", "owner": "shared", "disposition": "keep" }
+      ]
+    },
+    {
+      "id": "c3",
+      "sourceVideo": "IMG_0529.mov",
+      "containerType": "loose items",
+      "label": "Medical/Personal Care",
+      "category": "Personal Care",
+      "items": [
+        { "name": "Intubation tubes (x2)", "category": "medical", "owner": "Erin", "disposition": "keep" },
+        { "name": "Lube/vibrator", "category": "personal", "owner": "shared", "disposition": "keep" }
+      ]
+    },
+    {
+      "id": "c4",
+      "sourceVideo": "IMG_0529.mov",
+      "containerType": "cardboard box",
+      "label": "Speech Pathology — Pediatric Office Supplies",
+      "category": "Work — Speech Therapy",
+      "items": [
+        { "name": "Flashcards (speech therapy)", "category": "work-supplies", "owner": "Erin", "disposition": "keep" },
+        { "name": "Notebooks", "category": "work-supplies", "owner": "Erin", "disposition": "keep" },
+        { "name": "Toys (therapy)", "category": "work-supplies", "owner": "Erin", "disposition": "keep" },
+        { "name": "Puppets (therapy, including chef puppet)", "category": "work-supplies", "owner": "Erin", "disposition": "keep" },
+        { "name": "Markers (multiple boxes)", "category": "work-supplies", "owner": "Erin", "disposition": "keep" }
+      ]
+    },
+    {
+      "id": "c5",
+      "sourceVideo": "IMG_0529.mov",
+      "containerType": "box/bag",
+      "label": "Gift Wrapping Supplies",
+      "category": "Household",
+      "items": [
+        { "name": "Gift wrapping materials", "category": "household", "owner": "shared", "disposition": "keep" }
+      ]
+    },
+    {
+      "id": "c6",
+      "sourceVideo": "IMG_0529.mov",
+      "containerType": "cardboard box",
+      "label": "Asian Decorations",
+      "category": "Decor — Cultural",
+      "items": [
+        { "name": "Asian decorations (various)", "category": "decor", "owner": "shared", "disposition": "keep" },
+        { "name": "Chinese name stamp", "category": "decor", "owner": "shared", "disposition": "keep" },
+        { "name": "Decorative rice cooker candle", "category": "decor", "owner": "shared", "disposition": "keep" },
+        { "name": "Decorative vase", "category": "decor", "owner": "shared", "disposition": "keep" },
+        { "name": "Asian calendar", "category": "decor", "owner": "shared", "disposition": "keep" },
+        { "name": "Bamboo steamer basket (decorative)", "category": "decor", "owner": "shared", "disposition": "keep" },
+        { "name": "Leather pouch/bag", "category": "decor", "owner": "shared", "disposition": "keep" },
+        { "name": "Patterned textile/tapestry", "category": "decor", "owner": "shared", "disposition": "keep" }
+      ]
+    },
+    {
+      "id": "c7",
+      "sourceVideo": "IMG_0529.mov",
+      "containerType": "cardboard box",
+      "label": "More Decor + Regift Items",
+      "category": "Decor / To Regift",
+      "items": [
+        { "name": "Window garden herb kit (basil etc.)", "category": "decor", "owner": "shared", "disposition": "keep" },
+        { "name": "LED lights (x3)", "category": "electronics", "owner": "shared", "disposition": "regift", "notes": "Should regift, not keep" },
+        { "name": "Picture frame", "category": "decor", "owner": "shared", "disposition": "keep" },
+        { "name": "HDMI/electronics items (bubble-wrapped)", "category": "electronics", "owner": "shared", "disposition": "keep" }
+      ]
+    },
+    {
+      "id": "c8",
+      "sourceVideo": "IMG_0529.mov",
+      "containerType": "cardboard box",
+      "label": "Prenatal & Natal Care",
+      "category": "Baby / Health",
+      "items": [
+        { "name": "Neti pot", "category": "health", "owner": "Erin", "disposition": "keep" },
+        { "name": "Ovulation tests", "category": "health", "owner": "Erin", "disposition": "keep" },
+        { "name": "Pregnancy tests", "category": "health", "owner": "Erin", "disposition": "keep" },
+        { "name": "Postpartum care supplies", "category": "health", "owner": "Erin", "disposition": "keep" },
+        { "name": "Thermometer", "category": "health", "owner": "shared", "disposition": "keep" },
+        { "name": "Baby gear manuals (car seat, stroller, pack-n-play)", "category": "documents", "owner": "shared", "disposition": "keep" },
+        { "name": "4moms product materials/guides", "category": "documents", "owner": "shared", "disposition": "keep" }
+      ]
+    },
+    {
+      "id": "c9",
+      "sourceVideo": "IMG_0530.mov",
+      "containerType": "box/loose",
+      "label": "Hair & Personal Care",
+      "category": "Personal Care",
+      "items": [
+        { "name": "Curling iron (white, former)", "category": "personal-care", "owner": "Erin", "disposition": "keep" },
+        { "name": "Head massager", "category": "personal-care", "owner": "shared", "disposition": "keep" },
+        { "name": "Hairbrush", "category": "personal-care", "owner": "shared", "disposition": "keep" },
+        { "name": "Loofah", "category": "personal-care", "owner": "shared", "disposition": "keep" }
+      ]
+    },
+    {
+      "id": "c10",
+      "sourceVideo": "IMG_0530.mov",
+      "containerType": "box labeled 'Aaron Desk'",
+      "label": "Pediatric Therapy Job Supplies (Desk + Therapy)",
+      "category": "Work — Speech Therapy",
+      "items": [
+        { "name": "Felt letterboard", "category": "work-supplies", "owner": "Erin", "disposition": "keep" },
+        { "name": "Pins (for letterboard)", "category": "work-supplies", "owner": "Erin", "disposition": "keep" },
+        { "name": "Games (therapy, x2)", "category": "work-supplies", "owner": "Erin", "disposition": "keep" },
+        { "name": "Velcro dots", "category": "work-supplies", "owner": "Erin", "disposition": "keep" },
+        { "name": "Finger paints", "category": "work-supplies", "owner": "Erin", "disposition": "keep" },
+        { "name": "Mini eraser figurines (many)", "category": "work-supplies", "owner": "Erin", "disposition": "keep" },
+        { "name": "Mug", "category": "work-supplies", "owner": "Erin", "disposition": "keep" },
+        { "name": "Flashcards", "category": "work-supplies", "owner": "Erin", "disposition": "keep" },
+        { "name": "Magnetic sand garden", "category": "work-supplies", "owner": "Erin", "disposition": "keep" }
+      ]
+    },
+    {
+      "id": "c11",
+      "sourceVideo": "IMG_0530.mov",
+      "containerType": "box",
+      "label": "Bar Supplies",
+      "category": "Kitchen / Bar",
+      "items": [
+        { "name": "Bar towel", "category": "bar", "owner": "shared", "disposition": "keep" },
+        { "name": "Bar sign", "category": "bar", "owner": "shared", "disposition": "keep" },
+        { "name": "Kettle", "category": "bar", "owner": "shared", "disposition": "keep" },
+        { "name": "Decorative plate", "category": "bar", "owner": "shared", "disposition": "keep" },
+        { "name": "Decorative signs (bar area)", "category": "bar", "owner": "shared", "disposition": "keep" },
+        { "name": "Cups", "category": "bar", "owner": "shared", "disposition": "keep" },
+        { "name": "Shot glasses", "category": "bar", "owner": "shared", "disposition": "keep" },
+        { "name": "Walt Disney coaster set", "category": "bar", "owner": "shared", "disposition": "keep" },
+        { "name": "Other decorative bar items", "category": "bar", "owner": "shared", "disposition": "keep" }
+      ]
+    },
+    {
+      "id": "c12",
+      "sourceVideo": "IMG_0530.mov",
+      "containerType": "box",
+      "label": "Baby Ronin — Memorabilia",
+      "category": "Baby — Sentimental",
+      "items": [
+        { "name": "Baptismal candle", "category": "memorabilia", "owner": "Ronin", "disposition": "keep" },
+        { "name": "Hospital information/records", "category": "memorabilia", "owner": "Ronin", "disposition": "keep" },
+        { "name": "Newborn clothing", "category": "memorabilia", "owner": "Ronin", "disposition": "keep" },
+        { "name": "First spoon", "category": "memorabilia", "owner": "Ronin", "disposition": "keep" },
+        { "name": "First pacifier", "category": "memorabilia", "owner": "Ronin", "disposition": "keep" },
+        { "name": "Hospital name tag", "category": "memorabilia", "owner": "Ronin", "disposition": "keep" },
+        { "name": "Father's memorabilia items", "category": "memorabilia", "owner": "Brendan", "disposition": "keep" }
+      ]
+    },
+    {
+      "id": "c13",
+      "sourceVideo": "IMG_0530.mov",
+      "containerType": "box labeled 'Miscellaneous'",
+      "label": "House Documents & Misc",
+      "category": "Documents / Household",
+      "items": [
+        { "name": "House purchase binder", "category": "documents", "owner": "shared", "disposition": "keep" },
+        { "name": "Real estate tour binder", "category": "documents", "owner": "shared", "disposition": "keep" },
+        { "name": "Old license plates (van)", "category": "vehicle", "owner": "shared", "disposition": "keep" },
+        { "name": "Sewing kit", "category": "household", "owner": "shared", "disposition": "keep" },
+        { "name": "Wedding stamp (sentimental)", "category": "memorabilia", "owner": "shared", "disposition": "keep" },
+        { "name": "Wedding memorabilia", "category": "memorabilia", "owner": "shared", "disposition": "keep" },
+        { "name": "Games/cards (coffee table appropriate)", "category": "entertainment", "owner": "shared", "disposition": "keep" }
+      ]
+    },
+    {
+      "id": "c14",
+      "sourceVideo": "IMG_0530.mov",
+      "containerType": "box",
+      "label": "Red Light Mask",
+      "category": "Personal Care / Bathroom",
+      "items": [
+        { "name": "Red light therapy mask", "category": "personal-care", "owner": "shared", "disposition": "keep", "notes": "Bathroom item" }
+      ]
+    },
+    {
+      "id": "c15",
+      "sourceVideo": "IMG_0531.MOV",
+      "containerType": "clear plastic bin",
+      "label": "Holiday Books & Wall Decorations",
+      "category": "Decor — Kids / Holiday",
+      "items": [
+        { "name": "Holiday books", "category": "books", "owner": "Ronin", "disposition": "keep" },
+        { "name": "Picture frames (wall)", "category": "decor", "owner": "Ronin", "disposition": "keep" },
+        { "name": "Art wall decorations", "category": "decor", "owner": "Ronin", "disposition": "keep", "notes": "Mostly for Ronin's room" }
+      ]
+    },
+    {
+      "id": "c16",
+      "sourceVideo": "IMG_0533.mov",
+      "containerType": "black crate",
+      "label": "Speech Therapy Materials & Books",
+      "category": "Work — Speech Therapy",
+      "items": [
+        { "name": "Speech pathology desk supplies", "category": "work-supplies", "owner": "Erin", "disposition": "keep" },
+        { "name": "Pediatric speech therapy materials", "category": "work-supplies", "owner": "Erin", "disposition": "keep" },
+        { "name": "Books for expectant moms (Emily Oster — Cribsheet)", "category": "books", "owner": "Erin", "disposition": "keep" },
+        { "name": "CVC Objects game (speech therapy)", "category": "work-supplies", "owner": "Erin", "disposition": "keep" },
+        { "name": "CliftonStrengths book", "category": "books", "owner": "shared", "disposition": "keep" },
+        { "name": "Flashcards (therapy)", "category": "work-supplies", "owner": "Erin", "disposition": "keep" },
+        { "name": "Binders (therapy)", "category": "work-supplies", "owner": "Erin", "disposition": "keep" },
+        { "name": "Notebooks", "category": "work-supplies", "owner": "Erin", "disposition": "keep" }
+      ]
+    },
+    {
+      "id": "c17",
+      "sourceVideo": "IMG_0533.mov",
+      "containerType": "black crate (continued)",
+      "label": "Games, Art & Misc",
+      "category": "Entertainment / Decor",
+      "items": [
+        { "name": "Children's games", "category": "entertainment", "owner": "Ronin", "disposition": "keep" },
+        { "name": "Doomsday wall art (life countdown)", "category": "decor", "owner": "shared", "disposition": "keep" },
+        { "name": "Books (misc)", "category": "books", "owner": "shared", "disposition": "keep" }
+      ]
+    },
+    {
+      "id": "c18",
+      "sourceVideo": "IMG_0533.mov",
+      "containerType": "loose/bag",
+      "label": "Old Laptop & Paperwork",
+      "category": "Electronics / Documents",
+      "items": [
+        { "name": "Old laptop", "category": "electronics", "owner": "shared", "disposition": "keep" },
+        { "name": "Paperwork (misc)", "category": "documents", "owner": "shared", "disposition": "keep" },
+        { "name": "Hammocks (few)", "category": "outdoor", "owner": "shared", "disposition": "keep" },
+        { "name": "Decorative doll", "category": "decor", "owner": "shared", "disposition": "keep" }
+      ]
+    },
+    {
+      "id": "c19",
+      "sourceVideo": "IMG_0533.mov",
+      "containerType": "box/bag",
+      "label": "Erin's Work — Assessment Materials",
+      "category": "Work — Speech Therapy",
+      "items": [
+        { "name": "Paperwork from Erin's work", "category": "work-supplies", "owner": "Erin", "disposition": "keep" },
+        { "name": "Test materials (assessment)", "category": "work-supplies", "owner": "Erin", "disposition": "keep" },
+        { "name": "Assessment protocol binder", "category": "work-supplies", "owner": "Erin", "disposition": "keep" }
+      ]
+    },
+    {
+      "id": "c20",
+      "sourceVideo": "IMG_0533.mov",
+      "containerType": "bag (Target/Spectrum bags)",
+      "label": "Brendan's Keepsake T-Shirts",
+      "category": "Clothing — Keepsakes",
+      "items": [
+        { "name": "Travel t-shirts — Argentina", "category": "clothing", "owner": "Brendan", "disposition": "keep", "notes": "Sentimental, not to be worn" },
+        { "name": "Travel t-shirts — Asia", "category": "clothing", "owner": "Brendan", "disposition": "keep", "notes": "Sentimental, not to be worn" },
+        { "name": "Colorful patterned textile/blanket", "category": "clothing", "owner": "Brendan", "disposition": "keep" }
+      ]
+    },
+    {
+      "id": "c21",
+      "sourceVideo": "IMG_0533.mov",
+      "containerType": "bag (underneath c20)",
+      "label": "Erin's Keepsake T-Shirts & Sweatshirts",
+      "category": "Clothing — Keepsakes",
+      "items": [
+        { "name": "Keepsake t-shirts and sweatshirts", "category": "clothing", "owner": "Erin", "disposition": "keep", "notes": "Not to be worn, sentimental only" }
+      ]
+    },
+    {
+      "id": "c22",
+      "sourceVideo": "IMG_0534.MOV",
+      "containerType": "cardboard box (Nike)",
+      "label": "Adult Books, Textbooks & Photos",
+      "category": "Books / Photos",
+      "items": [
+        { "name": "Adult books", "category": "books", "owner": "shared", "disposition": "keep" },
+        { "name": "Textbooks", "category": "books", "owner": "shared", "disposition": "keep" },
+        { "name": "Puzzle", "category": "entertainment", "owner": "shared", "disposition": "keep" },
+        { "name": "Photos", "category": "memorabilia", "owner": "shared", "disposition": "keep" },
+        { "name": "Chinese-language pop-up books (Hong Kong, Taipei, etc.)", "category": "books", "owner": "shared", "disposition": "keep" },
+        { "name": "Young Children with Autism (textbook)", "category": "books", "owner": "Erin", "disposition": "keep" }
+      ]
+    },
+    {
+      "id": "c23",
+      "sourceVideo": "IMG_0534.MOV",
+      "containerType": "loose",
+      "label": "Ronin's Infant Play Mat",
+      "category": "Baby — Gear",
+      "items": [
+        { "name": "Baby play gym/mat (infant toy)", "category": "baby-gear", "owner": "Ronin", "disposition": "keep" }
+      ]
+    },
+    {
+      "id": "c24",
+      "sourceVideo": "IMG_0535.MOV",
+      "containerType": "cardboard box (Monos)",
+      "label": "Ronin's Outgrown Infant Clothing & Stuffed Animals",
+      "category": "Baby — Clothing / Toys",
+      "items": [
+        { "name": "Infant clothing (outgrown)", "category": "baby-clothing", "owner": "Ronin", "disposition": "keep" },
+        { "name": "Infant stuffed animals", "category": "baby-toys", "owner": "Ronin", "disposition": "keep" }
+      ]
+    },
+    {
+      "id": "c25",
+      "sourceVideo": "IMG_0535.MOV",
+      "containerType": "box",
+      "label": "Erin's Clothing Memorabilia",
+      "category": "Clothing — Keepsakes",
+      "items": [
+        { "name": "Keepsake clothing (not to be worn or thrown away)", "category": "clothing", "owner": "Erin", "disposition": "keep" },
+        { "name": "Old clothes (sentimental)", "category": "clothing", "owner": "Erin", "disposition": "keep" }
+      ]
+    },
+    {
+      "id": "c26",
+      "sourceVideo": "IMG_0535.MOV",
+      "containerType": "box (unopened)",
+      "label": "Large Squishmallow — Hello Kitty Swiss",
+      "category": "Baby — Toys",
+      "items": [
+        { "name": "Hello Kitty Squishmallow (large stuffed animal)", "category": "baby-toys", "owner": "Ronin", "disposition": "keep" }
+      ]
+    }
+  ],
+  "categorySummary": {
+    "Work — Speech Therapy": { "containers": ["c4", "c10", "c16", "c19"], "owner": "Erin", "itemCount": 25 },
+    "Clothing — Keepsakes": { "containers": ["c1", "c20", "c21", "c25"], "owners": ["Brendan", "Erin", "shared"], "itemCount": 6 },
+    "Decor — Cultural (Asian)": { "containers": ["c6"], "itemCount": 8 },
+    "Decor — General": { "containers": ["c7", "c17"], "itemCount": 7 },
+    "Decor — Kids / Holiday": { "containers": ["c15"], "itemCount": 3 },
+    "Baby — Sentimental": { "containers": ["c12"], "itemCount": 7 },
+    "Baby — Gear & Toys": { "containers": ["c23", "c24", "c26"], "itemCount": 4 },
+    "Baby / Health (Prenatal)": { "containers": ["c8"], "itemCount": 7 },
+    "Bar Supplies": { "containers": ["c11"], "itemCount": 9 },
+    "Books / Photos": { "containers": ["c22"], "itemCount": 6 },
+    "Documents / Household": { "containers": ["c5", "c13"], "itemCount": 8 },
+    "Personal Care": { "containers": ["c3", "c9", "c14"], "itemCount": 6 },
+    "Electronics": { "containers": ["c18"], "itemCount": 4 },
+    "Vehicle Accessories": { "containers": ["c2"], "itemCount": 1 }
+  },
+  "actionItems": [
+    { "action": "REGIFT", "items": "3 LED lights", "container": "c7", "source": "IMG_0529" }
+  ]
+}

@@ -1,0 +1,55 @@
+{
+  "metadata": {
+    "session_id": "ingest-test-002-cafebabe",
+    "source_video": "/tmp/test-kitchen-update.mp4",
+    "room_name": "Kitchen",
+    "duration_seconds": 45,
+    "frames_extracted": 2,
+    "total_items_found": 3,
+    "ingested_at": "2026-03-08T11:00:00.000Z",
+    "whisper_model": "base",
+    "context_window_seconds": 15
+  },
+  "transcript": {
+    "full_text": "OK so I forgot, there's also a cast iron skillet in the bottom cabinet. Oh and I moved the herb pots to the top shelf actually. Also the food processor is actually a KitchenAid mixer, my bad.",
+    "segments": [
+      { "id": 0, "start": 0, "end": 10, "text": "OK so I forgot, there's also a cast iron skillet in the bottom cabinet." },
+      { "id": 1, "start": 10, "end": 22, "text": "Oh and I moved the herb pots to the top shelf actually." },
+      { "id": 2, "start": 22, "end": 35, "text": "Also the food processor is actually a KitchenAid mixer, my bad." }
+    ]
+  },
+  "room": {
+    "name": "Kitchen",
+    "icon": "K",
+    "color": "#5d4037",
+    "width": 5,
+    "depth": 4,
+    "height": 2.7,
+    "pos_x": 0,
+    "pos_y": 0,
+    "pos_z": 0
+  },
+  "frames": [
+    {
+      "image_path": "/tmp/frames2/frame_00001.jpg",
+      "timestamp": "0:00",
+      "transcript_context": "OK so I forgot, there's also a cast iron skillet in the bottom cabinet.",
+      "items": [
+        { "name": "Cast iron skillet", "location": "Bottom cabinet, right side, bottom", "category": "Cookware", "confidence": "high", "source": "both" },
+        { "name": "KitchenAid mixer", "location": "Bottom cabinet, right side, next to blender", "category": "Appliances", "confidence": "high", "source": "both" }
+      ],
+      "scene_description": "Kitchen cabinet open showing cast iron skillet and mixer",
+      "storage_units_visible": ["Bottom cabinet"]
+    },
+    {
+      "image_path": "/tmp/frames2/frame_00002.jpg",
+      "timestamp": "0:15",
+      "transcript_context": "Oh and I moved the herb pots to the top shelf actually.",
+      "items": [
+        { "name": "Herb pots (3)", "location": "Top shelf, right side", "category": "Plants", "confidence": "high", "source": "both" }
+      ],
+      "scene_description": "Top shelf now showing herb pots alongside spice rack",
+      "storage_units_visible": ["Top shelf"]
+    }
+  ]
+}
