@@ -3366,6 +3366,10 @@ function writeStateToURL() {
     params.set('tz', target.z.toFixed(2));
     // Use replaceState to avoid polluting browser history with every drag
     history.replaceState(null, '', '#' + params.toString());
+    // Also notify parent React app so it can mirror state in its URL bar
+    if (isInIframe) {
+      window.parent.postMessage({ type: 'cameraState', hash: params.toString() }, '*');
+    }
   }, 300);
 }
 
@@ -4127,6 +4131,23 @@ window.addEventListener('message', e => {
   }
   if (e.data && e.data.type === 'syncItems') {
     handleSyncItems(e.data.items);
+  }
+  if (e.data && e.data.type === 'setCameraState') {
+    // Restore camera from parent URL hash (sent on iframe init)
+    try {
+      const params = new URLSearchParams(e.data.hash);
+      const r = parseFloat(params.get('r'));
+      const p = parseFloat(params.get('p'));
+      const t = parseFloat(params.get('t'));
+      const tx = parseFloat(params.get('tx'));
+      const ty = parseFloat(params.get('ty'));
+      const tz = parseFloat(params.get('tz'));
+      if (![r, p, t, tx, ty, tz].some(isNaN)) {
+        spherical.set(r, p, t);
+        target.set(tx, ty, tz);
+        updateCamera();
+      }
+    } catch (e) {}
   }
 });
 </script>

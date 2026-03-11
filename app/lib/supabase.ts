@@ -215,12 +215,29 @@ export async function createItems(
 
 export async function updateItem(
   id: string,
-  fields: Partial<Pick<Item, "name" | "location">>
+  fields: Partial<Pick<Item, "name" | "location" | "frame_id">>
 ): Promise<Item> {
   const { data, error } = await supabase
     .from("items")
     .update(fields)
     .eq("id", id)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteItem(id: string): Promise<void> {
+  const { error } = await supabase.from("items").delete().eq("id", id);
+  if (error) throw error;
+}
+
+export async function createItem(
+  item: Omit<Item, "id" | "created_at">
+): Promise<Item> {
+  const { data, error } = await supabase
+    .from("items")
+    .insert(item)
     .select()
     .single();
   if (error) throw error;

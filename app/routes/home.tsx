@@ -101,16 +101,26 @@ export default function HomePage() {
       if (e.data.type === "roomDoubleClicked") {
         navigate(`/rooms/${e.data.roomId}`);
       }
+
+      if (e.data.type === "cameraState" && e.data.hash) {
+        // Mirror iframe camera state into parent URL hash so the address bar is shareable
+        history.replaceState(null, "", "#" + e.data.hash);
+      }
     };
 
     window.addEventListener("message", handler);
     return () => window.removeEventListener("message", handler);
   }, [navigate, setActiveRoomId, to3dId]);
 
-  // When iframe loads, send a ping to trigger ready handshake
+  // When iframe loads, send a ping to trigger ready handshake and restore camera
   const onIframeLoad = useCallback(() => {
     if (iframeRef.current?.contentWindow) {
       iframeRef.current.contentWindow.postMessage({ type: "ping" }, "*");
+      // Restore camera state from parent URL hash if present
+      const hash = window.location.hash.slice(1);
+      if (hash) {
+        iframeRef.current.contentWindow.postMessage({ type: "setCameraState", hash }, "*");
+      }
     }
   }, []);
 

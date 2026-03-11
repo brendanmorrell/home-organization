@@ -497,9 +497,23 @@ body {
 }
 
 .inventory-count {
-  margin-left: auto;
   font-size: 12px;
   color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.inventory-actions-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto;
+}
+
+.btn-add {
+  padding: 7px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 7px;
   white-space: nowrap;
 }
 
@@ -551,7 +565,11 @@ body {
   background: var(--surface2);
 }
 .inventory-table tbody tr.editing {
-  background: var(--accent-glow);
+  background: var(--surface2);
+  border-left: 3px solid var(--accent);
+}
+.inventory-table tbody tr.editing td {
+  padding: 12px 14px;
 }
 
 .item-name-cell {
@@ -647,16 +665,129 @@ body {
   border-radius: 5px;
 }
 
+/* ---- Add / Edit Item Form Panel ---- */
+.add-form-panel {
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  padding: 16px 20px 18px;
+  animation: slideDown 0.15s ease-out;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.add-form-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.add-form-header h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: 0.01em;
+}
+
+.add-form-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.item-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.form-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 140px;
+  flex: 1;
+}
+
+.form-field-wide {
+  flex: 2;
+  min-width: 200px;
+}
+
+.form-field label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-dim);
+}
+
+.form-field.has-error label {
+  color: var(--red);
+}
+
+.field-error {
+  font-size: 11px;
+  color: var(--red);
+  margin-top: 2px;
+}
+
 /* Inline edit inputs */
 .edit-input {
   width: 100%;
-  padding: 6px 10px;
+  padding: 7px 10px;
   border-radius: 6px;
-  border: 1px solid var(--accent);
+  border: 1px solid var(--border);
   background: var(--bg);
   color: var(--text);
   font-size: 13px;
   outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.edit-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(91,141,239,0.15);
+}
+.form-field.has-error .edit-input {
+  border-color: var(--red);
+}
+
+.edit-select {
+  width: 100%;
+  padding: 7px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 13px;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%237c81a0'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 28px;
+}
+.edit-select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(91,141,239,0.15);
+}
+.edit-select:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.form-field.has-error .edit-select {
+  border-color: var(--red);
 }
 
 /* Empty state */
