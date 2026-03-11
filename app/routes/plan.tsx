@@ -50,6 +50,7 @@ const DISPOSAL_ITEMS: PlanItem[] = [
   { id: "i065", name: "Dog ball", zone: "FOYER-COAT-CLOSET", recommendation: "RETURN", reasoning: "Return to friend" },
   { id: "i062", name: "Gift cup for parents", zone: "WORKHALL-DRAWERS-N", recommendation: "GIVE", reasoning: "Give to parents" },
   { id: "i081", name: "Broken-away suitcase", zone: "BABY-CLOSET", recommendation: "REVIEW", reasoning: "Usable but not for important travel" },
+  { id: "i171", name: "Burlap K monogram bag", zone: "GARAGE-BIN-DECOR", recommendation: "REVIEW", reasoning: "Decorative — still wanted?" },
 ];
 
 const TIER_META = {
@@ -60,7 +61,7 @@ const TIER_META = {
 };
 
 const GROUPS: CategoryGroup[] = [
-  // Tier A
+  // Tier A — Daily/Weekly access, inside the house
   { name: "Kitchen Everyday", zone: "KITCHEN-LOWER-CAB / NOOK / ISLAND", tier: "A", items: [
     { id: "i014", name: "Pots and pans", zone: "KITCHEN" },
     { id: "i015", name: "Spices", zone: "KITCHEN" },
@@ -99,13 +100,19 @@ const GROUPS: CategoryGroup[] = [
     { id: "i096", name: "Baby health supplies (labeled: BABYHEALTH)", zone: "BATH" },
     { id: "i146", name: "Curling iron, head massager, hairbrush ← UNPACK c9", zone: "BATH" },
     { id: "i147", name: "Red light therapy mask ← UNPACK c14", zone: "BATH" },
+    { id: "i176", name: "Erin cosmetics, masks & makeup ← UNPACK c21", zone: "BATH" },
   ]},
-  { name: "Laundry", zone: "HALL-LAUNDRY", tier: "A", items: [
+  { name: "Laundry & Linens", zone: "HALL-LAUNDRY / HALL-LINEN", tier: "A", items: [
     { id: "i072", name: "Laundry detergent & supplies", zone: "LAUNDRY" },
     { id: "i073", name: "Stain stick", zone: "LAUNDRY" },
     { id: "i074", name: "Iron", zone: "LAUNDRY" },
+    { id: "i076", name: "Blankets, towels, sheets, bedding", zone: "LINEN" },
+    { id: "i179", name: "Blankets and sheets ← UNPACK c24", zone: "LINEN" },
   ]},
-  // Tier B
+  { name: "Important Documents", zone: "WORKHALL-MID-CAB", tier: "A", items: [
+    { id: "i174", name: "Fireproof box (passports, documents) ← UNPACK c19", zone: "WORKHALL" },
+  ]},
+  // Tier B — Weekly/Monthly, in-house but less convenient
   { name: "Office & Documents", zone: "WORKHALL-DRAWERS-S / MID-CAB", tier: "B", items: [
     { id: "i057", name: "Stationery (notes, letters, envelopes)", zone: "WORKHALL" },
     { id: "i059", name: "Tax documents", zone: "WORKHALL" },
@@ -136,7 +143,12 @@ const GROUPS: CategoryGroup[] = [
     { id: "i043", name: "Scissors", zone: "KITCHEN" },
     { id: "i045", name: "Sharpies", zone: "KITCHEN" },
   ]},
-  // Tier C
+  { name: "Home Fragrance & Candles", zone: "KITCHEN-UPPER-CAB", tier: "B", items: [
+    { id: "i027", name: "Light bulbs and candles", zone: "KITCHEN" },
+    { id: "i031", name: "Tea candles", zone: "KITCHEN" },
+    { id: "i175", name: "Candles (box) ← UNPACK c20, consolidate", zone: "KITCHEN" },
+  ]},
+  // Tier C — Garage shelves, moderate access
   { name: "Erin's Work — Speech Therapy", zone: "GARAGE-SHELF-NORTH", tier: "C", items: [
     { id: "i120", name: "Flashcards, notebooks, therapy toys, puppets", zone: "GARAGE" },
     { id: "i121", name: "Felt letterboard, games, Velcro dots, paints", zone: "GARAGE" },
@@ -161,7 +173,30 @@ const GROUPS: CategoryGroup[] = [
     { id: "i138", name: "Neti pot, ovulation tests, pregnancy tests, thermometer", zone: "GARAGE" },
     { id: "i145", name: "Intubation tubes (x2), personal items", zone: "GARAGE" },
   ]},
-  // Tier D
+  { name: "Asian Kitchen", zone: "GARAGE-SHELF-NORTH", tier: "C", items: [
+    { id: "i153", name: "Trivet", zone: "GARAGE" },
+    { id: "i154", name: "Bamboo steamer", zone: "GARAGE" },
+    { id: "i155", name: "Taiwan beer glasses", zone: "GARAGE" },
+    { id: "i156", name: "Tea cups", zone: "GARAGE" },
+    { id: "i157", name: "Kochuramunal (Korean ramen pot)", zone: "GARAGE" },
+  ]},
+  { name: "Photo Supplies", zone: "GARAGE-SHELF-NORTH", tier: "C", items: [
+    { id: "i158", name: "Polaroid camera (white case)", zone: "GARAGE" },
+    { id: "i159", name: "Polaroid pictures", zone: "GARAGE" },
+    { id: "i160", name: "Nikon camera (black bag)", zone: "GARAGE" },
+  ]},
+  { name: "Desk & Office Supplies (Overflow)", zone: "GARAGE-SHELF-NORTH", tier: "C", items: [
+    { id: "i163", name: "Peel & stick envelopes (#10)", zone: "GARAGE" },
+    { id: "i164", name: "Copy paper", zone: "GARAGE" },
+    { id: "i165", name: "Laminator", zone: "GARAGE" },
+    { id: "i166", name: "Scotch laminating pouches", zone: "GARAGE" },
+    { id: "i167", name: "Thank you notes", zone: "GARAGE" },
+  ]},
+  { name: "Picture Frames & Wedding", zone: "GARAGE-SHELF-WEST", tier: "C", items: [
+    { id: "i172", name: "Picture frames (multiple)", zone: "GARAGE" },
+    { id: "i173", name: "Wedding hand-fasting ceremony knots", zone: "GARAGE" },
+  ]},
+  // Tier D — Basement platforms, rarely accessed
   { name: "Keepsake Clothing", zone: "BSMT-RAISED-W", tier: "D", items: [
     { id: "i124", name: "Sentimental t-shirts (shared)", zone: "BASEMENT" },
     { id: "i125", name: "Brendan's travel t-shirts", zone: "BASEMENT" },
@@ -173,11 +208,15 @@ const GROUPS: CategoryGroup[] = [
     { id: "i136", name: "Outgrown infant clothing + infant stuffed animals", zone: "BASEMENT" },
     { id: "i137", name: "Large Hello Kitty Squishmallow (unopened)", zone: "BASEMENT" },
     { id: "i135", name: "Baby play gym/mat", zone: "BASEMENT" },
+    { id: "i178", name: "Sentimental items — baby keepsakes (Ronin & Brendan) ← from c23", zone: "BASEMENT" },
   ]},
   { name: "Décor — Asian & Seasonal", zone: "BSMT-RAISED-E", tier: "D", items: [
     { id: "i128", name: "Asian decorations (name stamp, rice cooker candle, vase)", zone: "BASEMENT" },
     { id: "i133", name: "Holiday books, picture frames, art wall decorations", zone: "BASEMENT" },
     { id: "i131", name: "Picture frame + bubble-wrapped items", zone: "BASEMENT" },
+    { id: "i161", name: "Asian lanterns (collapsible paper) ← from garage", zone: "BASEMENT" },
+    { id: "i162", name: "String lights / decoration lights ← from garage", zone: "BASEMENT" },
+    { id: "i177", name: "Vases (box) ← from c22", zone: "BASEMENT" },
   ]},
 ];
 
@@ -188,28 +227,43 @@ const CONTAINERS: ContainerSpec[] = [
   { type: "Clear Bin (medium)", label: "ELECTRONICS", zone: "GARAGE-SHELF-NE", items: "i106–i119 (14 items)" },
   { type: "Clear Bin (medium)", label: "BAR DECOR & EXTRAS", zone: "GARAGE-SHELF-NORTH", items: "i140" },
   { type: "Clear Bin (medium)", label: "BOOKS", zone: "GARAGE-SHELF-WEST", items: "i051, i132, i141, i142" },
-  { type: "Clear Bin (medium)", label: "DÉCOR - SEASONAL", zone: "BSMT-RAISED-E", items: "i128, i131, i133" },
+  { type: "Clear Bin (medium)", label: "DÉCOR - SEASONAL", zone: "BSMT-RAISED-E", items: "i128, i131, i133, i161, i162, i176 (lanterns, lights, vases)" },
   { type: "Black Small Crate", label: "HEALTH & MEDICAL", zone: "GARAGE-SHELF-WEST", items: "i138, i145" },
+  { type: "Clear Bin (medium)", label: "ASIAN KITCHEN", zone: "GARAGE-SHELF-NORTH", items: "Trivet, bamboo steamer, Taiwan glasses, tea cups, ramen pot" },
+  { type: "Clear Bin (small)", label: "PHOTO SUPPLIES", zone: "GARAGE-SHELF-NORTH", items: "Polaroid camera, Nikon camera, Polaroid pictures" },
+  { type: "Clear Bin (medium)", label: "DESK SUPPLIES", zone: "GARAGE-SHELF-NORTH", items: "Envelopes, copy paper, laminator, pouches, thank you notes" },
+  { type: "Clear Bin (medium)", label: "FRAMES & WEDDING", zone: "GARAGE-SHELF-WEST", items: "Picture frames, hand-fasting knots, bathroom decor" },
 ];
 
 const MOVES: MoveStep[] = [
+  // Unpack into house
   { id: 1, description: "Curling iron, hairbrush, etc.", from: "box c9", to: "BATH-CLOSET", category: "unpack" },
   { id: 2, description: "Red light therapy mask", from: "box c14", to: "BATH-CLOSET", category: "unpack" },
   { id: 3, description: "Gift wrapping materials", from: "box c5", to: "KITCHEN-LOWER-CAB (consolidate with i053)", category: "unpack" },
   { id: 4, description: "Window garden herb kit", from: "box c7", to: "KITCHEN-NOOK-SOUTH", category: "unpack" },
   { id: 5, description: "House docs, wedding stuff, games", from: "box c13", to: "WORKHALL-DRAWERS-S + LIVING-ENTRY-SHELF", category: "unpack" },
   { id: 6, description: "External hard drive + USB", from: "UNASSIGNED", to: "WORKHALL-MID-CAB", category: "unpack" },
+  { id: 18, description: "Fireproof documents box (passports!)", from: "box c19", to: "WORKHALL-MID-CAB (secure, accessible)", category: "unpack" },
+  { id: 19, description: "Erin's cosmetics, masks & makeup", from: "box c21", to: "BATH-CLOSET (with existing makeup)", category: "unpack" },
+  { id: 20, description: "Blankets and sheets", from: "box c24", to: "HALL-LINEN (consolidate with i076)", category: "unpack" },
+  { id: 21, description: "Candles", from: "box c20", to: "KITCHEN-UPPER-CAB (consolidate with i027, i031)", category: "unpack" },
+  // Rearrange within house
   { id: 7, description: "Old baby stuff & clothes", from: "LIVING-HALL-CLOSET", to: "FOYER-COAT-CLOSET", category: "rearrange" },
   { id: 8, description: "Stroller", from: "FOYER-COAT-CLOSET", to: "BSMT-RAISED-E", category: "rearrange" },
   { id: 9, description: "Cooking books", from: "KITCHEN-LOWER-CAB", to: "BOOKS bin → GARAGE-SHELF-WEST", category: "rearrange" },
+  // Repack into labeled containers
   { id: 10, description: "Speech therapy items (boxes c4/c10/c16/c19)", from: "Packed boxes", to: "SPEECH THERAPY bin → GARAGE-SHELF-NORTH", category: "repack" },
   { id: 11, description: "Electronics (14 items)", from: "Bags", to: "ELECTRONICS bin → GARAGE-SHELF-NE", category: "repack" },
   { id: 12, description: "Bar extras (box c11)", from: "box c11", to: "BAR DECOR bin → GARAGE-SHELF-NORTH", category: "repack" },
   { id: 13, description: "Books (boxes c22/c17)", from: "Packed boxes", to: "BOOKS bin → GARAGE-SHELF-WEST", category: "repack" },
   { id: 14, description: "Health items (boxes c8/c3)", from: "Packed boxes", to: "HEALTH & MEDICAL crate → GARAGE-SHELF-WEST", category: "repack" },
   { id: 15, description: "Keepsake clothes (boxes c1/c20/c21/c25)", from: "Packed boxes", to: "KEEPSAKE CLOTHING bin → BSMT-RAISED-W", category: "repack" },
-  { id: 16, description: "Baby keepsakes (boxes c12/c23/c24/c26)", from: "Packed boxes", to: "BABY KEEPSAKES bin → BSMT-RAISED-W", category: "repack" },
-  { id: 17, description: "Décor (boxes c6/c7/c15)", from: "Packed boxes", to: "DÉCOR - SEASONAL bin → BSMT-RAISED-E", category: "repack" },
+  { id: 16, description: "Baby keepsakes (incl. c23 sentimental items)", from: "Packed boxes", to: "BABY KEEPSAKES bin → BSMT-RAISED-W", category: "repack" },
+  { id: 17, description: "Décor + lanterns + vases (c6/c7/c15/c22)", from: "Packed boxes", to: "DÉCOR - SEASONAL bin → BSMT-RAISED-E", category: "repack" },
+  { id: 22, description: "Asian kitchen items into labeled bin", from: "GARAGE-BIN-ASIANKITCHEN", to: "ASIAN KITCHEN bin → GARAGE-SHELF-NORTH", category: "repack" },
+  { id: 23, description: "Photo supplies into labeled bin", from: "GARAGE-BIN-PHOTO", to: "PHOTO SUPPLIES bin → GARAGE-SHELF-NORTH", category: "repack" },
+  { id: 24, description: "Desk supplies into labeled bin", from: "GARAGE-BIN-DESK", to: "DESK SUPPLIES bin → GARAGE-SHELF-NORTH", category: "repack" },
+  { id: 25, description: "Picture frames + wedding knots into bin", from: "GARAGE-BIN-FRAMES", to: "FRAMES & WEDDING bin → GARAGE-SHELF-WEST", category: "repack" },
 ];
 
 type TabKey = "overview" | "tiers" | "containers" | "moves" | "disposal";
@@ -314,7 +368,7 @@ export default function PlanPage() {
                   <div className="flow-num">2</div>
                   <div className="flow-text">
                     <strong>Unpack Boxes</strong>
-                    <span>6 items to unpack from moving boxes into the house</span>
+                    <span>10 items to unpack from moving boxes into the house</span>
                   </div>
                 </div>
                 <div className="flow-arrow">→</div>
@@ -330,7 +384,7 @@ export default function PlanPage() {
                   <div className="flow-num">4</div>
                   <div className="flow-text">
                     <strong>Repack into Bins</strong>
-                    <span>8 labeled containers for garage & basement storage</span>
+                    <span>12 labeled containers for garage & basement storage</span>
                   </div>
                 </div>
               </div>
@@ -345,8 +399,12 @@ export default function PlanPage() {
                   <span className="count-label">Large Black/Yellow Bins</span>
                 </div>
                 <div className="container-count-card">
-                  <span className="count-num">4</span>
+                  <span className="count-num">7</span>
                   <span className="count-label">Clear Plastic Bins (medium)</span>
+                </div>
+                <div className="container-count-card">
+                  <span className="count-num">1</span>
+                  <span className="count-label">Clear Plastic Bin (small)</span>
                 </div>
                 <div className="container-count-card">
                   <span className="count-num">1</span>

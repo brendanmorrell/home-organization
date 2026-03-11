@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Outlet, Link, useNavigate, useLocation } from "react-router";
+import { Outlet, Link, useNavigate, useLocation, useSearchParams } from "react-router";
 import {
   fetchAllRoomsWithFrames,
   searchItemsLocal,
@@ -9,16 +9,21 @@ import {
 
 export default function AppLayout() {
   const [rooms, setRooms] = useState<RoomWithFrames[]>([]);
-  const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [activeRoomId, setActiveRoomId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const searchRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const searchTimeout = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const urlTimeout = useRef<ReturnType<typeof setTimeout>>(undefined);
 
-  // Load rooms on mount — Supabase + local inventory.json fallback
+  // Search query: local state for instant input, URL (?q=) for persistence
+  const [inputValue, setInputValue] = useState(searchParams.get("q") || "");
+  const searchQuery = searchParams.get("q") || "";
+
+  // Load rooms on mount — Supabase is source of truth, inventory.json as offline fallback only
   useEffect(() => {
     async function loadData() {
       try {
@@ -41,10 +46,20 @@ export default function AppLayout() {
                 'KITCHEN-NOOK': 'Kitchen', 'KITCHEN-NOOK-SOUTH': 'Kitchen',
                 'GARAGE-BIN-SPEECH': 'Garage', 'GARAGE-BIN-BARDECOR': 'Garage',
                 'GARAGE-BIN-ELECTRONICS': 'Garage', 'GARAGE-BIN-BOOKS': 'Garage',
-                'GARAGE-BIN-HEALTH': 'Garage', 'PACKED-BOX:c18': 'Garage',
+                'GARAGE-BIN-HEALTH': 'Garage', 'GARAGE-BIN-ASIANKITCHEN': 'Garage',
+                'GARAGE-BIN-PHOTO': 'Garage', 'GARAGE-BIN-ASIANDECOR': 'Garage',
+                'GARAGE-BIN-DESK': 'Garage', 'GARAGE-BIN-DECOR': 'Garage',
+                'GARAGE-BIN-FRAMES': 'Garage',
+                'GARAGE-SHELF-WEST': 'Garage', 'GARAGE-SHELF-NORTH': 'Garage',
+                'GARAGE-SHELF-NE': 'Garage', 'GARAGE-PEGBOARD': 'Garage',
+                'GARAGE-HOOKS-WEST': 'Garage', 'GARAGE-FLOOR': 'Garage',
+                'PACKED-BOX:c18': 'Garage',
                 'BSMT-RAISED-W': 'Basement', 'BSMT-RAISED-E': 'Basement',
                 'BSMT-BIN-CLOTHING': 'Basement', 'BSMT-BIN-BABY': 'Basement',
                 'BSMT-BIN-DECOR': 'Basement',
+                'BSMT-SINK-AREA': 'Basement', 'BSMT-CLOTHES': 'Basement',
+                'BSMT-UNDERSTAIR': 'Basement', 'BSMT-PAINT-CLOSET': 'Basement',
+                'BSMT-SHELVING-EW': 'Basement', 'BSMT-SHELVING-NS': 'Basement',
                 'WORKHALL-DRAWERS-N': 'Work Hallway', 'WORKHALL-DRAWERS-S': 'Work Hallway',
                 'WORKHALL-MID-CAB': 'Work Hallway', 'WORKHALL-SOUTH-CAB': 'Work Hallway',
                 'FOYER-COAT-CLOSET': 'Foyer',
@@ -189,29 +204,46 @@ export default function AppLayout() {
     return () => window.removeEventListener("keydown", handler);
   }, []);
 
-  // Debounced search — runs client-side against in-memory rooms
+  // Handle typing: update input instantly, debounce search + URL update
   const handleSearch = useCallback(
     (query: string) => {
-      setSearchQuery(query);
+      setInputValue(query); // instant — keeps input responsive
 
       if (searchTimeout.current) clearTimeout(searchTimeout.current);
+      if (urlTimeout.current) clearTimeout(urlTimeout.current);
 
       if (!query.trim()) {
         setSearchResults([]);
+        // Clear URL param immediately when input is cleared
+        setSearchParams(prev => { prev.delete("q"); return prev; }, { replace: true });
         return;
       }
 
+      // Debounce: search after 250ms of no typing
       searchTimeout.current = setTimeout(() => {
         const results = searchItemsLocal(rooms, query);
         setSearchResults(results);
-        // If we're on a room page but results are in other rooms, go home
         if (results.length > 0 && location.pathname !== "/") {
-          navigate("/");
+          navigate("/?q=" + encodeURIComponent(query));
         }
-      }, 200);
+      }, 250);
+
+      // Debounce URL update a bit longer (500ms) to avoid history churn
+      urlTimeout.current = setTimeout(() => {
+        setSearchParams(prev => { prev.set("q", query); return prev; }, { replace: true });
+      }, 500);
     },
-    [rooms, location.pathname, navigate]
+    [rooms, location.pathname, navigate, setSearchParams]
   );
+
+  // Run search when rooms load (handles page refresh with ?q= in URL)
+  useEffect(() => {
+    if (rooms.length > 0 && searchQuery.trim()) {
+      setInputValue(searchQuery);
+      const results = searchItemsLocal(rooms, searchQuery);
+      setSearchResults(results);
+    }
+  }, [rooms]); // Only re-run when rooms data loads
 
   const totalItems = rooms.reduce(
     (sum, r) => sum + r.frames.reduce((s, f) => s + f.items.length, 0),
@@ -297,26 +329,28 @@ export default function AppLayout() {
 
       {/* Main area */}
       <div className="main-content">
-        {/* Top bar */}
-        <div className="topbar">
-          <div className="search-box">
-            <span className="search-icon">&#x1F50D;</span>
-            <input
-              ref={searchRef}
-              type="text"
-              placeholder='Search for anything... (Cmd+K)'
-              value={searchQuery}
-              onChange={(e) => handleSearch(e.target.value)}
-            />
+        {/* Top bar — only show on home (3D/grid) view */}
+        {location.pathname === "/" && (
+          <div className="topbar">
+            <div className="search-box">
+              <span className="search-icon">&#x1F50D;</span>
+              <input
+                ref={searchRef}
+                type="text"
+                placeholder='Search for anything... (Cmd+K)'
+                value={inputValue}
+                onChange={(e) => handleSearch(e.target.value)}
+              />
+            </div>
+            {searchResults.length > 0 && (
+              <span className="result-count">
+                {searchResults.length}{" "}
+                {searchResults.length === 1 ? "match" : "matches"} across{" "}
+                {new Set(searchResults.map((r) => r.room_id)).size} rooms
+              </span>
+            )}
           </div>
-          {searchResults.length > 0 && (
-            <span className="result-count">
-              {searchResults.length}{" "}
-              {searchResults.length === 1 ? "match" : "matches"} across{" "}
-              {new Set(searchResults.map((r) => r.room_id)).size} rooms
-            </span>
-          )}
-        </div>
+        )}
 
         {/* Route content */}
         <div className="content-area">

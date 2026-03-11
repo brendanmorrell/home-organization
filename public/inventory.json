@@ -1,7 +1,7 @@
 {
   "meta": {
-    "version": 2,
-    "updatedAt": "2026-03-11T16:14:24.896Z",
+    "version": 4,
+    "updatedAt": "2026-03-11T19:41:04.694Z",
     "sources": [
       "IMG_0529.mov",
       "IMG_0530.mov",
@@ -11,10 +11,13 @@
       "IMG_0535.mov",
       "IMG_5349.mov",
       "IMG_5350.mov",
-      "IMG_5351.mov"
+      "IMG_5351.mov",
+      "IMG_0536.mov",
+      "IMG_0538.mov",
+      "supabase-seed"
     ],
     "notes": "Unified home inventory. 'zone' = current storage zone label from house-3d.html. 'PACKED-BOX:cN' = in a packed moving box. 'UNASSIGNED' = not yet placed.",
-    "itemCount": 147
+    "itemCount": 177
   },
   "items": [
     {
@@ -1070,7 +1073,15 @@
     },
     {
       "id": "i150",
-      "name": "Charcoal lighter fluid",
+      "name": "Charcoal",
+      "category": "outdoor-cooking",
+      "zone": "BALCONY-DECKBOX",
+      "source": "user-input",
+      "notes": "Stored in deck box"
+    },
+    {
+      "id": "i198",
+      "name": "Lighter fluid",
       "category": "outdoor-cooking",
       "zone": "BALCONY-DECKBOX",
       "source": "user-input",
@@ -1091,6 +1102,344 @@
       "zone": "BALCONY-DECKBOX",
       "source": "user-input",
       "notes": "Stored in deck box"
+    },
+    {
+      "id": "i153",
+      "name": "Trivet",
+      "category": "kitchen-asian",
+      "zone": "GARAGE-BIN-ASIANKITCHEN",
+      "source": "IMG_0536"
+    },
+    {
+      "id": "i154",
+      "name": "Bamboo steamer",
+      "category": "kitchen-asian",
+      "zone": "GARAGE-BIN-ASIANKITCHEN",
+      "source": "IMG_0536"
+    },
+    {
+      "id": "i155",
+      "name": "Taiwan beer glasses",
+      "category": "kitchen-asian",
+      "zone": "GARAGE-BIN-ASIANKITCHEN",
+      "source": "IMG_0536"
+    },
+    {
+      "id": "i156",
+      "name": "Tea cups",
+      "category": "kitchen-asian",
+      "zone": "GARAGE-BIN-ASIANKITCHEN",
+      "source": "IMG_0536"
+    },
+    {
+      "id": "i157",
+      "name": "Kochuramunal (Korean ramen pot)",
+      "category": "kitchen-asian",
+      "zone": "GARAGE-BIN-ASIANKITCHEN",
+      "source": "IMG_0536",
+      "notes": "Transcribed as coach ramal"
+    },
+    {
+      "id": "i158",
+      "name": "Polaroid camera (white case)",
+      "category": "photo-supplies",
+      "zone": "GARAGE-BIN-PHOTO",
+      "source": "IMG_0536"
+    },
+    {
+      "id": "i159",
+      "name": "Polaroid pictures",
+      "category": "photo-supplies",
+      "zone": "GARAGE-BIN-PHOTO",
+      "source": "IMG_0536"
+    },
+    {
+      "id": "i160",
+      "name": "Nikon camera (black bag)",
+      "category": "photo-supplies",
+      "zone": "GARAGE-BIN-PHOTO",
+      "source": "IMG_0536"
+    },
+    {
+      "id": "i161",
+      "name": "Asian lanterns (collapsible paper)",
+      "category": "decor-asian",
+      "zone": "GARAGE-BIN-ASIANDECOR",
+      "source": "IMG_0536"
+    },
+    {
+      "id": "i162",
+      "name": "String lights / decoration lights",
+      "category": "decor",
+      "zone": "GARAGE-BIN-ASIANDECOR",
+      "source": "IMG_0536"
+    },
+    {
+      "id": "i163",
+      "name": "Peel & stick envelopes (#10)",
+      "category": "office",
+      "zone": "GARAGE-BIN-DESK",
+      "source": "IMG_0536"
+    },
+    {
+      "id": "i164",
+      "name": "Copy paper",
+      "category": "office",
+      "zone": "GARAGE-BIN-DESK",
+      "source": "IMG_0536"
+    },
+    {
+      "id": "i165",
+      "name": "Laminator",
+      "category": "office",
+      "zone": "GARAGE-BIN-DESK",
+      "source": "IMG_0536"
+    },
+    {
+      "id": "i166",
+      "name": "Scotch laminating pouches",
+      "category": "office",
+      "zone": "GARAGE-BIN-DESK",
+      "source": "IMG_0536"
+    },
+    {
+      "id": "i167",
+      "name": "Thank you notes",
+      "category": "office",
+      "zone": "GARAGE-BIN-DESK",
+      "source": "IMG_0536"
+    },
+    {
+      "id": "i168",
+      "name": "Bathroom decoration bag",
+      "category": "decor-bathroom",
+      "zone": "GARAGE-BIN-DECOR",
+      "source": "IMG_0536"
+    },
+    {
+      "id": "i169",
+      "name": "Decorative vase",
+      "category": "decor",
+      "zone": "GARAGE-BIN-DECOR",
+      "source": "IMG_0536"
+    },
+    {
+      "id": "i170",
+      "name": "Decorative mug (Black Cat Coffee)",
+      "category": "decor",
+      "zone": "GARAGE-BIN-DECOR",
+      "source": "IMG_0536"
+    },
+    {
+      "id": "i171",
+      "name": "Burlap K monogram bag",
+      "category": "decor",
+      "zone": "GARAGE-BIN-DECOR",
+      "source": "IMG_0536"
+    },
+    {
+      "id": "i172",
+      "name": "Picture frames (multiple)",
+      "category": "decor",
+      "zone": "GARAGE-BIN-FRAMES",
+      "source": "IMG_0536"
+    },
+    {
+      "id": "i173",
+      "name": "Wedding hand-fasting ceremony knots",
+      "category": "memorabilia",
+      "zone": "GARAGE-BIN-FRAMES",
+      "source": "IMG_0536",
+      "notes": "Sentimental — wedding ceremony item"
+    },
+    {
+      "id": "i174",
+      "name": "Fireproof box (important documents, passports)",
+      "category": "documents-important",
+      "zone": "PACKED-BOX:c19",
+      "source": "IMG_0538",
+      "notes": "Black fireproof box — critical documents and passports"
+    },
+    {
+      "id": "i175",
+      "name": "Candles (box labeled CANDLES)",
+      "category": "home-fragrance",
+      "zone": "PACKED-BOX:c20",
+      "source": "IMG_0538"
+    },
+    {
+      "id": "i176",
+      "name": "Erin cosmetics, masks & makeup",
+      "category": "personal-care",
+      "zone": "PACKED-BOX:c21",
+      "source": "IMG_0538",
+      "notes": "Box labeled ERIN COSMETICS etc"
+    },
+    {
+      "id": "i177",
+      "name": "Vases (box)",
+      "category": "decor",
+      "zone": "PACKED-BOX:c22",
+      "source": "IMG_0538"
+    },
+    {
+      "id": "i178",
+      "name": "Sentimental items — baby clothes & keepsakes (Ronin & Brendan)",
+      "category": "baby-memorabilia",
+      "zone": "PACKED-BOX:c23",
+      "source": "IMG_0538",
+      "notes": "Newborn keepsakes for both children"
+    },
+    {
+      "id": "i179",
+      "name": "Blankets and sheets (box)",
+      "category": "linens",
+      "zone": "PACKED-BOX:c24",
+      "source": "IMG_0538"
+    },
+    {
+      "id": "i180",
+      "name": "Baking sheets",
+      "category": "kitchenware",
+      "zone": "KITCHEN-LOWER-CAB",
+      "source": "supabase-seed",
+      "notes": "Vertical organizer, next to oven"
+    },
+    {
+      "id": "i181",
+      "name": "Cast iron skillet",
+      "category": "kitchenware",
+      "zone": "KITCHEN-LOWER-CAB",
+      "source": "supabase-seed",
+      "notes": "Lower cabinet, under island"
+    },
+    {
+      "id": "i182",
+      "name": "Dutch oven",
+      "category": "kitchenware",
+      "zone": "KITCHEN-LOWER-CAB",
+      "source": "supabase-seed",
+      "notes": "Lower cabinet, under island"
+    },
+    {
+      "id": "i183",
+      "name": "Knife block",
+      "category": "kitchenware",
+      "zone": "KITCHEN-NOOK",
+      "source": "supabase-seed",
+      "notes": "Counter, right of stove"
+    },
+    {
+      "id": "i184",
+      "name": "Spice rack",
+      "category": "kitchenware",
+      "zone": "KITCHEN-UPPER-CAB",
+      "source": "supabase-seed",
+      "notes": "Upper cabinet, right of stove"
+    },
+    {
+      "id": "i185",
+      "name": "Stand mixer",
+      "category": "kitchenware",
+      "zone": "KITCHEN-NOOK",
+      "source": "supabase-seed",
+      "notes": "Counter, left of stove"
+    },
+    {
+      "id": "i186",
+      "name": "Bicycle",
+      "category": "outdoor",
+      "zone": "GARAGE-HOOKS-WEST",
+      "source": "supabase-seed",
+      "notes": "Wall mount, left side"
+    },
+    {
+      "id": "i187",
+      "name": "Camping tent",
+      "category": "outdoor",
+      "zone": "GARAGE-SHELF-NORTH",
+      "source": "supabase-seed",
+      "notes": "Top shelf, back wall"
+    },
+    {
+      "id": "i188",
+      "name": "Cooler",
+      "category": "outdoor",
+      "zone": "GARAGE-FLOOR",
+      "source": "supabase-seed",
+      "notes": "Floor, under shelf"
+    },
+    {
+      "id": "i189",
+      "name": "Extension cords",
+      "category": "tools",
+      "zone": "BSMT-UNDERSTAIR",
+      "source": "supabase-seed",
+      "notes": "Hook by door"
+    },
+    {
+      "id": "i190",
+      "name": "Holiday tablecloths",
+      "category": "household",
+      "zone": "BSMT-BIN-DECOR",
+      "source": "supabase-seed",
+      "notes": "Bottom cabinet, middle shelf"
+    },
+    {
+      "id": "i191",
+      "name": "Power drill",
+      "category": "tools",
+      "zone": "BSMT-SHELVING-EW",
+      "source": "supabase-seed",
+      "notes": "Pegboard wall, top row"
+    },
+    {
+      "id": "i192",
+      "name": "Screwdriver set",
+      "category": "tools",
+      "zone": "BSMT-SHELVING-EW",
+      "source": "supabase-seed",
+      "notes": "Pegboard wall, middle row"
+    },
+    {
+      "id": "i193",
+      "name": "Serving bowls",
+      "category": "kitchenware",
+      "zone": "BSMT-BIN-DECOR",
+      "source": "supabase-seed",
+      "notes": "Bottom cabinet, right side"
+    },
+    {
+      "id": "i194",
+      "name": "Tea tray",
+      "category": "kitchenware",
+      "zone": "BSMT-BIN-DECOR",
+      "source": "supabase-seed",
+      "notes": "Bottom cabinet, left side"
+    },
+    {
+      "id": "i195",
+      "name": "Extra pillows",
+      "category": "bedding",
+      "zone": "MASTER-CLOSET-E",
+      "source": "supabase-seed",
+      "notes": "Top shelf, closet"
+    },
+    {
+      "id": "i196",
+      "name": "Luggage set",
+      "category": "travel",
+      "zone": "MASTER-CLOSET-E",
+      "source": "supabase-seed",
+      "notes": "Floor, back of closet"
+    },
+    {
+      "id": "i197",
+      "name": "Winter blankets",
+      "category": "bedding",
+      "zone": "MASTER-CLOSET-E",
+      "source": "supabase-seed",
+      "notes": "Second shelf, closet"
     }
   ]
 }

@@ -63,6 +63,27 @@ export default function HomePage() {
         if (iframeRef.current?.contentWindow) {
           iframeRef.current.contentWindow.postMessage({ type: "readyAck" }, "*");
         }
+        // Push all Supabase items into the 3D model (replaces inventory.json)
+        if (rooms.length > 0 && iframeRef.current?.contentWindow) {
+          const items: { name: string; zone: string; notes: string }[] = [];
+          rooms.forEach(room => {
+            room.frames.forEach(frame => {
+              frame.items.forEach(item => {
+                // location is stored as "ZONE_LABEL | notes" or just zone label
+                const parts = (item.location || "").split("|");
+                const zone = (parts[0] || "").trim();
+                const notes = (parts[1] || "").trim();
+                if (zone) {
+                  items.push({ name: item.name, zone, notes });
+                }
+              });
+            });
+          });
+          iframeRef.current.contentWindow.postMessage(
+            { type: "syncItems", items },
+            "*"
+          );
+        }
         // Send any pending fly-to
         if (pendingFlyRef.current && iframeRef.current?.contentWindow) {
           iframeRef.current.contentWindow.postMessage(
@@ -93,6 +114,29 @@ export default function HomePage() {
     }
   }, []);
 
+  // Push Supabase items to 3D iframe when rooms data arrives (handles case where
+  // rooms load after iframe ready event)
+  useEffect(() => {
+    if (!iframeReady || rooms.length === 0 || !iframeRef.current?.contentWindow) return;
+    const items: { name: string; zone: string; notes: string }[] = [];
+    rooms.forEach(room => {
+      room.frames.forEach(frame => {
+        frame.items.forEach(item => {
+          const parts = (item.location || "").split("|");
+          const zone = (parts[0] || "").trim();
+          const notes = (parts[1] || "").trim();
+          if (zone) {
+            items.push({ name: item.name, zone, notes });
+          }
+        });
+      });
+    });
+    iframeRef.current.contentWindow.postMessage(
+      { type: "syncItems", items },
+      "*"
+    );
+  }, [rooms, iframeReady]);
+
   // When activeRoomId changes (e.g. sidebar click), fly the 3D camera
   useEffect(() => {
     if (iframeReady && activeRoomId && iframeRef.current?.contentWindow) {
@@ -103,23 +147,33 @@ export default function HomePage() {
     }
   }, [activeRoomId, iframeReady, to3dId]);
 
-  // When search query changes, send it to the 3D iframe for furniture-level search
+  // When search results change, send zone info to the 3D iframe
   useEffect(() => {
     if (iframeReady && iframeRef.current?.contentWindow) {
-      if (searchQuery.trim()) {
-        // Let the 3D model run its own search — flies to furniture, shows flyout, pulses
+      if (searchResults.length > 0) {
+        // Extract zone labels from item locations (format: "ZONE_LABEL | notes")
+        const zones = [...new Set(
+          searchResults
+            .map((r) => r.item_location?.split("|")[0].trim())
+            .filter((z) => z && z !== "undefined")
+        )];
+        const itemNames = searchResults.map((r) => r.item_name);
+        // Determine fallback room from first result (in case 3D can't find item)
+        const fallbackRoomId = to3dId(searchResults[0].room_id);
+        // Send zone-based highlighting (single message to avoid animation conflicts)
+        // Include fallbackRoomId so 3D can fly to the room even if item isn't in its data
         iframeRef.current.contentWindow.postMessage(
-          { type: "searchItem", query: searchQuery },
+          { type: "highlightZones", zones, itemNames, fallbackRoomId },
           "*"
         );
-      } else {
+      } else if (!searchQuery.trim()) {
         iframeRef.current.contentWindow.postMessage(
           { type: "clearSearch" },
           "*"
         );
       }
     }
-  }, [searchQuery, iframeReady]);
+  }, [searchResults, searchQuery, iframeReady]);
 
   // Click on a search result → fly to that room
   const handleSearchResultClick = useCallback(

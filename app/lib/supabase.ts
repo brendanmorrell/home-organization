@@ -144,8 +144,9 @@ export function searchItemsLocal(
   for (const room of rooms) {
     for (const frame of room.frames) {
       for (const item of frame.items) {
+        if (!item.name) continue; // skip items with null/undefined names
         const nameMatch = item.name.toLowerCase().includes(q);
-        const locMatch = item.location.toLowerCase().includes(q);
+        const locMatch = (item.location || '').toLowerCase().includes(q);
         if (nameMatch || locMatch) {
           // Simple relevance: exact start match > contains
           let rank = 0;
