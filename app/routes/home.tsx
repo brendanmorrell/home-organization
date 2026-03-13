@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useOutletContext, useNavigate, useSearchParams } from "react-router";
 import type { RoomWithFrames, SearchResult } from "~/lib/supabase";
+import type { AiSearchState } from "~/lib/search";
 
 interface LayoutContext {
   rooms: RoomWithFrames[];
@@ -9,6 +10,7 @@ interface LayoutContext {
   activeRoomId: string | null;
   setActiveRoomId: (id: string | null) => void;
   loading: boolean;
+  aiSearchState: AiSearchState;
 }
 
 // Map room names → 3D model IDs used in house-3d.html
@@ -27,6 +29,7 @@ export default function HomePage() {
     activeRoomId,
     setActiveRoomId,
     loading,
+    aiSearchState,
   } = useOutletContext<LayoutContext>();
 
   const navigate = useNavigate();
@@ -158,18 +161,19 @@ export default function HomePage() {
   }, [activeRoomId, iframeReady, to3dId]);
 
   // When search results change, send zone info to the 3D iframe
+  const allResults = [...searchResults, ...aiSearchState.results];
   useEffect(() => {
     if (iframeReady && iframeRef.current?.contentWindow) {
-      if (searchResults.length > 0) {
+      if (allResults.length > 0) {
         // Extract zone labels from item locations (format: "ZONE_LABEL | notes")
         const zones = [...new Set(
-          searchResults
+          allResults
             .map((r) => r.item_location?.split("|")[0].trim())
             .filter((z) => z && z !== "undefined")
         )];
-        const itemNames = searchResults.map((r) => r.item_name);
+        const itemNames = allResults.map((r) => r.item_name);
         // Determine fallback room from first result (in case 3D can't find item)
-        const fallbackRoomId = to3dId(searchResults[0].room_id);
+        const fallbackRoomId = to3dId(allResults[0].room_id);
         // Send zone-based highlighting (single message to avoid animation conflicts)
         // Include fallbackRoomId so 3D can fly to the room even if item isn't in its data
         iframeRef.current.contentWindow.postMessage(
@@ -183,7 +187,7 @@ export default function HomePage() {
         );
       }
     }
-  }, [searchResults, searchQuery, iframeReady]);
+  }, [searchResults, aiSearchState.results, searchQuery, iframeReady]);
 
   // Click on a search result → fly to that room
   const handleSearchResultClick = useCallback(
@@ -251,7 +255,7 @@ export default function HomePage() {
           />
 
           {/* Search result overlay in 3D mode */}
-          {searchResults.length > 0 && (
+          {(searchResults.length > 0 || aiSearchState.results.length > 0 || aiSearchState.loading) && (
             <div
               style={{
                 position: "absolute",
@@ -268,27 +272,69 @@ export default function HomePage() {
                 zIndex: 5,
               }}
             >
-              <div style={{ fontSize: 12, color: "var(--text-dim)", marginBottom: 8 }}>
-                Found {searchResults.length} {searchResults.length === 1 ? "item" : "items"}
-              </div>
-              {searchResults.map((result) => (
-                <div
-                  key={result.item_id}
-                  style={{
-                    padding: "8px 0",
-                    borderBottom: "1px solid var(--border)",
-                    cursor: "pointer",
-                  }}
-                  onClick={() => handleSearchResultClick(result.room_id)}
-                >
-                  <div style={{ fontSize: 13, fontWeight: 600 }}>
-                    {result.item_name}
+              {searchResults.length > 0 && (
+                <>
+                  <div style={{ fontSize: 12, color: "var(--text-dim)", marginBottom: 8 }}>
+                    Found {searchResults.length} {searchResults.length === 1 ? "item" : "items"}
                   </div>
-                  <div style={{ fontSize: 11, color: "var(--text-dim)", marginTop: 2 }}>
-                    {result.room_name} &middot; {result.item_location}
-                  </div>
+                  {searchResults.map((result) => (
+                    <div
+                      key={result.item_id}
+                      style={{
+                        padding: "8px 0",
+                        borderBottom: "1px solid var(--border)",
+                        cursor: "pointer",
+                      }}
+                      onClick={() => handleSearchResultClick(result.room_id)}
+                    >
+                      <div style={{ fontSize: 13, fontWeight: 600 }}>
+                        {result.item_name}
+                      </div>
+                      <div style={{ fontSize: 11, color: "var(--text-dim)", marginTop: 2 }}>
+                        {result.room_name} &middot; {result.item_location}
+                      </div>
+                    </div>
+                  ))}
+                </>
+              )}
+
+              {/* AI suggestions section */}
+              {aiSearchState.loading && (
+                <div className="ai-suggestion-section" style={{ padding: "8px 0", fontSize: 12, color: "var(--text-dim)" }}>
+                  <span className="ai-spinner" /> Asking AI for suggestions...
                 </div>
-              ))}
+              )}
+              {!aiSearchState.loading && aiSearchState.results.length > 0 && (
+                <>
+                  <div className="ai-suggestion-section" style={{ fontSize: 11, color: "var(--accent)", marginTop: searchResults.length > 0 ? 8 : 0, marginBottom: 8 }}>
+                    AI Suggestions
+                  </div>
+                  {aiSearchState.results.map((result) => (
+                    <div
+                      key={result.item_id}
+                      style={{
+                        padding: "8px 0",
+                        borderBottom: "1px solid var(--border)",
+                        cursor: "pointer",
+                      }}
+                      onClick={() => handleSearchResultClick(result.room_id)}
+                    >
+                      <div style={{ fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
+                        {result.item_name}
+                        <span className="ai-badge-tag">AI</span>
+                      </div>
+                      <div style={{ fontSize: 11, color: "var(--text-dim)", marginTop: 2 }}>
+                        {result.room_name} &middot; {result.item_location}
+                      </div>
+                      {aiSearchState.reasons.get(result.item_id) && (
+                        <div style={{ fontSize: 10, color: "var(--accent)", marginTop: 2, fontStyle: "italic" }}>
+                          {aiSearchState.reasons.get(result.item_id)}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </>
+              )}
             </div>
           )}
 

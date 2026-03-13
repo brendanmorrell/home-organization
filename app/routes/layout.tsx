@@ -2,10 +2,17 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { Outlet, Link, useNavigate, useLocation, useSearchParams } from "react-router";
 import {
   fetchAllRoomsWithFrames,
-  searchItemsLocal,
   type RoomWithFrames,
   type SearchResult,
 } from "~/lib/supabase";
+import {
+  buildFuseIndex,
+  fuzzySearch,
+  aiSearch,
+  INITIAL_AI_STATE,
+  type AiSearchState,
+} from "~/lib/search";
+import type Fuse from "fuse.js";
 
 export default function AppLayout() {
   const [rooms, setRooms] = useState<RoomWithFrames[]>([]);
@@ -18,6 +25,10 @@ export default function AppLayout() {
   const [searchParams, setSearchParams] = useSearchParams();
   const searchTimeout = useRef<ReturnType<typeof setTimeout>>(undefined);
   const urlTimeout = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const [roomsExpanded, setRoomsExpanded] = useState(false);
+  const fuseRef = useRef<Fuse<any> | null>(null);
+  const [aiSearchState, setAiSearchState] = useState<AiSearchState>(INITIAL_AI_STATE);
+  const aiTimeout = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   // Search query: local state for instant input, URL (?q=) for persistence
   const [inputValue, setInputValue] = useState(searchParams.get("q") || "");
@@ -192,6 +203,13 @@ export default function AppLayout() {
     loadData();
   }, []);
 
+  // Build Fuse index when rooms data loads
+  useEffect(() => {
+    if (rooms.length > 0) {
+      fuseRef.current = buildFuseIndex(rooms);
+    }
+  }, [rooms]);
+
   // Cmd+K to focus search
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -211,20 +229,43 @@ export default function AppLayout() {
 
       if (searchTimeout.current) clearTimeout(searchTimeout.current);
       if (urlTimeout.current) clearTimeout(urlTimeout.current);
+      if (aiTimeout.current) clearTimeout(aiTimeout.current);
 
       if (!query.trim()) {
         setSearchResults([]);
+        setAiSearchState(INITIAL_AI_STATE);
         // Clear URL param immediately when input is cleared
         setSearchParams(prev => { prev.delete("q"); return prev; }, { replace: true });
         return;
       }
 
-      // Debounce: search after 250ms of no typing
+      // Debounce: fuzzy search after 250ms of no typing
       searchTimeout.current = setTimeout(() => {
-        const results = searchItemsLocal(rooms, query);
+        if (!fuseRef.current) return;
+        const results = fuzzySearch(fuseRef.current, query);
         setSearchResults(results);
         if (results.length > 0 && location.pathname !== "/") {
           navigate("/?q=" + encodeURIComponent(query));
+        }
+
+        // If few results and query is long enough, trigger AI search after extra delay
+        if (results.length <= 2 && query.trim().length >= 3) {
+          setAiSearchState(prev => ({ ...prev, loading: true, error: null }));
+          aiTimeout.current = setTimeout(() => {
+            aiSearch(query, rooms)
+              .then(({ results: aiResults, reasons }) => {
+                // Deduplicate against fuzzy results
+                const fuzzyIds = new Set(results.map(r => r.item_id));
+                const newAiResults = aiResults.filter(r => !fuzzyIds.has(r.item_id));
+                setAiSearchState({ loading: false, results: newAiResults, reasons, error: null });
+              })
+              .catch(err => {
+                console.error("[ai-search]", err);
+                setAiSearchState({ loading: false, results: [], reasons: new Map(), error: err.message });
+              });
+          }, 1500);
+        } else {
+          setAiSearchState(INITIAL_AI_STATE);
         }
       }, 250);
 
@@ -238,9 +279,9 @@ export default function AppLayout() {
 
   // Run search when rooms load (handles page refresh with ?q= in URL)
   useEffect(() => {
-    if (rooms.length > 0 && searchQuery.trim()) {
+    if (rooms.length > 0 && searchQuery.trim() && fuseRef.current) {
       setInputValue(searchQuery);
-      const results = searchItemsLocal(rooms, searchQuery);
+      const results = fuzzySearch(fuseRef.current, searchQuery);
       setSearchResults(results);
     }
   }, [rooms]); // Only re-run when rooms data loads
@@ -272,20 +313,49 @@ export default function AppLayout() {
             <span>House View</span>
           </Link>
 
-          <div className="nav-section">Rooms</div>
-          {rooms.map((room) => {
+          {/* Active room (if on a room page) */}
+          {(() => {
+            const activeRoom = rooms.find(r => location.pathname === `/rooms/${r.id}`);
+            if (activeRoom) {
+              const activeCount = activeRoom.frames.reduce((s, f) => s + f.items.length, 0);
+              return (
+                <>
+                  <div className="nav-section">Current Room</div>
+                  <Link
+                    to={`/rooms/${activeRoom.id}`}
+                    className="nav-item active"
+                    onClick={() => setActiveRoomId(activeRoom.id)}
+                  >
+                    <span className="icon">{activeRoom.icon}</span>
+                    <span>{activeRoom.name}</span>
+                    <span className="count">{activeCount}</span>
+                  </Link>
+                </>
+              );
+            }
+            return null;
+          })()}
+
+          {/* Collapsible rooms list */}
+          <button
+            className="nav-section nav-section-toggle"
+            onClick={() => setRoomsExpanded(prev => !prev)}
+          >
+            <span>Rooms ({rooms.length})</span>
+            <span className={`toggle-arrow ${roomsExpanded ? "open" : ""}`}>&#x25B8;</span>
+          </button>
+          {roomsExpanded && rooms.map((room) => {
             const itemCount = room.frames.reduce(
               (s, f) => s + f.items.length,
               0
             );
             const hasResults = highlightedRoomIds.has(room.id);
+            const isActive = location.pathname === `/rooms/${room.id}`;
             return (
               <Link
                 key={room.id}
                 to={`/rooms/${room.id}`}
-                className={`nav-item ${
-                  location.pathname === `/rooms/${room.id}` ? "active" : ""
-                } ${hasResults ? "has-results" : ""}`}
+                className={`nav-item nav-item-compact ${isActive ? "active" : ""} ${hasResults ? "has-results" : ""}`}
                 onClick={() => setActiveRoomId(room.id)}
               >
                 <span className="icon">{room.icon}</span>
@@ -349,6 +419,16 @@ export default function AppLayout() {
                 {new Set(searchResults.map((r) => r.room_id)).size} rooms
               </span>
             )}
+            {aiSearchState.loading && (
+              <span className="result-count ai-searching">
+                <span className="ai-spinner" /> Asking AI...
+              </span>
+            )}
+            {!aiSearchState.loading && aiSearchState.results.length > 0 && (
+              <span className="result-count ai-badge">
+                +{aiSearchState.results.length} AI suggestion{aiSearchState.results.length !== 1 ? "s" : ""}
+              </span>
+            )}
           </div>
         )}
 
@@ -363,6 +443,7 @@ export default function AppLayout() {
               activeRoomId,
               setActiveRoomId,
               loading,
+              aiSearchState,
             }}
           />
         </div>

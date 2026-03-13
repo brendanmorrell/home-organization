@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback } from "react";
 import { useOutletContext, Link } from "react-router";
+import Fuse from "fuse.js";
 import {
   updateItem,
   deleteItem,
@@ -8,6 +9,7 @@ import {
   type Item,
   type SearchResult,
 } from "~/lib/supabase";
+import { expandWithSynonyms } from "~/lib/search";
 
 interface LayoutContext {
   rooms: RoomWithFrames[];
@@ -321,20 +323,38 @@ export default function InventoryPage() {
   // Flatten all items from all rooms
   const allItems = useMemo(() => flattenItems(rooms), [rooms]);
 
+  // Build Fuse index for inventory local filter
+  const inventoryFuse = useMemo(() => {
+    return new Fuse(allItems, {
+      threshold: 0.4,
+      ignoreLocation: true,
+      keys: [
+        { name: "name", weight: 0.4 },
+        { name: "location", weight: 0.2 },
+        { name: "roomName", weight: 0.15 },
+        { name: "box", weight: 0.1 },
+        { name: "category", weight: 0.15 },
+      ],
+    });
+  }, [allItems]);
+
   // Filter items
   const filteredItems = useMemo(() => {
     let items = allItems;
 
     if (localSearch.trim()) {
-      const q = localSearch.toLowerCase();
-      items = items.filter(
-        (item) =>
-          item.name.toLowerCase().includes(q) ||
-          item.location.toLowerCase().includes(q) ||
-          item.roomName.toLowerCase().includes(q) ||
-          item.box.toLowerCase().includes(q) ||
-          item.category.toLowerCase().includes(q)
-      );
+      const queries = expandWithSynonyms(localSearch);
+      const seen = new Set<string>();
+      const matched: FlatItem[] = [];
+      for (const q of queries) {
+        const hits = inventoryFuse.search(q, { limit: 200 });
+        for (const hit of hits) {
+          if (seen.has(hit.item.id)) continue;
+          seen.add(hit.item.id);
+          matched.push(hit.item);
+        }
+      }
+      items = matched;
     }
 
     if (categoryFilter !== "All") {
@@ -360,6 +380,7 @@ export default function InventoryPage() {
     return items;
   }, [
     allItems,
+    inventoryFuse,
     localSearch,
     categoryFilter,
     tierFilters,

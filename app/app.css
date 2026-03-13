@@ -12,6 +12,7 @@
   --highlight: #ffb74d;
   --highlight-glow: rgba(255, 183, 77, 0.2);
   --success: #66bb6a;
+  --red: #ef5350;
   --radius: 10px;
 }
 
@@ -87,6 +88,39 @@ body {
   color: var(--text-dim);
   padding: 16px 12px 6px;
   letter-spacing: 0.05em;
+}
+
+.nav-section-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  transition: color 0.15s;
+}
+.nav-section-toggle:hover {
+  color: var(--text);
+}
+.toggle-arrow {
+  font-size: 10px;
+  transition: transform 0.2s;
+}
+.toggle-arrow.open {
+  transform: rotate(90deg);
+}
+
+.nav-item-compact {
+  padding: 6px 12px;
+  font-size: 12px;
+}
+.nav-item-compact .icon {
+  width: 22px;
+  height: 22px;
+  font-size: 11px;
+  border-radius: 5px;
 }
 
 /* ---- Main area ---- */
@@ -664,6 +698,18 @@ body {
   font-size: 11px;
   border-radius: 5px;
 }
+.btn-danger {
+  color: var(--red);
+  border-color: rgba(239, 83, 80, 0.25);
+}
+.btn-danger:hover {
+  background: rgba(239, 83, 80, 0.1);
+  border-color: var(--red);
+}
+.inventory-table tbody tr.deleting {
+  opacity: 0.5;
+  pointer-events: none;
+}
 
 /* ---- Add / Edit Item Form Panel ---- */
 .add-form-panel {
@@ -1032,6 +1078,54 @@ body {
 .disposal-id { color: var(--text-dim); font-family: monospace; font-size: 10px; }
 .disposal-reason { font-size: 11px; color: var(--text-dim); }
 .disposal-zone { font-size: 10px; color: var(--text-dim); font-family: monospace; }
+
+/* ---- AI Search Styles ---- */
+.ai-searching {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ai-spinner {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: ai-spin 0.8s linear infinite;
+}
+
+@keyframes ai-spin {
+  to { transform: rotate(360deg); }
+}
+
+.ai-badge {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.ai-badge-tag {
+  display: inline-block;
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  background: rgba(108, 140, 255, 0.15);
+  color: var(--accent);
+  border: 1px solid rgba(108, 140, 255, 0.3);
+  letter-spacing: 0.03em;
+}
+
+.ai-suggestion-section {
+  border-top: 1px solid var(--border);
+  padding-top: 8px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  font-size: 10px;
+}
 
 /* ---- Scrollbar ---- */
 ::-webkit-scrollbar { width: 6px; }
