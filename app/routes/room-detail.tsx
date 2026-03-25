@@ -52,7 +52,7 @@ export default function RoomDetailPage() {
             </p>
           </div>
           <Link
-            to={`/?room=${room.id}`}
+            to={`/house?room=${room.id}`}
             className="btn btn-sm"
             style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 6 }}
           >

@@ -1,5 +1,5 @@
 {
-  "name": "home-organization",
+  "name": "homebase",
   "version": "1.0.0",
   "type": "module",
   "private": true,
@@ -8,6 +8,8 @@
     "build": "react-router build",
     "start": "react-router-serve ./build/server/index.js",
     "typecheck": "react-router typegen && tsc",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "ingest": "tsx scripts/ingest-video.ts",
     "ingest:structural": "tsx scripts/ingest-video.ts --mode structural",
     "ingest:help": "tsx scripts/ingest-video.ts --help",
@@ -27,9 +29,12 @@
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react-router": "^7.13.1",
+    "@tanstack/react-query": "^5.62.0",
     "three": "^0.183.2"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.1.0",
     "@react-router/dev": "^7.13.1",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
@@ -37,7 +42,9 @@
     "@vitejs/plugin-react": "^5.1.4",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
+    "jsdom": "^25.0.1",
     "vite": "^7.3.1",
+    "vitest": "^2.1.8",
     "vite-tsconfig-paths": "^6.1.1"
   }
 }

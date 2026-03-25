@@ -5,6 +5,8 @@ import {
   Scripts,
   ScrollRestoration,
 } from "react-router";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { queryClient } from "~/lib/queries";
 
 import "./app.css";
 
@@ -14,6 +16,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>HomeBase</title>
         <Meta />
         <Links />
       </head>
@@ -27,5 +30,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function Root() {
-  return <Outlet />;
+  return (
+    <QueryClientProvider client={queryClient}>
+      <Outlet />
+    </QueryClientProvider>
+  );
 }

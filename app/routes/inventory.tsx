@@ -999,7 +999,7 @@ export default function InventoryPage() {
                           {deleting === item.id ? "..." : "\u2715"}
                         </button>
                         <Link
-                          to={`/?room=${item.roomId}`}
+                          to={`/house?room=${item.roomId}`}
                           className="btn btn-sm"
                           title="View in 3D"
                         >

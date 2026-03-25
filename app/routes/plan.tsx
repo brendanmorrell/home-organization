@@ -24,12 +24,6 @@ interface CategoryGroup {
   items: PlanItem[];
 }
 
-interface ContainerSpec {
-  type: string;
-  label: string;
-  zone: string;
-  items: string;
-}
 
 interface MoveStep {
   id: number;
@@ -220,19 +214,79 @@ const GROUPS: CategoryGroup[] = [
   ]},
 ];
 
-const CONTAINERS: ContainerSpec[] = [
-  { type: "Large Black/Yellow Bin", label: "SPEECH THERAPY", zone: "GARAGE-SHELF-NORTH", items: "i120–i123" },
-  { type: "Large Black/Yellow Bin", label: "KEEPSAKE CLOTHING", zone: "BSMT-RAISED-W", items: "i124–i127" },
-  { type: "Large Black/Yellow Bin", label: "BABY KEEPSAKES", zone: "BSMT-RAISED-W", items: "i134–i137" },
-  { type: "Clear Bin (medium)", label: "ELECTRONICS", zone: "GARAGE-SHELF-NE", items: "i106–i119 (14 items)" },
-  { type: "Clear Bin (medium)", label: "BAR DECOR & EXTRAS", zone: "GARAGE-SHELF-NORTH", items: "i140" },
-  { type: "Clear Bin (medium)", label: "BOOKS", zone: "GARAGE-SHELF-WEST", items: "i051, i132, i141, i142" },
-  { type: "Clear Bin (medium)", label: "DÉCOR - SEASONAL", zone: "BSMT-RAISED-E", items: "i128, i131, i133, i161, i162, i176 (lanterns, lights, vases)" },
-  { type: "Black Small Crate", label: "HEALTH & MEDICAL", zone: "GARAGE-SHELF-WEST", items: "i138, i145" },
-  { type: "Clear Bin (medium)", label: "ASIAN KITCHEN", zone: "GARAGE-SHELF-NORTH", items: "Trivet, bamboo steamer, Taiwan glasses, tea cups, ramen pot" },
-  { type: "Clear Bin (small)", label: "PHOTO SUPPLIES", zone: "GARAGE-SHELF-NORTH", items: "Polaroid camera, Nikon camera, Polaroid pictures" },
-  { type: "Clear Bin (medium)", label: "DESK SUPPLIES", zone: "GARAGE-SHELF-NORTH", items: "Envelopes, copy paper, laminator, pouches, thank you notes" },
-  { type: "Clear Bin (medium)", label: "FRAMES & WEDDING", zone: "GARAGE-SHELF-WEST", items: "Picture frames, hand-fasting knots, bathroom decor" },
+interface ContainerFull {
+  type: string;
+  label: string;
+  zone: string;
+  items: PlanItem[];
+}
+
+// Build full packing lists for each container by pulling from GROUPS
+const CONTAINER_ITEMS_MAP: Record<string, PlanItem[]> = {};
+for (const group of GROUPS) {
+  for (const item of group.items) {
+    CONTAINER_ITEMS_MAP[item.id] = CONTAINER_ITEMS_MAP[item.id] || [];
+    CONTAINER_ITEMS_MAP[item.id].push(item);
+  }
+}
+
+// All items in a flat lookup by ID
+const ALL_ITEMS_BY_ID: Record<string, PlanItem> = {};
+for (const group of GROUPS) {
+  for (const item of group.items) {
+    ALL_ITEMS_BY_ID[item.id] = item;
+  }
+}
+
+const CONTAINERS: ContainerFull[] = [
+  {
+    type: "Large Black/Yellow Bin", label: "SPEECH THERAPY", zone: "GARAGE-SHELF-NORTH",
+    items: GROUPS.find(g => g.name === "Erin's Work — Speech Therapy")?.items || [],
+  },
+  {
+    type: "Large Black/Yellow Bin", label: "KEEPSAKE CLOTHING", zone: "BSMT-RAISED-W",
+    items: GROUPS.find(g => g.name === "Keepsake Clothing")?.items || [],
+  },
+  {
+    type: "Large Black/Yellow Bin", label: "BABY KEEPSAKES", zone: "BSMT-RAISED-W",
+    items: GROUPS.find(g => g.name === "Baby Keepsakes & Memorabilia")?.items || [],
+  },
+  {
+    type: "Clear Bin (medium)", label: "ELECTRONICS", zone: "GARAGE-SHELF-NE",
+    items: GROUPS.find(g => g.name === "Electronics — Organized")?.items || [],
+  },
+  {
+    type: "Clear Bin (medium)", label: "BAR DECOR & EXTRAS", zone: "GARAGE-SHELF-NORTH",
+    items: [{ id: "i140", name: "Bar decorations & extra entertaining supplies", zone: "GARAGE" }],
+  },
+  {
+    type: "Clear Bin (medium)", label: "BOOKS", zone: "GARAGE-SHELF-WEST",
+    items: GROUPS.find(g => g.name === "Books & Reading")?.items || [],
+  },
+  {
+    type: "Clear Bin (medium)", label: "DÉCOR - SEASONAL", zone: "BSMT-RAISED-E",
+    items: GROUPS.find(g => g.name === "Décor — Asian & Seasonal")?.items || [],
+  },
+  {
+    type: "Black Small Crate", label: "HEALTH & MEDICAL", zone: "GARAGE-SHELF-WEST",
+    items: GROUPS.find(g => g.name === "Health & Medical")?.items || [],
+  },
+  {
+    type: "Clear Bin (medium)", label: "ASIAN KITCHEN", zone: "GARAGE-SHELF-NORTH",
+    items: GROUPS.find(g => g.name === "Asian Kitchen")?.items || [],
+  },
+  {
+    type: "Clear Bin (small)", label: "PHOTO SUPPLIES", zone: "GARAGE-SHELF-NORTH",
+    items: GROUPS.find(g => g.name === "Photo Supplies")?.items || [],
+  },
+  {
+    type: "Clear Bin (medium)", label: "DESK SUPPLIES", zone: "GARAGE-SHELF-NORTH",
+    items: GROUPS.find(g => g.name === "Desk & Office Supplies (Overflow)")?.items || [],
+  },
+  {
+    type: "Clear Bin (medium)", label: "FRAMES & WEDDING", zone: "GARAGE-SHELF-WEST",
+    items: GROUPS.find(g => g.name === "Picture Frames & Wedding")?.items || [],
+  },
 ];
 
 const MOVES: MoveStep[] = [
@@ -464,15 +518,31 @@ export default function PlanPage() {
         {activeTab === "containers" && (
           <div className="plan-containers-full">
             <p className="plan-note">
-              Each container gets a printed label. Clear bins let you see contents; large bins hold bulky items.
+              Full packing list for each container. Check off items as you pack them.
             </p>
-            <div className="container-grid">
+            <div className="packing-list">
               {CONTAINERS.map((c) => (
-                <div key={c.label} className="container-card">
-                  <div className="container-type">{c.type}</div>
-                  <div className="container-label-tag">{c.label}</div>
-                  <div className="container-zone">{c.zone}</div>
-                  <div className="container-items">{c.items}</div>
+                <div key={c.label} className="packing-container">
+                  <div className="packing-container-header">
+                    <div>
+                      <div className="container-label-tag">{c.label}</div>
+                      <div className="packing-container-meta">
+                        <span className="container-type">{c.type}</span>
+                        <span className="packing-separator">&middot;</span>
+                        <span className="container-zone">{c.zone}</span>
+                        <span className="packing-separator">&middot;</span>
+                        <span className="packing-item-count">{c.items.length} items</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="packing-items">
+                    {c.items.map((item) => (
+                      <div key={item.id} className="packing-item">
+                        <span className="packing-item-id">{item.id}</span>
+                        <span className="packing-item-name">{item.name}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               ))}
             </div>
