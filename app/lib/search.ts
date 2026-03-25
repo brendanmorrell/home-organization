@@ -114,22 +114,58 @@ export function buildFuseIndex(rooms: RoomWithFrames[]): Fuse<FuseItem> {
   return new Fuse(items, FUSE_OPTIONS);
 }
 
-/** Run fuzzy search with synonym expansion. Returns deduplicated SearchResult[]. */
+/** Metadata about how a fuzzy match was found */
+export interface FuzzyMatchMeta {
+  type: "exact" | "fuzzy" | "synonym";
+  score: number; // 0–1, higher = better match
+  matchedQuery: string; // the actual query variant that matched
+  synonymOf?: string; // if synonym, the original word it expanded from
+}
+
+/** Run fuzzy search with synonym expansion. Returns deduplicated SearchResult[] + match metadata. */
 export function fuzzySearch(
   fuse: Fuse<FuseItem>,
   query: string
-): SearchResult[] {
-  if (!query.trim()) return [];
+): { results: SearchResult[]; matchMeta: Map<string, FuzzyMatchMeta> } {
+  if (!query.trim()) return { results: [], matchMeta: new Map() };
 
   const queries = expandWithSynonyms(query);
+  const originalQuery = query.toLowerCase().trim();
   const seen = new Set<string>();
   const results: SearchResult[] = [];
+  const matchMeta = new Map<string, FuzzyMatchMeta>();
 
   for (const q of queries) {
+    const isSynonymVariant = q !== originalQuery;
     const hits = fuse.search(q, { limit: 50 });
     for (const hit of hits) {
       if (seen.has(hit.item.item_id)) continue;
       seen.add(hit.item.item_id);
+
+      const score = 1 - (hit.score ?? 0);
+      const isExact = score > 0.85 && !isSynonymVariant;
+
+      let meta: FuzzyMatchMeta;
+      if (isSynonymVariant) {
+        // Figure out which word was the synonym
+        const origWords = originalQuery.split(/\s+/);
+        const synWords = q.split(/\s+/);
+        let synonymOf: string | undefined;
+        for (let i = 0; i < origWords.length; i++) {
+          if (origWords[i] !== synWords[i]) {
+            synonymOf = origWords[i];
+            break;
+          }
+        }
+        meta = { type: "synonym", score, matchedQuery: q, synonymOf };
+      } else if (isExact) {
+        meta = { type: "exact", score, matchedQuery: q };
+      } else {
+        meta = { type: "fuzzy", score, matchedQuery: q };
+      }
+
+      matchMeta.set(hit.item.item_id, meta);
+
       results.push({
         item_id: hit.item.item_id,
         item_name: hit.item.item_name,
@@ -140,14 +176,14 @@ export function fuzzySearch(
         room_id: hit.item.room_id,
         room_name: hit.item.room_name,
         room_icon: hit.item.room_icon,
-        rank: 1 - (hit.score ?? 0), // Fuse score is 0=perfect, 1=worst → invert
+        rank: score,
       });
     }
   }
 
   // Sort by rank descending
   results.sort((a, b) => b.rank - a.rank);
-  return results;
+  return { results, matchMeta };
 }
 
 // ---- AI Search (Claude API) ----

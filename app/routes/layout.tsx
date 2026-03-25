@@ -7,6 +7,7 @@ import {
   aiSearch,
   INITIAL_AI_STATE,
   type AiSearchState,
+  type FuzzyMatchMeta,
 } from "~/lib/search";
 import type Fuse from "fuse.js";
 import { useRooms, queryClient } from "~/lib/queries";
@@ -28,6 +29,7 @@ export default function AppLayout() {
     []
   );
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [fuzzyMatchMeta, setFuzzyMatchMeta] = useState<Map<string, FuzzyMatchMeta>>(new Map());
   const [activeRoomId, setActiveRoomId] = useState<string | null>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
@@ -73,6 +75,7 @@ export default function AppLayout() {
 
       if (!query.trim()) {
         setSearchResults([]);
+        setFuzzyMatchMeta(new Map());
         setAiSearchState(INITIAL_AI_STATE);
         setSearchParams(
           (prev) => {
@@ -87,8 +90,9 @@ export default function AppLayout() {
       // Debounce: fuzzy search after 250ms of no typing
       searchTimeout.current = setTimeout(() => {
         if (!fuseRef.current) return;
-        const results = fuzzySearch(fuseRef.current, query);
+        const { results, matchMeta } = fuzzySearch(fuseRef.current, query);
         setSearchResults(results);
+        setFuzzyMatchMeta(matchMeta);
         if (results.length > 0 && location.pathname !== "/house") {
           navigate("/house?q=" + encodeURIComponent(query));
         }
@@ -143,8 +147,9 @@ export default function AppLayout() {
   useEffect(() => {
     if (rooms.length > 0 && searchQuery.trim() && fuseRef.current) {
       setInputValue(searchQuery);
-      const results = fuzzySearch(fuseRef.current, searchQuery);
+      const { results, matchMeta } = fuzzySearch(fuseRef.current, searchQuery);
       setSearchResults(results);
+      setFuzzyMatchMeta(matchMeta);
     }
   }, [rooms]); // Only re-run when rooms data loads
 
@@ -175,6 +180,7 @@ export default function AppLayout() {
               setActiveRoomId,
               loading,
               aiSearchState,
+              fuzzyMatchMeta,
               inputValue,
               handleSearch,
               searchRef,

@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useOutletContext, useNavigate, useSearchParams } from "react-router";
 import type { RoomWithFrames, SearchResult } from "~/lib/supabase";
-import type { AiSearchState } from "~/lib/search";
+import type { AiSearchState, FuzzyMatchMeta } from "~/lib/search";
 
 interface LayoutContext {
   rooms: RoomWithFrames[];
@@ -11,9 +11,124 @@ interface LayoutContext {
   setActiveRoomId: (id: string | null) => void;
   loading: boolean;
   aiSearchState: AiSearchState;
+  fuzzyMatchMeta: Map<string, FuzzyMatchMeta>;
   inputValue: string;
   handleSearch: (query: string) => void;
   searchRef: React.RefObject<HTMLInputElement | null>;
+}
+
+function SearchDiagnostics({
+  query,
+  fuzzyResults,
+  fuzzyMatchMeta,
+  aiState,
+}: {
+  query: string;
+  fuzzyResults: SearchResult[];
+  fuzzyMatchMeta: Map<string, FuzzyMatchMeta>;
+  aiState: AiSearchState;
+}) {
+  const hasFuzzy = fuzzyResults.length > 0;
+  const hasAi = aiState.results.length > 0;
+  const aiDone = !aiState.loading && query.trim().length >= 3;
+  const noResults = !hasFuzzy && !hasAi && aiDone;
+
+  // Summarize match types
+  const exactCount = fuzzyResults.filter(
+    (r) => fuzzyMatchMeta.get(r.item_id)?.type === "exact"
+  ).length;
+  const fuzzyCount = fuzzyResults.filter(
+    (r) => fuzzyMatchMeta.get(r.item_id)?.type === "fuzzy"
+  ).length;
+  const synonymCount = fuzzyResults.filter(
+    (r) => fuzzyMatchMeta.get(r.item_id)?.type === "synonym"
+  ).length;
+
+  // Get unique synonyms used
+  const synonymsUsed = new Map<string, string>();
+  for (const r of fuzzyResults) {
+    const meta = fuzzyMatchMeta.get(r.item_id);
+    if (meta?.type === "synonym" && meta.synonymOf) {
+      synonymsUsed.set(meta.synonymOf, meta.matchedQuery);
+    }
+  }
+
+  const diagStyle: React.CSSProperties = {
+    padding: "6px 16px",
+    fontSize: 11,
+    lineHeight: 1.5,
+    color: "var(--text-dim)",
+    borderBottom: "1px solid var(--border)",
+    background: "rgba(255,255,255,0.02)",
+    display: "flex",
+    flexWrap: "wrap",
+    gap: "6px 12px",
+    alignItems: "center",
+  };
+
+  const tagStyle = (color: string): React.CSSProperties => ({
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 3,
+    padding: "1px 6px",
+    borderRadius: 4,
+    fontSize: 10,
+    fontWeight: 600,
+    background: color + "18",
+    color,
+    border: `1px solid ${color}30`,
+  });
+
+  if (noResults) {
+    return (
+      <div style={diagStyle}>
+        <span style={tagStyle("#f44336")}>No matches</span>
+        <span>
+          Neither fuzzy search nor AI found results for "{query}"
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <div style={diagStyle}>
+      {exactCount > 0 && (
+        <span style={tagStyle("#4caf50")}>
+          {exactCount} exact
+        </span>
+      )}
+      {fuzzyCount > 0 && (
+        <span style={tagStyle("#ff9800")}>
+          {fuzzyCount} fuzzy
+        </span>
+      )}
+      {synonymCount > 0 && (
+        <span style={tagStyle("#2196f3")}>
+          {synonymCount} synonym
+        </span>
+      )}
+      {synonymsUsed.size > 0 && (
+        <span>
+          {[...synonymsUsed.entries()]
+            .map(([orig, expanded]) => `"${orig}" → "${expanded}"`)
+            .join(", ")}
+        </span>
+      )}
+      {aiState.loading && (
+        <span style={tagStyle("#9c27b0")}>
+          <span className="ai-spinner" /> AI thinking...
+        </span>
+      )}
+      {hasAi && (
+        <span style={tagStyle("#9c27b0")}>
+          +{aiState.results.length} AI
+        </span>
+      )}
+      {!hasFuzzy && !hasAi && aiState.loading && (
+        <span>No fuzzy matches — waiting for AI...</span>
+      )}
+    </div>
+  );
 }
 
 // Map room names → 3D model IDs used in house-3d.html
@@ -33,6 +148,7 @@ export default function HousePage() {
     setActiveRoomId,
     loading,
     aiSearchState,
+    fuzzyMatchMeta,
     inputValue,
     handleSearch,
     searchRef,
@@ -255,6 +371,16 @@ export default function HousePage() {
         )}
       </div>
 
+      {/* Search diagnostics bar */}
+      {inputValue.trim() && (
+        <SearchDiagnostics
+          query={inputValue}
+          fuzzyResults={searchResults}
+          fuzzyMatchMeta={fuzzyMatchMeta}
+          aiState={aiSearchState}
+        />
+      )}
+
       {/* View toggle */}
       <div style={{ position: "absolute", top: 68, right: 20, zIndex: 10, display: "flex", gap: 4 }}>
         <button
@@ -306,24 +432,47 @@ export default function HousePage() {
                   <div style={{ fontSize: 12, color: "var(--text-dim)", marginBottom: 8 }}>
                     Found {searchResults.length} {searchResults.length === 1 ? "item" : "items"}
                   </div>
-                  {searchResults.map((result) => (
-                    <div
-                      key={result.item_id}
-                      style={{
-                        padding: "8px 0",
-                        borderBottom: "1px solid var(--border)",
-                        cursor: "pointer",
-                      }}
-                      onClick={() => handleSearchResultClick(result.room_id)}
-                    >
-                      <div style={{ fontSize: 13, fontWeight: 600 }}>
-                        {result.item_name}
+                  {searchResults.map((result) => {
+                    const meta = fuzzyMatchMeta.get(result.item_id);
+                    return (
+                      <div
+                        key={result.item_id}
+                        style={{
+                          padding: "8px 0",
+                          borderBottom: "1px solid var(--border)",
+                          cursor: "pointer",
+                        }}
+                        onClick={() => handleSearchResultClick(result.room_id)}
+                      >
+                        <div style={{ fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
+                          {result.item_name}
+                          {meta?.type === "fuzzy" && (
+                            <span style={{ fontSize: 9, padding: "1px 4px", borderRadius: 3, background: "#ff980018", color: "#ff9800", border: "1px solid #ff980030", fontWeight: 600 }}>
+                              fuzzy
+                            </span>
+                          )}
+                          {meta?.type === "synonym" && (
+                            <span style={{ fontSize: 9, padding: "1px 4px", borderRadius: 3, background: "#2196f318", color: "#2196f3", border: "1px solid #2196f330", fontWeight: 600 }}>
+                              synonym
+                            </span>
+                          )}
+                        </div>
+                        <div style={{ fontSize: 11, color: "var(--text-dim)", marginTop: 2 }}>
+                          {result.room_name} &middot; {result.item_location}
+                        </div>
+                        {meta?.type === "synonym" && meta.synonymOf && (
+                          <div style={{ fontSize: 10, color: "#2196f3", marginTop: 2, fontStyle: "italic" }}>
+                            "{meta.synonymOf}" → "{meta.matchedQuery}"
+                          </div>
+                        )}
+                        {meta?.type === "fuzzy" && (
+                          <div style={{ fontSize: 10, color: "#ff9800", marginTop: 2, fontStyle: "italic" }}>
+                            fuzzy match ({Math.round(meta.score * 100)}% confidence)
+                          </div>
+                        )}
                       </div>
-                      <div style={{ fontSize: 11, color: "var(--text-dim)", marginTop: 2 }}>
-                        {result.room_name} &middot; {result.item_location}
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </>
               )}
 
