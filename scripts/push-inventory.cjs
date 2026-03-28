@@ -31,7 +31,6 @@ const ZONE_TO_ROOM = {
   'LIVING-BAR-CABINETS': 'Living Room',
   'LIVING-HALL-CLOSET': 'Living Room',
   'KITCHEN-LOWER-CAB': 'Kitchen',
-  'KITCHEN-UPPER-CAB': 'Kitchen',
   'KITCHEN-NOOK': 'Kitchen',
   'KITCHEN-NOOK-SOUTH': 'Kitchen',
   'GARAGE-SHELF-NORTH': 'Garage',

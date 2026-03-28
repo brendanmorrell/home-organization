@@ -199,161 +199,161 @@
       "id": "i027",
       "name": "Light bulbs and candles",
       "category": "lighting",
-      "zone": "KITCHEN-UPPER-CAB",
+      "zone": "WORKHALL-UPPER",
       "source": "IMG_5349"
     },
     {
       "id": "i028",
       "name": "Twinkle lights",
       "category": "decor",
-      "zone": "KITCHEN-UPPER-CAB",
+      "zone": "WORKHALL-UPPER",
       "source": "IMG_5349"
     },
     {
       "id": "i029",
       "name": "Decorational bulbs",
       "category": "lighting",
-      "zone": "KITCHEN-UPPER-CAB",
+      "zone": "WORKHALL-UPPER",
       "source": "IMG_5349"
     },
     {
       "id": "i030",
       "name": "Gorilla tape",
       "category": "tools-supplies",
-      "zone": "KITCHEN-UPPER-CAB",
+      "zone": "WORKHALL-UPPER",
       "source": "IMG_5349"
     },
     {
       "id": "i031",
       "name": "Tea candles",
       "category": "home-fragrance",
-      "zone": "KITCHEN-UPPER-CAB",
+      "zone": "WORKHALL-UPPER",
       "source": "IMG_5349"
     },
     {
       "id": "i032",
       "name": "Packing tape",
       "category": "tools-supplies",
-      "zone": "KITCHEN-UPPER-CAB",
+      "zone": "WORKHALL-UPPER",
       "source": "IMG_5349"
     },
     {
       "id": "i033",
       "name": "Black duct tape",
       "category": "tools-supplies",
-      "zone": "KITCHEN-UPPER-CAB",
+      "zone": "WORKHALL-UPPER",
       "source": "IMG_5349"
     },
     {
       "id": "i034",
       "name": "Rechargeable battery charger",
       "category": "electronics",
-      "zone": "KITCHEN-UPPER-CAB",
+      "zone": "WORKHALL-UPPER",
       "source": "IMG_5349"
     },
     {
       "id": "i035",
       "name": "Duracell batteries",
       "category": "electronics",
-      "zone": "KITCHEN-UPPER-CAB",
+      "zone": "WORKHALL-UPPER",
       "source": "IMG_5349"
     },
     {
       "id": "i036",
       "name": "Fishing line",
       "category": "misc",
-      "zone": "KITCHEN-UPPER-CAB",
+      "zone": "WORKHALL-UPPER",
       "source": "IMG_5349"
     },
     {
       "id": "i037",
       "name": "Glue",
       "category": "tools-supplies",
-      "zone": "KITCHEN-UPPER-CAB",
+      "zone": "WORKHALL-UPPER",
       "source": "IMG_5349"
     },
     {
       "id": "i038",
       "name": "Assorted batteries",
       "category": "electronics",
-      "zone": "KITCHEN-UPPER-CAB",
+      "zone": "WORKHALL-UPPER",
       "source": "IMG_5349"
     },
     {
       "id": "i039",
       "name": "Double-sided tape",
       "category": "tools-supplies",
-      "zone": "KITCHEN-UPPER-CAB",
+      "zone": "WORKHALL-UPPER",
       "source": "IMG_5349"
     },
     {
       "id": "i040",
       "name": "Corner protectors",
       "category": "baby-proofing",
-      "zone": "KITCHEN-UPPER-CAB",
+      "zone": "WORKHALL-UPPER",
       "source": "IMG_5349"
     },
     {
       "id": "i041",
       "name": "Nanny cams",
       "category": "electronics",
-      "zone": "KITCHEN-UPPER-CAB",
+      "zone": "WORKHALL-UPPER",
       "source": "IMG_5349"
     },
     {
       "id": "i042",
       "name": "White duct tape",
       "category": "tools-supplies",
-      "zone": "KITCHEN-UPPER-CAB",
+      "zone": "WORKHALL-UPPER",
       "source": "IMG_5349"
     },
     {
       "id": "i043",
       "name": "Scissors",
       "category": "tools-supplies",
-      "zone": "KITCHEN-UPPER-CAB",
+      "zone": "WORKHALL-UPPER",
       "source": "IMG_5349"
     },
     {
       "id": "i044",
       "name": "Lighter",
       "category": "misc",
-      "zone": "KITCHEN-UPPER-CAB",
+      "zone": "WORKHALL-UPPER",
       "source": "IMG_5349"
     },
     {
       "id": "i045",
       "name": "Sharpies",
       "category": "office",
-      "zone": "KITCHEN-UPPER-CAB",
+      "zone": "WORKHALL-UPPER",
       "source": "IMG_5349"
     },
     {
       "id": "i047",
       "name": "Receipts & warranties",
       "category": "documents",
-      "zone": "KITCHEN-UPPER-CAB",
+      "zone": "WORKHALL-UPPER",
       "source": "IMG_5349"
     },
     {
       "id": "i048",
       "name": "Twist ties & rubber bands",
       "category": "tools-supplies",
-      "zone": "KITCHEN-UPPER-CAB",
+      "zone": "WORKHALL-UPPER",
       "source": "IMG_5349"
     },
     {
       "id": "i049",
       "name": "Magnetic cabinet locks",
       "category": "baby-proofing",
-      "zone": "KITCHEN-UPPER-CAB",
+      "zone": "WORKHALL-UPPER",
       "source": "IMG_5349"
     },
     {
       "id": "i050",
       "name": "Cryptography equipment (Ledger wallets)",
       "category": "electronics",
-      "zone": "KITCHEN-UPPER-CAB",
+      "zone": "WORKHALL-UPPER",
       "source": "IMG_5349",
       "notes": "Crypto hardware wallets"
     },

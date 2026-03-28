@@ -6,7 +6,6 @@ export const ZONE_ROOM: Record<string, string> = {
   "LIVING-BAR-CABINETS": "Living Room",
   "LIVING-HALL-CLOSET": "Living Room",
   "KITCHEN-LOWER-CAB": "Kitchen",
-  "KITCHEN-UPPER-CAB": "Kitchen",
   "KITCHEN-NOOK": "Kitchen",
   "KITCHEN-NOOK-SOUTH": "Kitchen",
   "GARAGE-BIN-SPEECH": "Garage",
