@@ -1022,11 +1022,18 @@ const ROOMS = [
         x: -2.85, y: 1.225, z: 1.5, w: 0.36, h: 0.30, d: 0.51, color: "#b3e5fc",
         items: []},
 
-      // AUTO SUPPLIES (box) on NORTH shelf, east end — wiper fluid, radiator fluid, jack stands, trickle charger, ramps, starting fluid
+      // AUTO SUPPLIES (box) on NORTH shelf — shifted west to make room for hardware box
       { type: "box", name: "AUTO SUPPLIES", category: "Auto & Garage",
         storageZone: true, zoneLabel: "GARAGE-BIN-AUTO", zoneType: "box",
         capacity: { slots: 6, slotDesc: "auto supplies" },
-        x: -1.25, y: 1.225, z: 2.85, w: 0.51, h: 0.30, d: 0.36, color: "#c62828",
+        x: -0.70, y: 1.225, z: 2.85, w: 0.51, h: 0.30, d: 0.36, color: "#c62828",
+        items: []},
+
+      // SMALL HARDWARE (box) on NORTH shelf, east of AUTO SUPPLIES — safety cup hooks, misc hardware
+      { type: "box", name: "SMALL HARDWARE", category: "Auto & Garage",
+        storageZone: true, zoneLabel: "GARAGE-BIN-HARDWARE", zoneType: "box",
+        capacity: { slots: 6, slotDesc: "small hardware items" },
+        x: -1.25, y: 1.225, z: 2.85, w: 0.51, h: 0.30, d: 0.36, color: "#5d4037",
         items: []},
 
       // BOOKS (Clear medium) on WEST shelf
@@ -2155,14 +2162,14 @@ const ZONE_ROOM_MAP = {
   'GARAGE-SHELVES-UPPER': 'r3', 'GARAGE-SHELVES-NE': 'r3',
   'GARAGE-SHELF-WEST': 'r3', 'GARAGE-SHELF-NORTH': 'r3', 'GARAGE-SHELF-NE': 'r3',
   'GARAGE-PEGBOARD': 'r3', 'GARAGE-HOOKS-WEST': 'r3', 'GARAGE-FLOOR': 'r3', 'GARAGE-FLOOR-NE': 'r3',
-  'GARAGE-BIN-BOOKS': 'r3', 'GARAGE-BIN-ELECTRONICS': 'r3', 'GARAGE-BIN-AUTO': 'r3',
+  'GARAGE-BIN-BOOKS': 'r3', 'GARAGE-BIN-ELECTRONICS': 'r3', 'GARAGE-BIN-AUTO': 'r3', 'GARAGE-BIN-HARDWARE': 'r3',
   'GARAGE-BIN-HEALTH': 'r3', 'GARAGE-BIN-SPEECH': 'r3', 'GARAGE-BIN-BARDECOR': 'r3',
   'GARAGE-BIN-ASIANKITCHEN': 'r3', 'GARAGE-BIN-PHOTO': 'r3', 'GARAGE-BIN-ASIANDECOR': 'r3',
   'GARAGE-BIN-DESK': 'r3', 'GARAGE-BIN-DECOR': 'r3', 'GARAGE-BIN-FRAMES': 'r3',
   'LIVING-HALL-CLOSET': 'r5', 'LIVING-BAR-CABINETS': 'r5',
   'FOYER-COAT-CLOSET': 'r7',
   'MASTER-CLOSET-E': 'r4', 'MASTER-CLOSET-W': 'r4',
-  'BABY-CLOSET': 'r14',
+  'BABY-CLOSET': 'r14', 'BABY-DRESSER': 'r9', 'BABY-BOOKSHELF': 'r9',
   'BATH-CLOSET': 'r10', 'BATH-VANITY': 'r10',
   'HALL-LAUNDRY': 'r10', 'HALL-LINEN': 'r10',
   'BALCONY-DECKBOX': 'r15',

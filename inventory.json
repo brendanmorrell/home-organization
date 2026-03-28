@@ -14,7 +14,7 @@
       "IMG_5351.mov"
     ],
     "notes": "Unified home inventory. 'zone' = current storage zone label from house-3d.html. 'PACKED-BOX:cN' = in a packed moving box. 'UNASSIGNED' = not yet placed.",
-    "itemCount": 147
+    "itemCount": 152
   },
   "items": [
     {
@@ -1091,6 +1091,46 @@
       "zone": "BALCONY-DECKBOX",
       "source": "user-input",
       "notes": "Stored in deck box"
+    },
+    {
+      "id": "i153",
+      "name": "Safety cup hooks (×6)",
+      "category": "auto-supplies",
+      "zone": "GARAGE-BIN-HARDWARE",
+      "source": "user-input",
+      "notes": "North shelf, east of auto supplies"
+    },
+    {
+      "id": "i154",
+      "name": "Suitcase (×2)",
+      "category": "luggage",
+      "zone": "GARAGE-SHELF-WEST",
+      "source": "user-input",
+      "notes": "West side upper shelf"
+    },
+    {
+      "id": "i155",
+      "name": "Backpack",
+      "category": "luggage",
+      "zone": "GARAGE-SHELF-WEST",
+      "source": "user-input",
+      "notes": "West side upper shelf"
+    },
+    {
+      "id": "i156",
+      "name": "Maternity pillow",
+      "category": "bedding",
+      "zone": "BSMT-RAISED-W",
+      "source": "user-input",
+      "notes": "NW raised concrete platform"
+    },
+    {
+      "id": "i157",
+      "name": "Pacifier clip (soother lanyard)",
+      "category": "baby-gear",
+      "zone": "BSMT-BIN-BABY",
+      "source": "user-input",
+      "notes": "Stored with baby supplies for baby #2"
     }
   ]
 }
