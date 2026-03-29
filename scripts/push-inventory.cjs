@@ -43,6 +43,7 @@ const ZONE_TO_ROOM = {
   'GARAGE-BIN-ELECTRONICS': 'Garage',
   'GARAGE-BIN-AUTO': 'Garage',
   'GARAGE-BIN-HARDWARE': 'Garage',
+  'WORKHALL-UPPER': 'Work Hallway',
   'GARAGE-BIN-BOOKS': 'Garage',
   'GARAGE-BIN-HEALTH': 'Garage',
   'BSMT-RAISED-W': 'Basement',

@@ -14,7 +14,7 @@
       "IMG_5351.mov"
     ],
     "notes": "Unified home inventory. 'zone' = current storage zone label from house-3d.html. 'PACKED-BOX:cN' = in a packed moving box. 'UNASSIGNED' = not yet placed.",
-    "itemCount": 152
+    "itemCount": 153
   },
   "items": [
     {
@@ -1131,6 +1131,14 @@
       "zone": "BSMT-BIN-BABY",
       "source": "user-input",
       "notes": "Stored with baby supplies for baby #2"
+    },
+    {
+      "id": "i158",
+      "name": "Endoscope inspection camera",
+      "category": "tools-supplies",
+      "zone": "GARAGE-BIN-AUTO",
+      "source": "user-input",
+      "notes": "Wired snake camera for pipe/inspection use"
     }
   ]
 }
