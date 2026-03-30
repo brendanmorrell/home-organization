@@ -1139,6 +1139,14 @@
       "zone": "GARAGE-BIN-AUTO",
       "source": "user-input",
       "notes": "Wired snake camera for pipe/inspection use"
+    },
+    {
+      "id": "i159",
+      "name": "Plumbing supplies (plumber's tape, pipes, tubes)",
+      "category": "tools-supplies",
+      "zone": "BSMT-SHELVING-EW",
+      "source": "user-input",
+      "notes": "General plumbing supplies on E-W shelf"
     }
   ]
 }

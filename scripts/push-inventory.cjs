@@ -51,6 +51,8 @@ const ZONE_TO_ROOM = {
   'BSMT-BIN-CLOTHING': 'Basement',
   'BSMT-BIN-BABY': 'Basement',
   'BSMT-BIN-DECOR': 'Basement',
+  'BSMT-SHELVING-EW': 'Basement',
+  'BSMT-SHELVING-NS': 'Basement',
   'WORKHALL-DRAWERS-N': 'Work Hallway',
   'WORKHALL-DRAWERS-S': 'Work Hallway',
   'WORKHALL-MID-CAB': 'Work Hallway',
