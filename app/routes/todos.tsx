@@ -38,6 +38,7 @@ export default function TodosPage() {
   const { data: lists = [], isLoading } = useQuery<TodoListWithItems[]>({
     queryKey: ["todo-lists"],
     queryFn: fetchTodoListsWithItems,
+    refetchInterval: 5000, // poll every 5s as reliable sync fallback
   });
 
   // --- Realtime: auto-refresh when another client changes data ---
