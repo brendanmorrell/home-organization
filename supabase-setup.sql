@@ -119,7 +119,36 @@ create policy "Public upload frame images"
 on storage.objects for insert
 with check (bucket_id = 'frame-images');
 
--- 8. Seed some demo data so the app has something to show
+-- 8. Todo Lists table
+create table public.todo_lists (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  color_index int not null default 0,
+  sort_order int not null default 0,
+  created_at timestamptz not null default now()
+);
+
+-- 9. Todo Items table
+create table public.todo_items (
+  id uuid primary key default gen_random_uuid(),
+  list_id uuid not null references public.todo_lists(id) on delete cascade,
+  text text not null,
+  status text not null default 'todo' check (status in ('todo', 'inflight', 'done')),
+  sort_order int not null default 0,
+  created_at timestamptz not null default now()
+);
+
+create index idx_todo_items_list_id on public.todo_items(list_id);
+create index idx_todo_items_status on public.todo_items(status);
+
+alter table public.todo_lists enable row level security;
+alter table public.todo_items enable row level security;
+create policy "Public read todo_lists" on public.todo_lists for select using (true);
+create policy "Public write todo_lists" on public.todo_lists for all using (true) with check (true);
+create policy "Public read todo_items" on public.todo_items for select using (true);
+create policy "Public write todo_items" on public.todo_items for all using (true) with check (true);
+
+-- 10. Seed some demo data so the app has something to show
 insert into public.rooms (id, name, icon, pos_x, pos_y, pos_z, width, depth, height, color, sort_order) values
   ('00000000-0000-0000-0000-000000000001', 'Kitchen', 'K', 0, 0, 0, 5, 4, 2.7, '#5d4037', 1),
   ('00000000-0000-0000-0000-000000000002', 'Basement', 'B', 0, -3, 0, 6, 5, 2.4, '#283593', 2),

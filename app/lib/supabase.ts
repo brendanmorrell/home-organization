@@ -210,3 +210,150 @@ export async function uploadFrameImage(
   } = supabase.storage.from("frame-images").getPublicUrl(path);
   return publicUrl;
 }
+
+// ---- Todo Types ----
+
+export type TodoList = {
+  id: string;
+  name: string;
+  color_index: number;
+  sort_order: number;
+  created_at: string;
+};
+
+export type TodoItem = {
+  id: string;
+  list_id: string;
+  text: string;
+  status: "todo" | "inflight" | "done";
+  sort_order: number;
+  created_at: string;
+};
+
+export type TodoListWithItems = TodoList & { items: TodoItem[] };
+
+// ---- Todo Data Fetching ----
+
+export async function fetchTodoLists(): Promise<TodoList[]> {
+  const { data, error } = await supabase
+    .from("todo_lists")
+    .select("*")
+    .order("sort_order");
+  if (error) throw error;
+  return data || [];
+}
+
+export async function fetchTodoListsWithItems(): Promise<TodoListWithItems[]> {
+  const lists = await fetchTodoLists();
+
+  const { data: items, error } = await supabase
+    .from("todo_items")
+    .select("*")
+    .order("sort_order");
+  if (error) throw error;
+
+  const itemsByListId = (items || []).reduce(
+    (acc: Record<string, TodoItem[]>, item: TodoItem) => {
+      if (!acc[item.list_id]) acc[item.list_id] = [];
+      acc[item.list_id].push(item);
+      return acc;
+    },
+    {}
+  );
+
+  return lists.map((list) => ({
+    ...list,
+    items: itemsByListId[list.id] || [],
+  }));
+}
+
+// ---- Todo Mutations ----
+
+export async function createTodoList(list: {
+  name: string;
+  color_index: number;
+  sort_order: number;
+}): Promise<TodoList> {
+  const { data, error } = await supabase
+    .from("todo_lists")
+    .insert(list)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function updateTodoList(
+  id: string,
+  updates: Partial<Pick<TodoList, "name" | "color_index" | "sort_order">>
+): Promise<TodoList> {
+  const { data, error } = await supabase
+    .from("todo_lists")
+    .update(updates)
+    .eq("id", id)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteTodoList(id: string): Promise<void> {
+  const { error } = await supabase
+    .from("todo_lists")
+    .delete()
+    .eq("id", id);
+  if (error) throw error;
+}
+
+export async function createTodoItem(item: {
+  list_id: string;
+  text: string;
+  status?: string;
+  sort_order: number;
+}): Promise<TodoItem> {
+  const { data, error } = await supabase
+    .from("todo_items")
+    .insert(item)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function updateTodoItem(
+  id: string,
+  updates: Partial<Pick<TodoItem, "text" | "status" | "sort_order">>
+): Promise<TodoItem> {
+  const { data, error } = await supabase
+    .from("todo_items")
+    .update(updates)
+    .eq("id", id)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteTodoItem(id: string): Promise<void> {
+  const { error } = await supabase
+    .from("todo_items")
+    .delete()
+    .eq("id", id);
+  if (error) throw error;
+}
+
+export async function reorderTodoItems(
+  items: { id: string; sort_order: number }[]
+): Promise<void> {
+  await Promise.all(
+    items.map(({ id, sort_order }) =>
+      supabase
+        .from("todo_items")
+        .update({ sort_order })
+        .eq("id", id)
+        .then(({ error }) => {
+          if (error) throw error;
+        })
+    )
+  );
+}
