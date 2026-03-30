@@ -8,6 +8,7 @@ import {
   createTodoItem,
   updateTodoItem,
   deleteTodoItem,
+  supabase,
   type TodoListWithItems,
   type TodoItem,
 } from "~/lib/supabase";
@@ -38,6 +39,20 @@ export default function TodosPage() {
     queryKey: ["todo-lists"],
     queryFn: fetchTodoListsWithItems,
   });
+
+  // --- Realtime: auto-refresh when another client changes data ---
+  useEffect(() => {
+    const channel = supabase
+      .channel('todo-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'todo_lists' }, () => {
+        queryClient.invalidateQueries({ queryKey: ["todo-lists"] });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'todo_items' }, () => {
+        queryClient.invalidateQueries({ queryKey: ["todo-lists"] });
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [queryClient]);
 
   // --- Local UI state ---
   const [activeListId, setActiveListId] = useState<string | null>(null);

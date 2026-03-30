@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
+  supabase,
   fetchTodoListsWithItems,
   createTodoList,
   createTodoItem,
@@ -62,6 +63,18 @@ export default function TodosScreen() {
   useEffect(() => {
     setLoading(true);
     loadData().finally(() => setLoading(false));
+
+    // Realtime: auto-refresh when another client changes data
+    const channel = supabase
+      .channel('todo-changes-mobile')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'todo_lists' }, () => {
+        loadData();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'todo_items' }, () => {
+        loadData();
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
   }, []);
 
   const onRefresh = useCallback(async () => {

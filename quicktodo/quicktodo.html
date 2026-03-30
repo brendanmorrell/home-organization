@@ -698,10 +698,70 @@ async function saveToSupabase() {
 }
 
 let _sbTimer = null;
+let _savingToSupabase = false;
 function debouncedSaveToSupabase() {
   if (_sbTimer) clearTimeout(_sbTimer);
-  _sbTimer = setTimeout(() => { saveToSupabase(); }, 500);
+  _sbTimer = setTimeout(() => { _savingToSupabase = true; saveToSupabase().finally(() => { _savingToSupabase = false; }); }, 500);
 }
+
+// ── Supabase Realtime: reload when another client changes data ──
+function setupRealtimeSync() {
+  try {
+    const wsUrl = SUPABASE_URL.replace('https://', 'wss://') + '/realtime/v1/websocket?apikey=' + SUPABASE_KEY + '&vsn=1.0.0';
+    const ws = new WebSocket(wsUrl);
+    let heartbeatRef = 0;
+    let heartbeatInterval = null;
+
+    ws.onopen = () => {
+      // Join the realtime channel for todo_lists and todo_items
+      ws.send(JSON.stringify({
+        topic: 'realtime:public:todo_lists',
+        event: 'phx_join',
+        payload: { config: { broadcast: { self: false }, postgres_changes: [{ event: '*', schema: 'public', table: 'todo_lists' }] } },
+        ref: '1'
+      }));
+      ws.send(JSON.stringify({
+        topic: 'realtime:public:todo_items',
+        event: 'phx_join',
+        payload: { config: { broadcast: { self: false }, postgres_changes: [{ event: '*', schema: 'public', table: 'todo_items' }] } },
+        ref: '2'
+      }));
+      // Heartbeat every 30s
+      heartbeatInterval = setInterval(() => {
+        heartbeatRef++;
+        ws.send(JSON.stringify({ topic: 'phoenix', event: 'heartbeat', payload: {}, ref: String(heartbeatRef + 100) }));
+      }, 30000);
+    };
+
+    ws.onmessage = (evt) => {
+      try {
+        const msg = JSON.parse(evt.data);
+        if (msg.event === 'postgres_changes' || msg.event === 'INSERT' || msg.event === 'UPDATE' || msg.event === 'DELETE') {
+          // Another client changed data — reload from Supabase (but not if we're the ones saving)
+          if (!_savingToSupabase) {
+            loadFromSupabase().then(sbState => {
+              if (sbState && sbState.lists && sbState.lists.length > 0) {
+                state = sbState;
+                render();
+              }
+            });
+          }
+        }
+      } catch(e) {}
+    };
+
+    ws.onclose = () => {
+      if (heartbeatInterval) clearInterval(heartbeatInterval);
+      // Reconnect after 3 seconds
+      setTimeout(setupRealtimeSync, 3000);
+    };
+
+    ws.onerror = () => { ws.close(); };
+  } catch(e) {
+    console.log('Realtime setup error:', e);
+  }
+}
+setupRealtimeSync();
 
 // Called when pywebview API is ready
 async function initFromFile() {
