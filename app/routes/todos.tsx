@@ -367,15 +367,13 @@ export default function TodosPage() {
                     </span>
                   )}
 
-                  {hoveredItemId === item.id && (
-                    <button
-                      className="todo-item-delete"
-                      onClick={() => deleteItemMut.mutate(item.id)}
-                      title="Delete task"
-                    >
-                      &times;
-                    </button>
-                  )}
+                  <button
+                    className={`todo-item-delete ${hoveredItemId === item.id ? "visible" : ""}`}
+                    onClick={() => deleteItemMut.mutate(item.id)}
+                    title="Delete task"
+                  >
+                    &times;
+                  </button>
                 </div>
               ))}
             </div>
@@ -636,7 +634,7 @@ const styles = `
   border: 1px solid var(--todo-accent);
   border-radius: 6px;
   color: var(--text);
-  font-size: 14px;
+  font-size: 16px;
   padding: 4px 8px;
   outline: none;
 }
@@ -649,9 +647,12 @@ const styles = `
   cursor: pointer;
   padding: 0 4px;
   line-height: 1;
-  opacity: 0.5;
+  opacity: 0;
   transition: opacity 0.1s, color 0.1s;
   flex-shrink: 0;
+}
+.todo-item-delete.visible {
+  opacity: 0.5;
 }
 .todo-item-delete:hover {
   opacity: 1;
@@ -702,7 +703,7 @@ const styles = `
   border: 1px solid var(--border);
   border-radius: var(--radius);
   color: var(--text);
-  font-size: 14px;
+  font-size: 16px;
   padding: 10px 14px;
   outline: none;
   transition: border-color 0.15s;
@@ -713,5 +714,40 @@ const styles = `
 .todo-input:focus {
   border-color: var(--todo-accent);
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--todo-accent) 20%, transparent);
+}
+
+/* ---- Mobile touch optimizations ---- */
+@media (max-width: 767px) {
+  .todo-tabs {
+    padding: 8px 12px 0;
+  }
+  .todo-tab {
+    padding: 8px 14px;
+    font-size: 14px;
+  }
+  .todo-item {
+    padding: 12px 12px;
+    gap: 12px;
+    min-height: 48px;
+  }
+  .todo-checkbox {
+    width: 28px;
+    height: 28px;
+  }
+  .todo-item-text {
+    font-size: 15px;
+  }
+  /* Always show delete on touch — no hover */
+  .todo-item-delete {
+    display: flex;
+    opacity: 0.4;
+  }
+  .todo-input-bar {
+    padding: 10px 12px;
+    padding-bottom: calc(10px + env(safe-area-inset-bottom, 0));
+  }
+  .todo-status {
+    padding: 6px 12px;
+  }
 }
 `;

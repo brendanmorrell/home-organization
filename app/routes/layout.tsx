@@ -197,7 +197,10 @@ export default function AppLayout() {
       </div>
 
       <BottomTabs />
-      <QuickAddFAB rooms={rooms} />
+      {/* Only show inventory FAB on inventory-related pages */}
+      {["/inventory", "/house", "/dashboard", "/rooms"].some(p => location.pathname.startsWith(p)) && (
+        <QuickAddFAB rooms={rooms} />
+      )}
     </div>
   );
 }
