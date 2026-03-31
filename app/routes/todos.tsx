@@ -12,6 +12,14 @@ import {
   type TodoListWithItems,
   type TodoItem,
 } from "~/lib/supabase";
+import {
+  getIdentity,
+  setIdentity,
+  clearIdentity,
+  getActiveListKey,
+  USERS,
+  type Identity,
+} from "~/lib/identity";
 
 const NEON_COLORS = [
   "#00e5ff", // Electric Cyan
@@ -32,16 +40,107 @@ function sortItems(items: TodoItem[]): TodoItem[] {
   );
 }
 
+/** Check if a list is visible to a given user */
+function isListVisibleTo(list: TodoListWithItems, user: Identity): boolean {
+  // Shared lists (owner is null/undefined) are visible to everyone
+  if (!list.owner) return true;
+  // Personal lists are only visible to their owner
+  return list.owner === user;
+}
+
+/** Check if a list is shared (no owner) */
+function isSharedList(list: TodoListWithItems): boolean {
+  return !list.owner;
+}
+
+// ---- Identity Picker Component ----
+
+function IdentityPicker({ onSelect }: { onSelect: (id: Identity) => void }) {
+  return (
+    <div className="identity-picker">
+      <style>{pickerStyles}</style>
+      <div className="identity-picker-content">
+        <h1 className="identity-picker-title">Who are you?</h1>
+        <div className="identity-picker-buttons">
+          {USERS.map((user) => (
+            <button
+              key={user.id}
+              className="identity-picker-btn"
+              onClick={() => onSelect(user.id)}
+            >
+              <span className="identity-picker-avatar">
+                {user.label.charAt(0)}
+              </span>
+              <span className="identity-picker-name">{user.label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function TodosPage() {
   const queryClient = useQueryClient();
+  const [currentUser, setCurrentUser] = useState<Identity | null>(() => getIdentity());
+  const [newListShared, setNewListShared] = useState(false);
 
-  const { data: lists = [], isLoading } = useQuery<TodoListWithItems[]>({
+  const handleSelectIdentity = useCallback((id: Identity) => {
+    setIdentity(id);
+    setCurrentUser(id);
+  }, []);
+
+  const handleSwitchUser = useCallback(() => {
+    clearIdentity();
+    setCurrentUser(null);
+  }, []);
+
+  // If no identity, show picker
+  if (!currentUser) {
+    return <IdentityPicker onSelect={handleSelectIdentity} />;
+  }
+
+  return (
+    <TodosMain
+      currentUser={currentUser}
+      onSwitchUser={handleSwitchUser}
+      newListShared={newListShared}
+      setNewListShared={setNewListShared}
+    />
+  );
+}
+
+function TodosMain({
+  currentUser,
+  onSwitchUser,
+  newListShared,
+  setNewListShared,
+}: {
+  currentUser: Identity;
+  onSwitchUser: () => void;
+  newListShared: boolean;
+  setNewListShared: (v: boolean) => void;
+}) {
+  const queryClient = useQueryClient();
+
+  const { data: allLists = [], isLoading } = useQuery<TodoListWithItems[]>({
     queryKey: ["todo-lists"],
     queryFn: fetchTodoListsWithItems,
-    refetchInterval: 5000, // poll every 5s as reliable sync fallback
+    refetchInterval: 5000,
   });
 
-  // --- Realtime: auto-refresh when another client changes data ---
+  // Filter lists visible to the current user
+  const lists = allLists.filter((l) => isListVisibleTo(l, currentUser));
+
+  // Sort: user's own lists first, then shared
+  const sortedLists = [...lists].sort((a, b) => {
+    const aOwned = a.owner === currentUser ? 0 : 1;
+    const bOwned = b.owner === currentUser ? 0 : 1;
+    if (aOwned !== bOwned) return aOwned - bOwned;
+    return a.sort_order - b.sort_order;
+  });
+
+  // --- Realtime ---
   useEffect(() => {
     const channel = supabase
       .channel('todo-changes')
@@ -56,7 +155,21 @@ export default function TodosPage() {
   }, [queryClient]);
 
   // --- Local UI state ---
-  const [activeListId, setActiveListId] = useState<string | null>(null);
+  const activeListKey = getActiveListKey(currentUser);
+  const [activeListId, setActiveListIdRaw] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
+    return localStorage.getItem(activeListKey);
+  });
+
+  const setActiveListId = useCallback((id: string | null) => {
+    setActiveListIdRaw(id);
+    if (id) {
+      localStorage.setItem(activeListKey, id);
+    } else {
+      localStorage.removeItem(activeListKey);
+    }
+  }, [activeListKey]);
+
   const [newInput, setNewInput] = useState("");
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [editingItemText, setEditingItemText] = useState("");
@@ -69,12 +182,14 @@ export default function TodosPage() {
   const editRef = useRef<HTMLInputElement>(null);
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Auto-select first list if none active
+  // Auto-select first list if none active or active not in visible lists
   useEffect(() => {
-    if (!activeListId && lists.length > 0) {
-      setActiveListId(lists[0].id);
+    if (sortedLists.length === 0) return;
+    const activeStillVisible = activeListId && sortedLists.some((l) => l.id === activeListId);
+    if (!activeStillVisible) {
+      setActiveListId(sortedLists[0].id);
     }
-  }, [lists, activeListId]);
+  }, [sortedLists, activeListId, setActiveListId]);
 
   // Focus rename input when renaming
   useEffect(() => {
@@ -86,7 +201,7 @@ export default function TodosPage() {
     if (editingItemId) editRef.current?.focus();
   }, [editingItemId]);
 
-  const activeList = lists.find((l) => l.id === activeListId) ?? null;
+  const activeList = sortedLists.find((l) => l.id === activeListId) ?? null;
   const activeColor = activeList ? NEON_COLORS[activeList.color_index % NEON_COLORS.length] : NEON_COLORS[0];
   const sortedItems = activeList ? sortItems(activeList.items) : [];
 
@@ -100,14 +215,16 @@ export default function TodosPage() {
     mutationFn: () =>
       createTodoList({
         name: "New List",
-        color_index: lists.length % NEON_COLORS.length,
-        sort_order: lists.length,
+        color_index: allLists.length % NEON_COLORS.length,
+        sort_order: allLists.length,
+        owner: newListShared ? null : currentUser,
       }),
     onSuccess: (newList: { id: string; name: string }) => {
       queryClient.invalidateQueries({ queryKey: ["todo-lists"] });
       setActiveListId(newList.id);
       setRenamingListId(newList.id);
       setRenamingListName(newList.name);
+      setNewListShared(false);
     },
   });
 
@@ -121,7 +238,7 @@ export default function TodosPage() {
     mutationFn: (id: string) => deleteTodoList(id),
     onSuccess: (_, deletedId) => {
       if (activeListId === deletedId) {
-        const remaining = lists.filter((l) => l.id !== deletedId);
+        const remaining = sortedLists.filter((l) => l.id !== deletedId);
         setActiveListId(remaining.length > 0 ? remaining[0].id : null);
       }
       queryClient.invalidateQueries({ queryKey: ["todo-lists"] });
@@ -221,12 +338,12 @@ export default function TodosPage() {
   const handleDeleteList = useCallback(
     (e: React.MouseEvent, listId: string) => {
       e.stopPropagation();
-      const list = lists.find((l) => l.id === listId);
+      const list = sortedLists.find((l) => l.id === listId);
       if (!list) return;
       if (!window.confirm(`Delete "${list.name}" and all its items?`)) return;
       deleteListMut.mutate(listId);
     },
-    [lists, deleteListMut]
+    [sortedLists, deleteListMut]
   );
 
   // --- Render ---
@@ -244,16 +361,27 @@ export default function TodosPage() {
     <div className="todo-page" style={{ "--todo-accent": activeColor } as React.CSSProperties}>
       <style>{styles}</style>
 
+      {/* User header */}
+      <div className="todo-user-bar">
+        <span className="todo-user-name">
+          {currentUser.charAt(0).toUpperCase() + currentUser.slice(1)}'s Todos
+        </span>
+        <button className="todo-switch-user" onClick={onSwitchUser}>
+          Switch
+        </button>
+      </div>
+
       {/* Tab bar */}
       <div className="todo-tabs">
         <div className="todo-tabs-scroll">
-          {lists.map((list) => {
+          {sortedLists.map((list) => {
             const color = NEON_COLORS[list.color_index % NEON_COLORS.length];
             const isActive = list.id === activeListId;
+            const shared = isSharedList(list);
             return (
               <div
                 key={list.id}
-                className={`todo-tab ${isActive ? "active" : ""}`}
+                className={`todo-tab ${isActive ? "active" : ""} ${shared ? "todo-tab--shared" : ""}`}
                 style={{ "--tab-color": color } as React.CSSProperties}
                 onClick={() => setActiveListId(list.id)}
                 onMouseEnter={() => setHoveredTab(list.id)}
@@ -284,6 +412,7 @@ export default function TodosPage() {
                     {list.name}
                   </span>
                 )}
+                {shared && <span className="todo-tab-shared-badge">shared</span>}
                 <span className="todo-tab-count">{list.items.length}</span>
                 {hoveredTab === list.id && (
                   <button
@@ -297,14 +426,25 @@ export default function TodosPage() {
               </div>
             );
           })}
-          <button
-            className="todo-tab todo-tab-add"
-            onClick={() => addListMut.mutate()}
-            disabled={addListMut.isPending}
-            title="Add new list"
-          >
-            +
-          </button>
+
+          {/* New list button with shared toggle */}
+          <div className="todo-tab-add-group">
+            <button
+              className="todo-tab todo-tab-add"
+              onClick={() => addListMut.mutate()}
+              disabled={addListMut.isPending}
+              title={newListShared ? "Add shared list" : "Add personal list"}
+            >
+              +
+            </button>
+            <button
+              className={`todo-shared-toggle ${newListShared ? "active" : ""}`}
+              onClick={() => setNewListShared(!newListShared)}
+              title={newListShared ? "Will create shared list" : "Will create personal list"}
+            >
+              {newListShared ? "Shared" : "Personal"}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -420,7 +560,7 @@ export default function TodosPage() {
         </div>
       ) : (
         <div className="todo-empty">
-          {lists.length === 0
+          {sortedLists.length === 0
             ? 'No lists yet. Click "+" to create one.'
             : "Select a list to view tasks."}
         </div>
@@ -428,6 +568,84 @@ export default function TodosPage() {
     </div>
   );
 }
+
+// ---- Identity Picker styles ----
+
+const pickerStyles = `
+.identity-picker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  background: #0a0a1a;
+  color: #e8e8f0;
+}
+
+.identity-picker-content {
+  text-align: center;
+  padding: 24px;
+}
+
+.identity-picker-title {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 40px;
+  color: #e8e8f0;
+  letter-spacing: -0.5px;
+}
+
+.identity-picker-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: center;
+}
+
+.identity-picker-btn {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 260px;
+  padding: 20px 28px;
+  background: #16213e;
+  border: 2px solid #2a3a5e;
+  border-radius: 16px;
+  color: #e8e8f0;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.identity-picker-btn:hover {
+  border-color: #00e5ff;
+  background: #1a2844;
+  box-shadow: 0 0 20px rgba(0, 229, 255, 0.15);
+  transform: translateY(-2px);
+}
+
+.identity-picker-btn:active {
+  transform: translateY(0);
+}
+
+.identity-picker-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #00e5ff, #b388ff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  font-weight: 700;
+  color: #0a0a1a;
+  flex-shrink: 0;
+}
+
+.identity-picker-name {
+  font-size: 20px;
+  font-weight: 600;
+}
+`;
 
 // ---- Scoped styles ----
 
@@ -451,6 +669,38 @@ const styles = `
   font-size: 14px;
 }
 
+/* ---- User bar ---- */
+.todo-user-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.todo-user-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.todo-switch-user {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  font-size: 12px;
+  padding: 4px 12px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
+}
+.todo-switch-user:hover {
+  border-color: var(--todo-accent);
+  color: var(--todo-accent);
+}
+
 /* ---- Tab bar ---- */
 .todo-tabs {
   padding: 12px 16px 0;
@@ -464,6 +714,7 @@ const styles = `
   overflow-x: auto;
   padding-bottom: 10px;
   scrollbar-width: thin;
+  align-items: center;
 }
 
 .todo-tab {
@@ -497,6 +748,21 @@ const styles = `
   box-shadow: 0 0 12px color-mix(in srgb, var(--tab-color) 25%, transparent);
 }
 
+.todo-tab--shared {
+  border-style: dashed;
+}
+.todo-tab--shared.active {
+  border-style: solid;
+}
+
+.todo-tab-shared-badge {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.5;
+  font-weight: 600;
+}
+
 .todo-tab-name {
   cursor: pointer;
 }
@@ -506,7 +772,7 @@ const styles = `
   border: none;
   border-bottom: 1px solid var(--tab-color, var(--accent));
   color: var(--text);
-  font-size: 13px;
+  font-size: 16px;
   font-weight: 500;
   outline: none;
   width: 80px;
@@ -537,6 +803,13 @@ const styles = `
   color: var(--red);
 }
 
+.todo-tab-add-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
 .todo-tab-add {
   font-size: 18px;
   font-weight: 300;
@@ -546,6 +819,28 @@ const styles = `
 .todo-tab-add:hover {
   color: var(--accent);
   border-color: var(--accent);
+}
+
+.todo-shared-toggle {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  font-size: 10px;
+  padding: 4px 8px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+  font-family: inherit;
+}
+.todo-shared-toggle:hover {
+  border-color: var(--todo-accent);
+  color: var(--todo-accent);
+}
+.todo-shared-toggle.active {
+  border-color: var(--todo-accent);
+  color: var(--todo-accent);
+  background: color-mix(in srgb, var(--todo-accent) 10%, transparent);
 }
 
 /* ---- Items container ---- */
@@ -748,6 +1043,9 @@ const styles = `
   }
   .todo-status {
     padding: 6px 12px;
+  }
+  .todo-user-bar {
+    padding: 8px 12px;
   }
 }
 `;

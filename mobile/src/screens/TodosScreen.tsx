@@ -9,11 +9,11 @@ import {
   StyleSheet,
   RefreshControl,
   Alert,
-  Keyboard,
   ActivityIndicator,
   Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   supabase,
   fetchTodoListsWithItems,
@@ -34,16 +34,178 @@ const TEXT_PRIMARY = '#e8e8f0';
 const TEXT_SECONDARY = '#8888a8';
 const DANGER = '#ff4060';
 
+const IDENTITY_KEY = 'homebase_user';
+type Identity = 'brendan' | 'sarah';
+
+const USERS: { id: Identity; label: string }[] = [
+  { id: 'brendan', label: 'Brendan' },
+  { id: 'sarah', label: 'Sarah' },
+];
+
+function isListVisibleTo(list: TodoListWithItems, user: Identity): boolean {
+  if (!list.owner) return true;
+  return list.owner === user;
+}
+
+function isSharedList(list: TodoListWithItems): boolean {
+  return !list.owner;
+}
+
+// ---- Identity Picker ----
+
+function IdentityPicker({ onSelect }: { onSelect: (id: Identity) => void }) {
+  return (
+    <SafeAreaView style={pickerStyles.container}>
+      <View style={pickerStyles.content}>
+        <Text style={pickerStyles.title}>Who are you?</Text>
+        <View style={pickerStyles.buttons}>
+          {USERS.map(user => (
+            <TouchableOpacity
+              key={user.id}
+              style={pickerStyles.btn}
+              onPress={() => onSelect(user.id)}
+              activeOpacity={0.7}
+            >
+              <View style={pickerStyles.avatar}>
+                <Text style={pickerStyles.avatarText}>{user.label.charAt(0)}</Text>
+              </View>
+              <Text style={pickerStyles.name}>{user.label}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+    </SafeAreaView>
+  );
+}
+
+const pickerStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#0a0a1a',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  content: {
+    alignItems: 'center',
+    padding: 24,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: TEXT_PRIMARY,
+    marginBottom: 40,
+    letterSpacing: -0.5,
+  },
+  buttons: {
+    gap: 16,
+    width: '100%',
+    alignItems: 'center',
+  },
+  btn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+    width: 260,
+    paddingVertical: 20,
+    paddingHorizontal: 28,
+    backgroundColor: SURFACE,
+    borderWidth: 2,
+    borderColor: '#2a3a5e',
+    borderRadius: 16,
+  },
+  avatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#00e5ff',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  avatarText: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#0a0a1a',
+  },
+  name: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: TEXT_PRIMARY,
+  },
+});
+
+// ---- Main Screen ----
+
 export default function TodosScreen() {
-  const [lists, setLists] = useState<TodoListWithItems[]>([]);
+  const [identity, setIdentityState] = useState<Identity | null>(null);
+  const [identityLoading, setIdentityLoading] = useState(true);
+
+  useEffect(() => {
+    AsyncStorage.getItem(IDENTITY_KEY).then(val => {
+      if (val === 'brendan' || val === 'sarah') {
+        setIdentityState(val);
+      }
+      setIdentityLoading(false);
+    });
+  }, []);
+
+  const handleSelectIdentity = useCallback(async (id: Identity) => {
+    await AsyncStorage.setItem(IDENTITY_KEY, id);
+    setIdentityState(id);
+  }, []);
+
+  const handleSwitchUser = useCallback(async () => {
+    await AsyncStorage.removeItem(IDENTITY_KEY);
+    setIdentityState(null);
+  }, []);
+
+  if (identityLoading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={NEON_COLORS[0].neon} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (!identity) {
+    return <IdentityPicker onSelect={handleSelectIdentity} />;
+  }
+
+  return (
+    <TodosMain
+      currentUser={identity}
+      onSwitchUser={handleSwitchUser}
+    />
+  );
+}
+
+function TodosMain({
+  currentUser,
+  onSwitchUser,
+}: {
+  currentUser: Identity;
+  onSwitchUser: () => void;
+}) {
+  const [allLists, setAllLists] = useState<TodoListWithItems[]>([]);
   const [activeListId, setActiveListId] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [newItemText, setNewItemText] = useState('');
   const [addingItem, setAddingItem] = useState(false);
+  const [newListShared, setNewListShared] = useState(false);
   const inputRef = useRef<TextInput>(null);
 
-  const activeList = lists.find(l => l.id === activeListId) || lists[0] || null;
+  // Filter lists for current user
+  const lists = allLists.filter(l => isListVisibleTo(l, currentUser));
+  const sortedLists = [...lists].sort((a, b) => {
+    const aOwned = a.owner === currentUser ? 0 : 1;
+    const bOwned = b.owner === currentUser ? 0 : 1;
+    if (aOwned !== bOwned) return aOwned - bOwned;
+    return a.sort_order - b.sort_order;
+  });
+
+  const activeList = sortedLists.find(l => l.id === activeListId) || sortedLists[0] || null;
   const activeColor = activeList
     ? NEON_COLORS[activeList.color_index % NEON_COLORS.length]
     : NEON_COLORS[0];
@@ -51,20 +213,31 @@ export default function TodosScreen() {
   const loadData = useCallback(async () => {
     try {
       const data = await fetchTodoListsWithItems();
-      setLists(data);
-      if (!activeListId && data.length > 0) {
-        setActiveListId(data[0].id);
+      setAllLists(data);
+      // Restore persisted active list
+      const storedId = await AsyncStorage.getItem(`homebase_active_list_${currentUser}`);
+      if (storedId && data.some(l => l.id === storedId)) {
+        setActiveListId(storedId);
+      } else if (!activeListId && data.length > 0) {
+        const visible = data.filter(l => isListVisibleTo(l, currentUser));
+        if (visible.length > 0) setActiveListId(visible[0].id);
       }
     } catch (err) {
       console.error('Failed to load todos:', err);
     }
-  }, [activeListId]);
+  }, [activeListId, currentUser]);
+
+  const persistActiveList = useCallback(async (id: string | null) => {
+    setActiveListId(id);
+    if (id) {
+      await AsyncStorage.setItem(`homebase_active_list_${currentUser}`, id);
+    }
+  }, [currentUser]);
 
   useEffect(() => {
     setLoading(true);
     loadData().finally(() => setLoading(false));
 
-    // Realtime: auto-refresh when another client changes data
     const channel = supabase
       .channel('todo-changes-mobile')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'todo_lists' }, () => {
@@ -90,14 +263,16 @@ export default function TodosScreen() {
       async (name) => {
         if (!name?.trim()) return;
         try {
-          const colorIndex = lists.length % NEON_COLORS.length;
-          const sortOrder = lists.length;
+          const colorIndex = allLists.length % NEON_COLORS.length;
+          const sortOrder = allLists.length;
           const newList = await createTodoList({
             name: name.trim(),
             color_index: colorIndex,
             sort_order: sortOrder,
+            owner: newListShared ? null : currentUser,
           });
-          setActiveListId(newList.id);
+          await persistActiveList(newList.id);
+          setNewListShared(false);
           await loadData();
         } catch (err) {
           Alert.alert('Error', 'Failed to create list');
@@ -207,7 +382,7 @@ export default function TodosScreen() {
     );
   };
 
-  // Sort: todo (0) → inflight (1) → done (2)
+  // Sort: todo (0) -> inflight (1) -> done (2)
   const sortedItems = React.useMemo(() => {
     if (!activeList) return [];
     const order: Record<string, number> = { todo: 0, inflight: 1, done: 2 };
@@ -276,13 +451,18 @@ export default function TodosScreen() {
       {/* Header */}
       <View style={styles.header}>
         <Text style={[styles.headerTitle, { color: activeColor.neon }]}>
-          HomeBase
+          {currentUser.charAt(0).toUpperCase() + currentUser.slice(1)}'s Todos
         </Text>
-        <TouchableOpacity onPress={handleDeleteList} disabled={!activeList}>
-          <Text style={[styles.headerAction, !activeList && { opacity: 0.3 }]}>
-            Delete List
-          </Text>
-        </TouchableOpacity>
+        <View style={styles.headerActions}>
+          <TouchableOpacity onPress={onSwitchUser}>
+            <Text style={styles.switchUserText}>Switch</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={handleDeleteList} disabled={!activeList}>
+            <Text style={[styles.headerAction, !activeList && { opacity: 0.3 }]}>
+              Delete List
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* List Tabs */}
@@ -292,15 +472,17 @@ export default function TodosScreen() {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.tabScroll}
         >
-          {lists.map(list => {
+          {sortedLists.map(list => {
             const color = NEON_COLORS[list.color_index % NEON_COLORS.length];
             const isActive = list.id === (activeList?.id ?? null);
+            const shared = isSharedList(list);
             return (
               <TouchableOpacity
                 key={list.id}
-                onPress={() => setActiveListId(list.id)}
+                onPress={() => persistActiveList(list.id)}
                 style={[
                   styles.tab,
+                  shared && styles.tabShared,
                   isActive
                     ? { backgroundColor: color.neon, borderColor: color.neon }
                     : { backgroundColor: 'transparent', borderColor: color.dim },
@@ -317,6 +499,11 @@ export default function TodosScreen() {
                 >
                   {list.name}
                 </Text>
+                {shared && (
+                  <Text style={[styles.sharedBadge, isActive ? { color: '#0a0a15' } : { color: color.dim }]}>
+                    S
+                  </Text>
+                )}
                 <View
                   style={[
                     styles.tabBadge,
@@ -336,9 +523,19 @@ export default function TodosScreen() {
             );
           })}
 
-          <TouchableOpacity onPress={handleAddList} style={styles.addListBtn}>
-            <Text style={styles.addListBtnText}>+</Text>
-          </TouchableOpacity>
+          <View style={styles.addListGroup}>
+            <TouchableOpacity onPress={handleAddList} style={styles.addListBtn}>
+              <Text style={styles.addListBtnText}>+</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setNewListShared(!newListShared)}
+              style={[styles.sharedToggle, newListShared && styles.sharedToggleActive]}
+            >
+              <Text style={[styles.sharedToggleText, newListShared && styles.sharedToggleTextActive]}>
+                {newListShared ? 'Shared' : 'Personal'}
+              </Text>
+            </TouchableOpacity>
+          </View>
         </ScrollView>
       </View>
 
@@ -385,7 +582,6 @@ export default function TodosScreen() {
           }
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
-              <Text style={styles.emptyIcon}>📋</Text>
               <Text style={styles.emptyText}>No items yet</Text>
               <Text style={styles.emptySubtext}>
                 Add your first item below
@@ -396,7 +592,6 @@ export default function TodosScreen() {
         />
       ) : (
         <View style={styles.emptyContainer}>
-          <Text style={styles.emptyIcon}>🏠</Text>
           <Text style={styles.emptyText}>No lists yet</Text>
           <Text style={styles.emptySubtext}>
             Tap + to create your first list
@@ -484,12 +679,22 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   headerTitle: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: '800',
     letterSpacing: -0.5,
   },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
   headerAction: {
     color: DANGER,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  switchUserText: {
+    color: TEXT_SECONDARY,
     fontSize: 14,
     fontWeight: '600',
   },
@@ -512,9 +717,17 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     gap: 6,
   },
+  tabShared: {
+    borderStyle: 'dashed',
+  },
   tabText: {
     fontSize: 14,
     maxWidth: 120,
+  },
+  sharedBadge: {
+    fontSize: 9,
+    fontWeight: '700',
+    opacity: 0.6,
   },
   tabBadge: {
     minWidth: 20,
@@ -527,6 +740,11 @@ const styles = StyleSheet.create({
   tabBadgeText: {
     fontSize: 11,
     fontWeight: '700',
+  },
+  addListGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   addListBtn: {
     width: 36,
@@ -543,6 +761,25 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '300',
     marginTop: -1,
+  },
+  sharedToggle: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: TEXT_SECONDARY,
+  },
+  sharedToggleActive: {
+    borderColor: '#00e5ff',
+    backgroundColor: 'rgba(0, 229, 255, 0.1)',
+  },
+  sharedToggleText: {
+    fontSize: 10,
+    color: TEXT_SECONDARY,
+    fontWeight: '600',
+  },
+  sharedToggleTextActive: {
+    color: '#00e5ff',
   },
 
   // Status Bar
@@ -642,10 +879,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingBottom: 80,
   },
-  emptyIcon: {
-    fontSize: 48,
-    marginBottom: 16,
-  },
   emptyText: {
     color: TEXT_PRIMARY,
     fontSize: 18,
@@ -675,7 +908,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingHorizontal: 14,
     color: TEXT_PRIMARY,
-    fontSize: 15,
+    fontSize: 16,
   },
   addItemBtn: {
     height: 44,

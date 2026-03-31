@@ -626,6 +626,9 @@ function saveState() {
   debouncedSaveToSupabase();
 }
 
+// QuickTodo runs on Brendan's Mac — hardcode owner filter
+const QUICKTODO_OWNER = 'brendan';
+
 async function loadFromSupabase() {
   try {
     const [listsRes, itemsRes] = await Promise.all([
@@ -633,8 +636,10 @@ async function loadFromSupabase() {
       fetch(SUPABASE_URL + '/rest/v1/todo_items?order=sort_order', { headers: SB_HEADERS })
     ]);
     if (!listsRes.ok || !itemsRes.ok) return null;
-    const lists = await listsRes.json();
+    const allLists = await listsRes.json();
     const items = await itemsRes.json();
+    // Filter: show Brendan's lists + shared lists (owner is null), hide Sarah's personal lists
+    const lists = allLists.filter(l => !l.owner || l.owner === QUICKTODO_OWNER);
     // Group items by list_id
     const itemsByList = {};
     items.forEach(item => {
@@ -646,6 +651,7 @@ async function loadFromSupabase() {
       lists: lists.map(l => ({
         name: l.name,
         colorIndex: l.color_index !== undefined ? l.color_index : 0,
+        owner: l.owner || null,
         _id: l.id,
         items: (itemsByList[l.id] || []).map(it => ({
           text: it.text,
@@ -672,7 +678,7 @@ async function saveToSupabase() {
       const res = await fetch(SUPABASE_URL + '/rest/v1/todo_lists', {
         method: 'POST',
         headers: SB_HEADERS,
-        body: JSON.stringify({ name: list.name, color_index: list.colorIndex, sort_order: i })
+        body: JSON.stringify({ name: list.name, color_index: list.colorIndex, sort_order: i, owner: list.owner || null })
       });
       if (!res.ok) continue;
       const created = await res.json();
@@ -816,7 +822,7 @@ function renderTabs() {
   addBtn.title = 'New list';
   addBtn.addEventListener('click', () => {
     const colorIndex = state.lists.length % NUM_COLORS;
-    state.lists.push({ name: 'New List', items: [], colorIndex });
+    state.lists.push({ name: 'New List', items: [], colorIndex, owner: QUICKTODO_OWNER });
     state.activeList = state.lists.length - 1;
     pendingRenameIndex = state.activeList;
     render();

@@ -218,6 +218,7 @@ export type TodoList = {
   name: string;
   color_index: number;
   sort_order: number;
+  owner?: string | null;
   created_at: string;
 };
 
@@ -273,6 +274,7 @@ export async function createTodoList(list: {
   name: string;
   color_index: number;
   sort_order: number;
+  owner?: string | null;
 }): Promise<TodoList> {
   const { data, error } = await supabase
     .from("todo_lists")
@@ -285,7 +287,7 @@ export async function createTodoList(list: {
 
 export async function updateTodoList(
   id: string,
-  updates: Partial<Pick<TodoList, "name" | "color_index" | "sort_order">>
+  updates: Partial<Pick<TodoList, "name" | "color_index" | "sort_order" | "owner">>
 ): Promise<TodoList> {
   const { data, error } = await supabase
     .from("todo_lists")

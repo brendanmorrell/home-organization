@@ -11,6 +11,7 @@ export type TodoList = {
   name: string;
   color_index: number;
   sort_order: number;
+  owner?: string | null;
   created_at: string;
 };
 
@@ -43,7 +44,7 @@ export async function fetchTodoListsWithItems(): Promise<TodoListWithItems[]> {
   }));
 }
 
-export async function createTodoList(list: { name: string; color_index: number; sort_order: number }) {
+export async function createTodoList(list: { name: string; color_index: number; sort_order: number; owner?: string | null }) {
   const { data, error } = await supabase.from('todo_lists').insert(list).select().single();
   if (error) throw error;
   return data as TodoList;
@@ -70,7 +71,7 @@ export async function deleteTodoList(id: string) {
   if (error) throw error;
 }
 
-export async function updateTodoList(id: string, updates: Partial<Pick<TodoList, 'name' | 'color_index' | 'sort_order'>>) {
+export async function updateTodoList(id: string, updates: Partial<Pick<TodoList, 'name' | 'color_index' | 'sort_order' | 'owner'>>) {
   const { error } = await supabase.from('todo_lists').update(updates).eq('id', id);
   if (error) throw error;
 }
