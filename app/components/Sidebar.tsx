@@ -27,8 +27,8 @@ export default function Sidebar({
       <div className="sidebar-nav">
         <div className="nav-section">Navigate</div>
         <Link
-          to="/"
-          className={`nav-item ${location.pathname === "/" ? "active" : ""}`}
+          to="/dashboard"
+          className={`nav-item ${location.pathname === "/dashboard" ? "active" : ""}`}
           onClick={() => setActiveRoomId(null)}
         >
           <span className="icon">{"\u{1F3E0}"}</span>
@@ -112,8 +112,8 @@ export default function Sidebar({
 
         <div className="nav-section">Modules</div>
         <Link
-          to="/todos"
-          className={`nav-item ${location.pathname === "/todos" ? "active" : ""}`}
+          to="/"
+          className={`nav-item ${location.pathname === "/" ? "active" : ""}`}
         >
           <span className="icon">{"\u2705"}</span>
           <span>To-dos</span>

@@ -8,7 +8,7 @@ VENV_DIR="$SCRIPT_DIR/.quicktodo-venv"
 PY_SCRIPT="$SCRIPT_DIR/launch-quicktodo.py"
 
 # Check if QuickTodo is already running
-PID=$(pgrep -f "launch-quicktodo.py")
+PID=$(pgrep -f "[Pp]ython.*launch-quicktodo.py")
 
 if [ -n "$PID" ]; then
   # Already running — toggle visibility via AppleScript
@@ -33,5 +33,5 @@ else
     "$VENV_DIR/bin/pip" install --quiet pywebview
   fi
 
-  "$VENV_DIR/bin/python3" "$PY_SCRIPT" &
+  exec "$VENV_DIR/bin/python3" "$PY_SCRIPT"
 fi

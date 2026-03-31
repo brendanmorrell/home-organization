@@ -207,6 +207,13 @@ export default function TodosScreen() {
     );
   };
 
+  // Sort: todo (0) → inflight (1) → done (2)
+  const sortedItems = React.useMemo(() => {
+    if (!activeList) return [];
+    const order: Record<string, number> = { todo: 0, inflight: 1, done: 2 };
+    return [...activeList.items].sort((a, b) => (order[a.status] ?? 0) - (order[b.status] ?? 0));
+  }, [activeList]);
+
   const todoCount = activeList?.items.filter(i => i.status === 'todo').length ?? 0;
   const inflightCount = activeList?.items.filter(i => i.status === 'inflight').length ?? 0;
   const doneCount = activeList?.items.filter(i => i.status === 'done').length ?? 0;
@@ -364,7 +371,7 @@ export default function TodosScreen() {
       {/* Items List */}
       {activeList ? (
         <FlatList
-          data={activeList.items}
+          data={sortedItems}
           keyExtractor={item => item.id}
           renderItem={renderItem}
           contentContainerStyle={styles.listContent}

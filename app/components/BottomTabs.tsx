@@ -2,10 +2,10 @@ import { Link, useLocation } from "react-router";
 import { useState } from "react";
 
 const tabs = [
-  { label: "Home", icon: "\u{1F3E0}", to: "/" },
+  { label: "Todos", icon: "\u2705", to: "/" },
+  { label: "Home", icon: "\u{1F3E0}", to: "/dashboard" },
   { label: "House", icon: "3D", to: "/house" },
   { label: "Items", icon: "\u{1F4CB}", to: "/inventory" },
-  { label: "Todos", icon: "\u2705", to: "/todos" },
 ];
 
 const moreItems = [

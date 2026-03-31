@@ -8,6 +8,18 @@ import os
 import json
 import webview
 
+# Set the app icon (replaces default Python rocket in app switcher)
+icon_path = '/Applications/QuickTodo.app/Contents/Resources/AppIcon.icns'
+if os.path.exists(icon_path):
+    try:
+        from AppKit import NSApplication, NSImage
+        app = NSApplication.sharedApplication()
+        icon = NSImage.alloc().initWithContentsOfFile_(icon_path)
+        if icon:
+            app.setApplicationIconImage_(icon)
+    except Exception:
+        pass
+
 WIDTH = 360
 HEIGHT = 520
 COLLAPSED_HEIGHT = 30
