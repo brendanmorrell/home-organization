@@ -117,15 +117,6 @@ export default function Sidebar({
         >
           <span className="icon">{"\u2705"}</span>
           <span>To-dos</span>
-          <span className="count coming-soon-badge">Soon</span>
-        </Link>
-        <Link
-          to="/weekly"
-          className={`nav-item ${location.pathname === "/weekly" ? "active" : ""}`}
-        >
-          <span className="icon">{"\u{1F6D2}"}</span>
-          <span>Weekly</span>
-          <span className="count coming-soon-badge">Soon</span>
         </Link>
         <Link
           to="/vehicles"

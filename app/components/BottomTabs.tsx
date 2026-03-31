@@ -9,7 +9,6 @@ const tabs = [
 ];
 
 const moreItems = [
-  { label: "Weekly", icon: "\u{1F6D2}", to: "/weekly" },
   { label: "Vehicles", icon: "\u{1F697}", to: "/vehicles" },
   { label: "Documents", icon: "\u{1F4C1}", to: "/docs" },
   { label: "Org Plan", icon: "\u{1F5FA}", to: "/plan" },
