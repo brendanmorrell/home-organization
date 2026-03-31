@@ -1,19 +1,19 @@
 // Simple user identity for HomeBase todos
-// Two hardcoded users: "brendan" and "sarah"
+// Two hardcoded users: "brendan" and "erin"
 
 const STORAGE_KEY = "homebase_user";
 
-export type Identity = "brendan" | "sarah";
+export type Identity = "brendan" | "erin";
 
 export const USERS: { id: Identity; label: string }[] = [
   { id: "brendan", label: "Brendan" },
-  { id: "sarah", label: "Sarah" },
+  { id: "erin", label: "Erin" },
 ];
 
 export function getIdentity(): Identity | null {
   if (typeof window === "undefined") return null;
   const val = localStorage.getItem(STORAGE_KEY);
-  if (val === "brendan" || val === "sarah") return val;
+  if (val === "brendan" || val === "erin") return val;
   return null;
 }
 
