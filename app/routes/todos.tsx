@@ -126,7 +126,7 @@ function TodosMain({
   const { data: allLists = [], isLoading } = useQuery<TodoListWithItems[]>({
     queryKey: ["todo-lists"],
     queryFn: fetchTodoListsWithItems,
-    refetchInterval: 5000,
+    refetchInterval: 15000, // poll less aggressively; realtime handles fast sync
   });
 
   // Filter lists visible to the current user
@@ -182,14 +182,15 @@ function TodosMain({
   const editRef = useRef<HTMLInputElement>(null);
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Auto-select first list if none active or active not in visible lists
+  // Auto-select first list ONLY if no valid active list exists
+  // Use list IDs as stable dependency, not the array reference
+  const visibleListIds = sortedLists.map(l => l.id).join(",");
   useEffect(() => {
     if (sortedLists.length === 0) return;
-    const activeStillVisible = activeListId && sortedLists.some((l) => l.id === activeListId);
-    if (!activeStillVisible) {
-      setActiveListId(sortedLists[0].id);
-    }
-  }, [sortedLists, activeListId, setActiveListId]);
+    if (activeListId && sortedLists.some((l) => l.id === activeListId)) return;
+    // Only auto-select if current selection is genuinely invalid
+    setActiveListId(sortedLists[0].id);
+  }, [visibleListIds]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Focus rename input when renaming
   useEffect(() => {
@@ -258,12 +259,38 @@ function TodosMain({
   const updateItemMut = useMutation({
     mutationFn: ({ id, updates }: { id: string; updates: Parameters<typeof updateTodoItem>[1] }) =>
       updateTodoItem(id, updates),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["todo-lists"] }),
+    onMutate: async ({ id, updates }) => {
+      await queryClient.cancelQueries({ queryKey: ["todo-lists"] });
+      const prev = queryClient.getQueryData<TodoListWithItems[]>(["todo-lists"]);
+      queryClient.setQueryData<TodoListWithItems[]>(["todo-lists"], (old) =>
+        old?.map((l) => ({
+          ...l,
+          items: l.items.map((i) => (i.id === id ? { ...i, ...updates } : i)),
+        })) ?? []
+      );
+      return { prev };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.prev) queryClient.setQueryData(["todo-lists"], context.prev);
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ["todo-lists"] }),
   });
 
   const deleteItemMut = useMutation({
     mutationFn: (id: string) => deleteTodoItem(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["todo-lists"] }),
+    onMutate: async (id: string) => {
+      // Optimistic: remove item from cache immediately
+      await queryClient.cancelQueries({ queryKey: ["todo-lists"] });
+      const prev = queryClient.getQueryData<TodoListWithItems[]>(["todo-lists"]);
+      queryClient.setQueryData<TodoListWithItems[]>(["todo-lists"], (old) =>
+        old?.map((l) => ({ ...l, items: l.items.filter((i) => i.id !== id) })) ?? []
+      );
+      return { prev };
+    },
+    onError: (_err, _id, context) => {
+      if (context?.prev) queryClient.setQueryData(["todo-lists"], context.prev);
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ["todo-lists"] }),
   });
 
   // --- Handlers ---
