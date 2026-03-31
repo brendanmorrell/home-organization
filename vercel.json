@@ -4,6 +4,8 @@
   "rewrites": [
     { "source": "/house-3d.html", "destination": "/house-3d.html" },
     { "source": "/assets/(.*)", "destination": "/assets/$1" },
+    { "source": "/manifest.json", "destination": "/manifest.json" },
+    { "source": "/icon-:size.png", "destination": "/icon-:size.png" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
