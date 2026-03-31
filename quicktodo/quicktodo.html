@@ -182,6 +182,37 @@
   }
   .app.collapsed .collapsible { display: none; }
 
+  /* ── User bar ── */
+  .user-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 12px;
+    background: var(--neon-tint-surface);
+    border-bottom: 1px solid var(--border-subtle);
+    flex-shrink: 0;
+  }
+  .user-bar-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+  .user-bar-switch {
+    background: none;
+    border: 1px solid var(--border-subtle);
+    color: var(--text-secondary);
+    font-size: 10px;
+    padding: 2px 10px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit;
+  }
+  .user-bar-switch:hover {
+    border-color: var(--neon);
+    color: var(--neon);
+  }
+
   /* ── Tab bar ── */
   .tab-bar {
     display: flex;
@@ -230,6 +261,8 @@
     box-shadow: 0 0 12px var(--neon-glow), 0 0 4px var(--neon-wash-strong);
     text-shadow: 0 0 10px var(--neon-glow), 0 0 20px var(--neon-glow);
   }
+  .tab.shared { border-style: dashed; }
+  .tab.shared.active { border-style: solid; }
   .tab.active .tab-close { color: rgba(255,255,255,0.7); }
   .tab.active .tab-close:hover { color: #fff; }
   .tab .tab-close {
@@ -246,7 +279,30 @@
   .tab:hover .tab-close { display: inline-flex; color: var(--neon); }
   .tab .tab-close:hover { opacity: 1; }
 
+  .tab-shared-badge {
+    font-size: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    opacity: 0.5;
+    font-weight: 600;
+  }
+
+  .tab-count {
+    font-size: 10px;
+    opacity: 0.6;
+    background: rgba(255,255,255,0.08);
+    padding: 1px 5px;
+    border-radius: 8px;
+  }
+
   .tab-name { cursor: pointer; }
+
+  .tab-add-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+  }
 
   .tab-add {
     display: flex;
@@ -268,6 +324,28 @@
     border-color: var(--neon-dim);
     box-shadow: 0 0 8px var(--neon-wash);
     text-shadow: 0 0 6px var(--neon-glow);
+  }
+
+  .shared-toggle {
+    background: none;
+    border: 1px solid var(--border-subtle);
+    color: var(--text-secondary);
+    font-size: 9px;
+    padding: 3px 7px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+    font-family: inherit;
+  }
+  .shared-toggle:hover {
+    border-color: var(--neon);
+    color: var(--neon);
+  }
+  .shared-toggle.active {
+    border-color: var(--neon);
+    color: var(--neon);
+    background: var(--neon-wash);
   }
 
   /* ── List area ── */
@@ -528,6 +606,70 @@
     font-size: 12px;
     color: var(--neon);
   }
+
+  /* ── Identity picker ── */
+  .identity-picker {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    background: var(--bg-base);
+  }
+  .identity-picker-content {
+    text-align: center;
+    padding: 24px;
+  }
+  .identity-picker-title {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 24px;
+    color: var(--text-primary);
+  }
+  .identity-picker-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    align-items: center;
+  }
+  .identity-picker-btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 200px;
+    padding: 14px 20px;
+    background: var(--bg-surface);
+    border: 2px solid rgba(255,255,255,0.1);
+    border-radius: 12px;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: inherit;
+    font-size: 13px;
+  }
+  .identity-picker-btn:hover {
+    border-color: #00e5ff;
+    background: var(--bg-elevated);
+    box-shadow: 0 0 20px rgba(0,229,255,0.15);
+    transform: translateY(-2px);
+  }
+  .identity-picker-btn:active { transform: translateY(0); }
+  .identity-picker-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #00e5ff, #b388ff);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: 700;
+    color: #0a0a1a;
+    flex-shrink: 0;
+  }
+  .identity-picker-name {
+    font-size: 16px;
+    font-weight: 600;
+  }
 </style>
 </head>
 <body>
@@ -535,22 +677,39 @@
   <div class="titlebar" id="titlebar">
     <span class="titlebar-label">QuickTodo</span>
   </div>
-  <div class="collapsible">
-    <div class="tab-bar" id="tabBar"></div>
-    <div class="list-area" id="listArea"></div>
-    <div class="input-area" id="inputArea">
-      <input type="text" id="newItemInput" placeholder="Add a task…" autofocus>
+  <div class="collapsible" id="collapsible">
+    <!-- Identity picker (shown when no user selected) -->
+    <div class="identity-picker" id="identityPicker" style="display:none;">
+      <div class="identity-picker-content">
+        <div class="identity-picker-title">Who are you?</div>
+        <div class="identity-picker-buttons" id="identityButtons"></div>
+      </div>
     </div>
-    <div class="status-bar" id="statusBar">
-      <span id="statusText"></span>
-      <span class="clear-done" id="clearDone" title="Remove completed items">clear done</span>
+    <!-- Main todo UI (shown when user is selected) -->
+    <div id="mainUI" style="display:none; flex-direction:column; min-height:0;">
+      <div class="user-bar" id="userBar">
+        <span class="user-bar-name" id="userBarName"></span>
+        <button class="user-bar-switch" id="userBarSwitch">Switch</button>
+      </div>
+      <div class="tab-bar" id="tabBar"></div>
+      <div class="list-area" id="listArea"></div>
+      <div class="input-area" id="inputArea">
+        <input type="text" id="newItemInput" placeholder="Add a task…" autofocus>
+      </div>
+      <div class="status-bar" id="statusBar">
+        <span id="statusText"></span>
+        <span class="clear-done" id="clearDone" title="Remove completed items">clear done</span>
+      </div>
     </div>
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
+// ── Supabase config ──
 const SUPABASE_URL = 'https://bbztmfiefxymkfmmplfj.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_-pkNGDQJIBajbVAPgcbe_Q_OcPtkJ1X';
+const sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const SB_HEADERS = {
   'apikey': SUPABASE_KEY,
   'Authorization': 'Bearer ' + SUPABASE_KEY,
@@ -559,197 +718,512 @@ const SB_HEADERS = {
 };
 
 const NUM_COLORS = 8;
-const STORAGE_KEY = 'quicktodo_data';
-let state = defaultState();
-let pendingRenameIndex = null;
+const STATUS_ORDER = { todo: 0, inflight: 1, done: 2 };
+const USERS = [
+  { id: 'brendan', label: 'Brendan' },
+  { id: 'erin', label: 'Erin' }
+];
+const IDENTITY_KEY = 'quicktodo_user';
+
+// ── State ──
+let currentUser = null;       // 'brendan' | 'erin' | null
+let allLists = [];            // Array of { id, name, color_index, sort_order, owner, items: [...] }
+let activeListId = null;      // UUID string
+let newListShared = false;
+let pendingRenameId = null;
 let pywebviewReady = false;
 
-function defaultState() {
-  return { activeList: 0, lists: [] };
-}
+// ── Identity ──
 
-function parseState(raw) {
+function getStoredIdentity() {
   try {
-    if (raw) {
-      const s = JSON.parse(raw);
-      if (s.lists) {
-        s.lists.forEach((l, i) => {
-          if (l.colorIndex === undefined) l.colorIndex = i % NUM_COLORS;
-          // Migrate old items: convert boolean done to status field
-          l.items.forEach(item => {
-            if (item.status === undefined) {
-              item.status = item.done ? 'done' : 'todo';
-            }
-            // Keep done in sync for backward compat
-            item.done = item.status === 'done';
-          });
-        });
-        return s;
-      }
-    }
+    const val = localStorage.getItem(IDENTITY_KEY);
+    if (val === 'brendan' || val === 'erin') return val;
   } catch(e) {}
   return null;
 }
 
-// Sort order: todo (0) → inflight (1) → done (2)
+function setStoredIdentity(id) {
+  localStorage.setItem(IDENTITY_KEY, id);
+}
+
+function clearStoredIdentity() {
+  localStorage.removeItem(IDENTITY_KEY);
+}
+
+function getActiveListKey() {
+  return 'quicktodo_active_list_' + currentUser;
+}
+
+function getStoredActiveListId() {
+  try {
+    return localStorage.getItem(getActiveListKey());
+  } catch(e) {}
+  return null;
+}
+
+function setStoredActiveListId(id) {
+  if (id) {
+    localStorage.setItem(getActiveListKey(), id);
+  } else {
+    localStorage.removeItem(getActiveListKey());
+  }
+}
+
+// ── List visibility ──
+
+function isListVisibleTo(list, user) {
+  if (!list.owner) return true; // shared
+  return list.owner === user;
+}
+
+function isSharedList(list) {
+  return !list.owner;
+}
+
+function getVisibleLists() {
+  if (!currentUser) return [];
+  return allLists.filter(l => isListVisibleTo(l, currentUser));
+}
+
+function getSortedVisibleLists() {
+  const visible = getVisibleLists();
+  return visible.sort((a, b) => {
+    const aOwned = a.owner === currentUser ? 0 : 1;
+    const bOwned = b.owner === currentUser ? 0 : 1;
+    if (aOwned !== bOwned) return aOwned - bOwned;
+    return a.sort_order - b.sort_order;
+  });
+}
+
 function sortItems(items) {
-  const order = { todo: 0, inflight: 1, done: 2 };
-  items.sort((a, b) => (order[a.status] || 0) - (order[b.status] || 0));
+  return [...items].sort((a, b) =>
+    (STATUS_ORDER[a.status] ?? 0) - (STATUS_ORDER[b.status] ?? 0) || a.sort_order - b.sort_order
+  );
 }
 
-function loadStateFromLocalStorage() {
+function getActiveList() {
+  if (!activeListId) return null;
+  return allLists.find(l => l.id === activeListId) || null;
+}
+
+// ── Supabase CRUD (individual operations, NOT destructive bulk) ──
+
+async function sbFetchAll() {
+  const [listsRes, itemsRes] = await Promise.all([
+    fetch(SUPABASE_URL + '/rest/v1/todo_lists?order=sort_order', { headers: SB_HEADERS }),
+    fetch(SUPABASE_URL + '/rest/v1/todo_items?order=sort_order', { headers: SB_HEADERS })
+  ]);
+  if (!listsRes.ok || !itemsRes.ok) throw new Error('Fetch failed');
+  const lists = await listsRes.json();
+  const items = await itemsRes.json();
+  const itemsByList = {};
+  items.forEach(item => {
+    if (!itemsByList[item.list_id]) itemsByList[item.list_id] = [];
+    itemsByList[item.list_id].push(item);
+  });
+  return lists.map(l => ({
+    id: l.id,
+    name: l.name,
+    color_index: l.color_index ?? 0,
+    sort_order: l.sort_order ?? 0,
+    owner: l.owner || null,
+    items: (itemsByList[l.id] || []).map(it => ({
+      id: it.id,
+      list_id: it.list_id,
+      text: it.text,
+      status: it.status || 'todo',
+      sort_order: it.sort_order ?? 0,
+      created_at: it.created_at,
+    }))
+  }));
+}
+
+async function sbCreateList(data) {
+  const res = await fetch(SUPABASE_URL + '/rest/v1/todo_lists', {
+    method: 'POST',
+    headers: SB_HEADERS,
+    body: JSON.stringify(data)
+  });
+  if (!res.ok) throw new Error('Create list failed');
+  const arr = await res.json();
+  return arr[0];
+}
+
+async function sbUpdateList(id, updates) {
+  const res = await fetch(SUPABASE_URL + '/rest/v1/todo_lists?id=eq.' + id, {
+    method: 'PATCH',
+    headers: SB_HEADERS,
+    body: JSON.stringify(updates)
+  });
+  if (!res.ok) throw new Error('Update list failed');
+}
+
+async function sbDeleteList(id) {
+  // Delete items first, then the list
+  await fetch(SUPABASE_URL + '/rest/v1/todo_items?list_id=eq.' + id, {
+    method: 'DELETE',
+    headers: SB_HEADERS
+  });
+  await fetch(SUPABASE_URL + '/rest/v1/todo_lists?id=eq.' + id, {
+    method: 'DELETE',
+    headers: SB_HEADERS
+  });
+}
+
+async function sbCreateItem(data) {
+  const res = await fetch(SUPABASE_URL + '/rest/v1/todo_items', {
+    method: 'POST',
+    headers: SB_HEADERS,
+    body: JSON.stringify(data)
+  });
+  if (!res.ok) throw new Error('Create item failed');
+  const arr = await res.json();
+  return arr[0];
+}
+
+async function sbUpdateItem(id, updates) {
+  const res = await fetch(SUPABASE_URL + '/rest/v1/todo_items?id=eq.' + id, {
+    method: 'PATCH',
+    headers: SB_HEADERS,
+    body: JSON.stringify(updates)
+  });
+  if (!res.ok) throw new Error('Update item failed');
+}
+
+async function sbDeleteItem(id) {
+  await fetch(SUPABASE_URL + '/rest/v1/todo_items?id=eq.' + id, {
+    method: 'DELETE',
+    headers: SB_HEADERS
+  });
+}
+
+// ── Optimistic mutation helpers ──
+// Pattern: apply change locally -> render -> fire request -> on error rollback -> on success refresh
+
+function snapshotLists() {
+  return JSON.parse(JSON.stringify(allLists));
+}
+
+function rollback(snapshot) {
+  allLists = snapshot;
+  render();
+}
+
+async function refreshFromSupabase() {
   try {
-    return parseState(localStorage.getItem(STORAGE_KEY));
-  } catch(e) {}
-  return null;
-}
-
-async function loadStateFromFile() {
-  if (window.pywebview && window.pywebview.api) {
-    try {
-      const raw = await window.pywebview.api.load_data();
-      return parseState(raw);
-    } catch(e) {}
+    const fresh = await sbFetchAll();
+    allLists = fresh;
+    autoSelectList();
+    render();
+  } catch(e) {
+    console.log('Refresh failed:', e);
   }
-  return null;
 }
 
-function saveState() {
-  const json = JSON.stringify(state);
-  // Always save to localStorage as fallback
-  try { localStorage.setItem(STORAGE_KEY, json); } catch(e) {}
-  // Save to file via Python API (the reliable path)
-  if (window.pywebview && window.pywebview.api) {
-    try { window.pywebview.api.save_data(json); } catch(e) {}
+function autoSelectList() {
+  const sorted = getSortedVisibleLists();
+  if (sorted.length === 0) {
+    activeListId = null;
+    return;
   }
-  // Sync to Supabase (debounced)
-  debouncedSaveToSupabase();
+  if (activeListId && sorted.some(l => l.id === activeListId)) return;
+  activeListId = sorted[0].id;
+  setStoredActiveListId(activeListId);
 }
 
-// QuickTodo runs on Brendan's Mac — hardcode owner filter
-const QUICKTODO_OWNER = 'brendan';
+// ── Mutations (optimistic) ──
 
-async function loadFromSupabase() {
+async function addList() {
+  const snapshot = snapshotLists();
+  const tempId = 'temp-' + Date.now();
+  const colorIndex = allLists.length % NUM_COLORS;
+  const owner = newListShared ? null : currentUser;
+  const optimistic = {
+    id: tempId,
+    name: 'New List',
+    color_index: colorIndex,
+    sort_order: allLists.length,
+    owner: owner,
+    items: []
+  };
+  allLists.push(optimistic);
+  activeListId = tempId;
+  setStoredActiveListId(tempId);
+  pendingRenameId = tempId;
+  newListShared = false;
+  render();
+
   try {
-    const [listsRes, itemsRes] = await Promise.all([
-      fetch(SUPABASE_URL + '/rest/v1/todo_lists?order=sort_order', { headers: SB_HEADERS }),
-      fetch(SUPABASE_URL + '/rest/v1/todo_items?order=sort_order', { headers: SB_HEADERS })
-    ]);
-    if (!listsRes.ok || !itemsRes.ok) return null;
-    const allLists = await listsRes.json();
-    const items = await itemsRes.json();
-    // Filter: show Brendan's lists + shared lists (owner is null), hide Sarah's personal lists
-    const lists = allLists.filter(l => !l.owner || l.owner === QUICKTODO_OWNER);
-    // Group items by list_id
-    const itemsByList = {};
-    items.forEach(item => {
-      if (!itemsByList[item.list_id]) itemsByList[item.list_id] = [];
-      itemsByList[item.list_id].push(item);
+    const created = await sbCreateList({
+      name: 'New List',
+      color_index: colorIndex,
+      sort_order: allLists.length - 1,
+      owner: owner
     });
-    return {
-      activeList: 0,
-      lists: lists.map(l => ({
-        name: l.name,
-        colorIndex: l.color_index !== undefined ? l.color_index : 0,
-        owner: l.owner || null,
-        _id: l.id,
-        items: (itemsByList[l.id] || []).map(it => ({
-          text: it.text,
-          status: it.status || 'todo',
-          done: it.status === 'done',
-          _id: it.id
-        }))
-      }))
-    };
-  } catch (e) {
-    console.log('loadFromSupabase error:', e);
-    return null;
+    // Replace temp with real
+    const idx = allLists.findIndex(l => l.id === tempId);
+    if (idx !== -1) {
+      allLists[idx].id = created.id;
+    }
+    if (activeListId === tempId) {
+      activeListId = created.id;
+      setStoredActiveListId(created.id);
+    }
+    if (pendingRenameId === tempId) pendingRenameId = created.id;
+    render();
+  } catch(e) {
+    console.log('addList error:', e);
+    rollback(snapshot);
   }
 }
 
-async function saveToSupabase() {
+async function updateList(id, updates) {
+  if (id.startsWith('temp-')) return; // can't update a temp list
+  const snapshot = snapshotLists();
+  const list = allLists.find(l => l.id === id);
+  if (list) Object.assign(list, updates);
+  render();
+
   try {
-    // Delete all items, then all lists
-    await fetch(SUPABASE_URL + '/rest/v1/todo_items?id=not.is.null', { method: 'DELETE', headers: SB_HEADERS });
-    await fetch(SUPABASE_URL + '/rest/v1/todo_lists?id=not.is.null', { method: 'DELETE', headers: SB_HEADERS });
-    // Insert lists one by one to get back IDs
-    for (let i = 0; i < state.lists.length; i++) {
-      const list = state.lists[i];
-      const res = await fetch(SUPABASE_URL + '/rest/v1/todo_lists', {
-        method: 'POST',
-        headers: SB_HEADERS,
-        body: JSON.stringify({ name: list.name, color_index: list.colorIndex, sort_order: i, owner: list.owner || null })
-      });
-      if (!res.ok) continue;
-      const created = await res.json();
-      const listId = created[0].id;
-      // Insert items for this list
-      if (list.items.length > 0) {
-        const itemPayload = list.items.map((item, j) => ({
-          list_id: listId,
-          text: item.text,
-          status: item.status || (item.done ? 'done' : 'todo'),
-          sort_order: j
-        }));
-        await fetch(SUPABASE_URL + '/rest/v1/todo_items', {
-          method: 'POST',
-          headers: SB_HEADERS,
-          body: JSON.stringify(itemPayload)
-        });
-      }
-    }
-  } catch (e) {
-    console.log('saveToSupabase error:', e);
+    await sbUpdateList(id, updates);
+  } catch(e) {
+    console.log('updateList error:', e);
+    rollback(snapshot);
   }
 }
 
-let _sbTimer = null;
-let _savingToSupabase = false;
-function debouncedSaveToSupabase() {
-  if (_sbTimer) clearTimeout(_sbTimer);
-  _sbTimer = setTimeout(() => { _savingToSupabase = true; saveToSupabase().finally(() => { _savingToSupabase = false; }); }, 500);
-}
-
-// ── Poll for remote changes every 3 seconds ──
-let _lastStateHash = '';
-function hashState(s) { return JSON.stringify(s.lists?.map(l => l.name + '|' + l.items?.map(i => i.text + i.status).join(','))); }
-
-setInterval(async () => {
-  if (_savingToSupabase) return; // skip if we're currently saving
-  try {
-    const sbState = await loadFromSupabase();
-    if (sbState && sbState.lists && sbState.lists.length > 0) {
-      const newHash = hashState(sbState);
-      if (newHash !== _lastStateHash) {
-        _lastStateHash = newHash;
-        state = sbState;
-        render();
-      }
-    }
-  } catch(e) {}
-}, 3000);
-
-// Called when pywebview API is ready
-async function initFromFile() {
-  pywebviewReady = true;
-  const fileState = await loadStateFromFile();
-  if (fileState && fileState.lists && fileState.lists.length > 0) {
-    state = fileState;
+async function deleteList(id) {
+  if (!confirm('Delete "' + (allLists.find(l => l.id === id)?.name || '') + '" and all its items?')) return;
+  const snapshot = snapshotLists();
+  allLists = allLists.filter(l => l.id !== id);
+  if (activeListId === id) {
+    const sorted = getSortedVisibleLists();
+    activeListId = sorted.length > 0 ? sorted[0].id : null;
+    setStoredActiveListId(activeListId);
   }
   render();
+
+  if (id.startsWith('temp-')) return;
+  try {
+    await sbDeleteList(id);
+  } catch(e) {
+    console.log('deleteList error:', e);
+    rollback(snapshot);
+  }
+}
+
+async function addItem(text) {
+  const list = getActiveList();
+  if (!list) return;
+  const snapshot = snapshotLists();
+  const tempId = 'temp-' + Date.now() + '-' + Math.random().toString(36).slice(2,6);
+  const optimistic = {
+    id: tempId,
+    list_id: list.id,
+    text: text,
+    status: 'todo',
+    sort_order: list.items.length,
+    created_at: new Date().toISOString()
+  };
+  list.items.push(optimistic);
+  render();
+
+  if (list.id.startsWith('temp-')) return;
+  try {
+    const created = await sbCreateItem({
+      list_id: list.id,
+      text: text,
+      sort_order: list.items.length - 1
+    });
+    // Replace temp
+    const currentList = allLists.find(l => l.id === list.id);
+    if (currentList) {
+      const itemIdx = currentList.items.findIndex(i => i.id === tempId);
+      if (itemIdx !== -1) currentList.items[itemIdx].id = created.id;
+    }
+  } catch(e) {
+    console.log('addItem error:', e);
+    rollback(snapshot);
+  }
+}
+
+async function updateItem(id, updates) {
+  if (id.startsWith('temp-')) return;
+  const snapshot = snapshotLists();
+  for (const list of allLists) {
+    const item = list.items.find(i => i.id === id);
+    if (item) {
+      Object.assign(item, updates);
+      break;
+    }
+  }
+  render();
+
+  try {
+    await sbUpdateItem(id, updates);
+  } catch(e) {
+    console.log('updateItem error:', e);
+    rollback(snapshot);
+  }
+}
+
+async function deleteItem(id) {
+  if (id.startsWith('temp-')) {
+    for (const list of allLists) {
+      list.items = list.items.filter(i => i.id !== id);
+    }
+    render();
+    return;
+  }
+  const snapshot = snapshotLists();
+  for (const list of allLists) {
+    list.items = list.items.filter(i => i.id !== id);
+  }
+  render();
+
+  try {
+    await sbDeleteItem(id);
+  } catch(e) {
+    console.log('deleteItem error:', e);
+    rollback(snapshot);
+  }
+}
+
+async function clearDoneItems() {
+  const list = getActiveList();
+  if (!list) return;
+  const doneItems = list.items.filter(i => i.status === 'done');
+  for (const item of doneItems) {
+    deleteItem(item.id);
+  }
+}
+
+// ── Realtime subscriptions + fallback polling ──
+let _pollTimer = null;
+let _realtimeChannel = null;
+let _realtimeHealthy = false;
+
+function startSync() {
+  stopSync();
+  _realtimeHealthy = false;
+
+  _realtimeChannel = sbClient
+    .channel('quicktodo-changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'todo_lists' }, () => {
+      refreshFromSupabase();
+    })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'todo_items' }, () => {
+      refreshFromSupabase();
+    })
+    .subscribe((status) => {
+      if (status === 'SUBSCRIBED') {
+        _realtimeHealthy = true;
+        stopFallbackPolling();
+        console.log('Realtime connected');
+      } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+        _realtimeHealthy = false;
+        startFallbackPolling();
+        console.log('Realtime disconnected, falling back to polling');
+      }
+    });
+}
+
+function stopSync() {
+  if (_realtimeChannel) {
+    sbClient.removeChannel(_realtimeChannel);
+    _realtimeChannel = null;
+  }
+  _realtimeHealthy = false;
+  stopFallbackPolling();
+}
+
+function startFallbackPolling() {
+  if (_pollTimer) return; // already polling
+  _pollTimer = setInterval(async () => {
+    try {
+      const fresh = await sbFetchAll();
+      allLists = fresh;
+      autoSelectList();
+      render();
+    } catch(e) {}
+  }, 10000);
+  console.log('Fallback polling started (10s)');
+}
+
+function stopFallbackPolling() {
+  if (_pollTimer) {
+    clearInterval(_pollTimer);
+    _pollTimer = null;
+    console.log('Fallback polling stopped');
+  }
+}
+
+// ── Rendering ──
+
+function showIdentityPicker() {
+  document.getElementById('identityPicker').style.display = 'flex';
+  document.getElementById('mainUI').style.display = 'none';
+  document.getElementById('mainUI').style.flex = '';
+
+  const btns = document.getElementById('identityButtons');
+  btns.innerHTML = '';
+  USERS.forEach(user => {
+    const btn = document.createElement('button');
+    btn.className = 'identity-picker-btn';
+    btn.innerHTML = `
+      <span class="identity-picker-avatar">${user.label.charAt(0)}</span>
+      <span class="identity-picker-name">${user.label}</span>
+    `;
+    btn.addEventListener('click', () => selectIdentity(user.id));
+    btns.appendChild(btn);
+  });
+}
+
+function showMainUI() {
+  document.getElementById('identityPicker').style.display = 'none';
+  const mainUI = document.getElementById('mainUI');
+  mainUI.style.display = 'flex';
+  mainUI.style.flex = '1';
+  document.getElementById('userBarName').textContent =
+    currentUser.charAt(0).toUpperCase() + currentUser.slice(1) + "'s Todos";
+}
+
+async function selectIdentity(id) {
+  currentUser = id;
+  setStoredIdentity(id);
+  activeListId = getStoredActiveListId();
+  showMainUI();
+
+  // Load from Supabase
+  try {
+    const fresh = await sbFetchAll();
+    allLists = fresh;
+  } catch(e) {
+    console.log('Initial load failed:', e);
+  }
+  autoSelectList();
+  render();
+  startSync();
   document.getElementById('newItemInput').focus();
 }
 
-// Listen for pywebview ready event
-window.addEventListener('pywebviewready', () => { initFromFile(); });
+function switchUser() {
+  currentUser = null;
+  clearStoredIdentity();
+  activeListId = null;
+  allLists = [];
+  stopSync();
+  showIdentityPicker();
+}
 
 function render() {
   const app = document.getElementById('app');
-  const activeList = state.lists[state.activeList];
+  const activeList = getActiveList();
 
   app.className = 'app';
   if (activeList) {
-    app.classList.add('color-' + activeList.colorIndex);
+    app.classList.add('color-' + (activeList.color_index % NUM_COLORS));
   }
   if (app.dataset.collapsed === 'true') {
     app.classList.add('collapsed');
@@ -759,47 +1233,69 @@ function render() {
   renderList();
   renderStatus();
   renderInputVisibility();
-  saveState();
 }
 
 function renderInputVisibility() {
-  const hasActiveList = state.lists.length > 0 && state.lists[state.activeList];
-  document.getElementById('inputArea').style.display = hasActiveList ? 'block' : 'none';
-  document.getElementById('statusBar').style.display = hasActiveList ? 'flex' : 'none';
+  const activeList = getActiveList();
+  document.getElementById('inputArea').style.display = activeList ? 'block' : 'none';
+  document.getElementById('statusBar').style.display = activeList ? 'flex' : 'none';
 }
 
 function renderTabs() {
   const bar = document.getElementById('tabBar');
   bar.innerHTML = '';
-  state.lists.forEach((list, i) => {
+  const sorted = getSortedVisibleLists();
+
+  sorted.forEach(list => {
     const tab = document.createElement('div');
-    tab.className = 'tab color-' + list.colorIndex + (i === state.activeList ? ' active' : '');
+    const isActive = list.id === activeListId;
+    const shared = isSharedList(list);
+    tab.className = 'tab color-' + (list.color_index % NUM_COLORS)
+      + (isActive ? ' active' : '')
+      + (shared ? ' shared' : '');
 
     const name = document.createElement('span');
     name.className = 'tab-name';
     name.textContent = list.name;
 
     let clickTimer = null;
-    name.addEventListener('click', (e) => {
+    const handleTabClick = (e) => {
       e.stopPropagation();
       if (clickTimer) return;
       clickTimer = setTimeout(() => {
         clickTimer = null;
-        state.activeList = i;
+        activeListId = list.id;
+        setStoredActiveListId(list.id);
         render();
       }, 250);
-    });
-    name.addEventListener('dblclick', (e) => {
+    };
+    const handleTabDblClick = (e) => {
       e.stopPropagation();
       if (clickTimer) { clearTimeout(clickTimer); clickTimer = null; }
-      startRenameTab(tab, name, i);
-    });
+      startRenameTab(tab, name, list);
+    };
+    name.addEventListener('click', handleTabClick);
+    name.addEventListener('dblclick', handleTabDblClick);
+    tab.addEventListener('click', handleTabClick);
+    tab.addEventListener('dblclick', handleTabDblClick);
     tab.appendChild(name);
 
-    if (pendingRenameIndex === i) {
-      setTimeout(() => startRenameTab(tab, name, i), 0);
-      pendingRenameIndex = null;
+    if (pendingRenameId === list.id) {
+      setTimeout(() => startRenameTab(tab, name, list), 0);
+      pendingRenameId = null;
     }
+
+    if (shared) {
+      const badge = document.createElement('span');
+      badge.className = 'tab-shared-badge';
+      badge.textContent = 'shared';
+      tab.appendChild(badge);
+    }
+
+    const count = document.createElement('span');
+    count.className = 'tab-count';
+    count.textContent = list.items.length;
+    tab.appendChild(count);
 
     const close = document.createElement('span');
     close.className = 'tab-close';
@@ -807,34 +1303,42 @@ function renderTabs() {
     close.title = 'Delete this list';
     close.addEventListener('click', (e) => {
       e.stopPropagation();
-      state.lists.splice(i, 1);
-      if (state.activeList >= state.lists.length) state.activeList = Math.max(0, state.lists.length - 1);
-      render();
+      deleteList(list.id);
     });
     tab.appendChild(close);
 
     bar.appendChild(tab);
   });
 
+  // Add group: + button and shared toggle
+  const addGroup = document.createElement('div');
+  addGroup.className = 'tab-add-group';
+
   const addBtn = document.createElement('div');
   addBtn.className = 'tab-add';
   addBtn.textContent = '+';
-  addBtn.title = 'New list';
-  addBtn.addEventListener('click', () => {
-    const colorIndex = state.lists.length % NUM_COLORS;
-    state.lists.push({ name: 'New List', items: [], colorIndex, owner: QUICKTODO_OWNER });
-    state.activeList = state.lists.length - 1;
-    pendingRenameIndex = state.activeList;
+  addBtn.title = newListShared ? 'Add shared list' : 'Add personal list';
+  addBtn.addEventListener('click', () => addList());
+  addGroup.appendChild(addBtn);
+
+  const sharedToggle = document.createElement('button');
+  sharedToggle.className = 'shared-toggle' + (newListShared ? ' active' : '');
+  sharedToggle.textContent = newListShared ? 'Shared' : 'Personal';
+  sharedToggle.title = newListShared ? 'Will create shared list' : 'Will create personal list';
+  sharedToggle.addEventListener('click', () => {
+    newListShared = !newListShared;
     render();
   });
-  bar.appendChild(addBtn);
+  addGroup.appendChild(sharedToggle);
+
+  bar.appendChild(addGroup);
 }
 
-function startRenameTab(tabEl, nameEl, index) {
+function startRenameTab(tabEl, nameEl, list) {
   const inp = document.createElement('input');
   inp.type = 'text';
   inp.className = 'tab-rename-input';
-  inp.value = state.lists[index].name;
+  inp.value = list.name;
 
   nameEl.replaceWith(inp);
   inp.focus();
@@ -845,8 +1349,11 @@ function startRenameTab(tabEl, nameEl, index) {
     if (finished) return;
     finished = true;
     const val = inp.value.trim();
-    if (val) state.lists[index].name = val;
-    render();
+    if (val && val !== list.name) {
+      updateList(list.id, { name: val });
+    } else {
+      render();
+    }
     document.getElementById('newItemInput').focus();
   };
   inp.addEventListener('blur', finish);
@@ -860,19 +1367,21 @@ let dragSrcIndex = null;
 
 function renderList() {
   const area = document.getElementById('listArea');
-  const list = state.lists[state.activeList];
+  const list = getActiveList();
   area.innerHTML = '';
 
   if (!list) {
+    const sorted = getSortedVisibleLists();
     area.innerHTML = `
       <div class="empty-state">
-        <div>No lists</div>
-        <div class="hint">Hit + to create one</div>
+        <div>${sorted.length === 0 ? 'No lists yet' : 'Select a list'}</div>
+        <div class="hint">${sorted.length === 0 ? 'Hit + to create one' : 'Click a tab above'}</div>
       </div>`;
     return;
   }
 
-  if (list.items.length === 0) {
+  const sorted = sortItems(list.items);
+  if (sorted.length === 0) {
     area.innerHTML = `
       <div class="empty-state">
         <div>No tasks yet</div>
@@ -881,14 +1390,16 @@ function renderList() {
     return;
   }
 
-  list.items.forEach((item, i) => {
+  sorted.forEach((item, displayIdx) => {
     const row = document.createElement('div');
-    row.className = 'todo-item' + (item.status === 'done' ? ' done' : '') + (item.status === 'inflight' ? ' inflight' : '');
+    row.className = 'todo-item'
+      + (item.status === 'done' ? ' done' : '')
+      + (item.status === 'inflight' ? ' inflight' : '');
     row.draggable = true;
-    row.dataset.index = i;
+    row.dataset.id = item.id;
 
     row.addEventListener('dragstart', (e) => {
-      dragSrcIndex = i;
+      dragSrcIndex = displayIdx;
       row.classList.add('dragging');
       e.dataTransfer.effectAllowed = 'move';
     });
@@ -906,42 +1417,40 @@ function renderList() {
     row.addEventListener('drop', (e) => {
       e.preventDefault();
       row.classList.remove('drag-over');
-      if (dragSrcIndex !== null && dragSrcIndex !== i) {
-        const items = state.lists[state.activeList].items;
-        const [moved] = items.splice(dragSrcIndex, 1);
-        items.splice(i, 0, moved);
-        render();
+      if (dragSrcIndex !== null && dragSrcIndex !== displayIdx) {
+        // Reorder in the actual list items array
+        const sortedIds = sorted.map(i => i.id);
+        const srcId = sortedIds[dragSrcIndex];
+        const srcItem = list.items.find(i => i.id === srcId);
+        if (srcItem) {
+          list.items = list.items.filter(i => i.id !== srcId);
+          const targetItem = list.items.find(i => i.id === item.id);
+          const targetIdx = list.items.indexOf(targetItem);
+          list.items.splice(targetIdx, 0, srcItem);
+          // Update sort_orders
+          list.items.forEach((it, idx) => {
+            it.sort_order = idx;
+            if (!it.id.startsWith('temp-')) {
+              sbUpdateItem(it.id, { sort_order: idx }).catch(() => {});
+            }
+          });
+          render();
+        }
       }
     });
 
     const check = document.createElement('div');
     check.className = 'todo-check';
-    // Left-click: toggle between todo and done
     check.addEventListener('click', (e) => {
       e.stopPropagation();
-      if (item.status === 'done') {
-        item.status = 'todo';
-        item.done = false;
-      } else {
-        item.status = 'done';
-        item.done = true;
-      }
-      sortItems(list.items);
-      render();
+      const nextStatus = item.status === 'done' ? 'todo' : 'done';
+      updateItem(item.id, { status: nextStatus });
     });
-    // Right-click: toggle inflight
     check.addEventListener('contextmenu', (e) => {
       e.preventDefault();
       e.stopPropagation();
-      if (item.status === 'inflight') {
-        item.status = 'todo';
-        item.done = false;
-      } else {
-        item.status = 'inflight';
-        item.done = false;
-      }
-      sortItems(list.items);
-      render();
+      const nextStatus = item.status === 'inflight' ? 'todo' : 'inflight';
+      updateItem(item.id, { status: nextStatus });
     });
 
     const text = document.createElement('div');
@@ -962,12 +1471,13 @@ function renderList() {
         if (finished) return;
         finished = true;
         const val = inp.value.trim();
-        if (val) {
-          item.text = val;
+        if (val && val !== item.text) {
+          updateItem(item.id, { text: val });
+        } else if (!val) {
+          deleteItem(item.id);
         } else {
-          list.items.splice(i, 1);
+          render();
         }
-        render();
       };
       inp.addEventListener('blur', finish);
       inp.addEventListener('keydown', (ev) => {
@@ -979,9 +1489,9 @@ function renderList() {
     const del = document.createElement('span');
     del.className = 'todo-delete';
     del.textContent = '\u00d7';
-    del.addEventListener('click', () => {
-      list.items.splice(i, 1);
-      render();
+    del.addEventListener('click', (e) => {
+      e.stopPropagation();
+      deleteItem(item.id);
     });
 
     row.appendChild(check);
@@ -992,23 +1502,22 @@ function renderList() {
 }
 
 function renderStatus() {
-  const list = state.lists[state.activeList];
+  const list = getActiveList();
   if (!list) {
     document.getElementById('statusText').textContent = '';
     document.getElementById('clearDone').style.display = 'none';
     return;
   }
-  const total = list.items.length;
-  const done = list.items.filter(i => i.status === 'done').length;
-  const inflight = list.items.filter(i => i.status === 'inflight').length;
-  const todo = total - done - inflight;
-  let parts = [];
-  if (todo > 0) parts.push(`${todo} to do`);
-  if (inflight > 0) parts.push(`${inflight} in flight`);
-  if (done > 0) parts.push(`${done} done`);
-  document.getElementById('statusText').textContent = total === 0 ? '' : parts.join(' \u00b7 ');
+  const items = list.items;
+  const done = items.filter(i => i.status === 'done').length;
+  const inflight = items.filter(i => i.status === 'inflight').length;
+  const todo = items.length - done - inflight;
+  document.getElementById('statusText').textContent =
+    items.length === 0 ? '' : `${todo} to do \u00b7 ${inflight} in flight \u00b7 ${done} done`;
   document.getElementById('clearDone').style.display = done > 0 ? 'inline' : 'none';
 }
+
+// ── Input handling ──
 
 const input = document.getElementById('newItemInput');
 input.addEventListener('keydown', (e) => {
@@ -1030,24 +1539,22 @@ input.addEventListener('paste', (e) => {
 });
 
 function addItems(text) {
-  if (state.lists.length === 0) return;
-  const list = state.lists[state.activeList];
+  const list = getActiveList();
+  if (!list) return;
   const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
   lines.forEach(line => {
     line = line.replace(/^(?:[-*\u2022\u2013\u2014]\s+|\d+[.)]\s+|\[.\]\s+)/, '');
-    if (line) list.items.unshift({ text: line, done: false, status: 'todo' });
+    if (line) addItem(line);
   });
-  render();
-  document.getElementById('listArea').scrollTop = document.getElementById('listArea').scrollHeight;
 }
 
-document.getElementById('clearDone').addEventListener('click', () => {
-  const list = state.lists[state.activeList];
-  if (list) {
-    list.items = list.items.filter(i => i.status !== 'done');
-    render();
-  }
-});
+document.getElementById('clearDone').addEventListener('click', () => clearDoneItems());
+
+// ── User bar ──
+
+document.getElementById('userBarSwitch').addEventListener('click', switchUser);
+
+// ── Titlebar collapse ──
 
 document.getElementById('titlebar').addEventListener('dblclick', () => {
   const app = document.getElementById('app');
@@ -1059,6 +1566,8 @@ document.getElementById('titlebar').addEventListener('dblclick', () => {
   }
 });
 
+// ── Keyboard shortcuts ──
+
 document.addEventListener('keydown', (e) => {
   if ((e.metaKey || e.ctrlKey) && e.key === 'n') {
     e.preventDefault();
@@ -1066,17 +1575,21 @@ document.addEventListener('keydown', (e) => {
   }
   if ((e.metaKey || e.ctrlKey) && e.key === 't') {
     e.preventDefault();
-    document.querySelector('.tab-add').click();
+    addList();
   }
   if ((e.metaKey || e.ctrlKey) && e.key >= '1' && e.key <= '9') {
+    const sorted = getSortedVisibleLists();
     const idx = parseInt(e.key) - 1;
-    if (idx < state.lists.length) {
+    if (idx < sorted.length) {
       e.preventDefault();
-      state.activeList = idx;
+      activeListId = sorted[idx].id;
+      setStoredActiveListId(activeListId);
       render();
     }
   }
 });
+
+// ── Context menu ──
 
 let ctxMenu = null;
 function hideCtxMenu() {
@@ -1084,6 +1597,8 @@ function hideCtxMenu() {
 }
 document.addEventListener('click', hideCtxMenu);
 document.addEventListener('contextmenu', async (e) => {
+  // Only show app context menu if not on a todo-check (those have their own handler)
+  if (e.target.closest('.todo-check')) return;
   e.preventDefault();
   hideCtxMenu();
 
@@ -1112,22 +1627,34 @@ document.addEventListener('contextmenu', async (e) => {
   ctxMenu = menu;
 });
 
-// Initial render with localStorage data (fast), pywebview will override when ready
-const lsState = loadStateFromLocalStorage();
-if (lsState) state = lsState;
-render();
-input.focus();
+// ── PyWebView integration ──
 
-// Load authoritative state from Supabase (overrides localStorage)
-loadFromSupabase().then(sbState => {
-  if (sbState && sbState.lists && sbState.lists.length > 0) {
-    state = sbState;
-    render();
-  }
+window.addEventListener('pywebviewready', () => {
+  pywebviewReady = true;
 });
 
-// If pywebview is already ready (race condition), init now
-if (window.pywebview && window.pywebview.api) { initFromFile(); }
+// ── Init ──
+
+const storedUser = getStoredIdentity();
+if (storedUser) {
+  currentUser = storedUser;
+  activeListId = getStoredActiveListId();
+  showMainUI();
+  // Load from Supabase
+  sbFetchAll().then(fresh => {
+    allLists = fresh;
+    autoSelectList();
+    render();
+    startSync();
+    input.focus();
+  }).catch(e => {
+    console.log('Initial load failed:', e);
+    render();
+    startSync();
+  });
+} else {
+  showIdentityPicker();
+}
 </script>
 </body>
 </html>

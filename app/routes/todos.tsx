@@ -123,10 +123,12 @@ function TodosMain({
 }) {
   const queryClient = useQueryClient();
 
+  const [realtimeHealthy, setRealtimeHealthy] = useState(false);
+
   const { data: allLists = [], isLoading } = useQuery<TodoListWithItems[]>({
     queryKey: ["todo-lists"],
     queryFn: fetchTodoListsWithItems,
-    refetchInterval: 15000, // poll less aggressively; realtime handles fast sync
+    refetchInterval: realtimeHealthy ? false : 10000, // only poll when realtime is down
   });
 
   // Filter lists visible to the current user
@@ -150,7 +152,13 @@ function TodosMain({
       .on('postgres_changes', { event: '*', schema: 'public', table: 'todo_items' }, () => {
         queryClient.invalidateQueries({ queryKey: ["todo-lists"] });
       })
-      .subscribe();
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          setRealtimeHealthy(true);
+        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+          setRealtimeHealthy(false);
+        }
+      });
     return () => { supabase.removeChannel(channel); };
   }, [queryClient]);
 
