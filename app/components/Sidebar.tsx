@@ -144,6 +144,13 @@ export default function Sidebar({
           <span>Org Plan</span>
         </Link>
         <Link
+          to="/neighborhood"
+          className={`nav-item ${location.pathname === "/neighborhood" ? "active" : ""}`}
+        >
+          <span className="icon">{"\u{1F3D8}"}</span>
+          <span>Block Map</span>
+        </Link>
+        <Link
           to="/admin"
           className={`nav-item ${location.pathname === "/admin" ? "active" : ""}`}
         >

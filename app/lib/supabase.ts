@@ -71,6 +71,17 @@ export interface RoomWithFrames extends Room {
   frames: FrameWithItems[];
 }
 
+export interface Neighbor {
+  id: string;
+  address: string;
+  side: "west" | "east" | "alley";
+  names: string[];
+  notes: string;
+  is_us: boolean;
+  position_index: number;
+  created_at: string;
+}
+
 // ---- Data fetching ----
 
 export async function fetchRooms(): Promise<Room[]> {
@@ -358,4 +369,43 @@ export async function reorderTodoItems(
         })
     )
   );
+}
+
+// ---- Neighbors ----
+
+export async function fetchNeighbors(): Promise<Neighbor[]> {
+  const { data, error } = await supabase
+    .from("neighbors")
+    .select("*")
+    .order("position_index");
+  if (error) throw error;
+  return data || [];
+}
+
+export async function upsertNeighbor(
+  neighbor: Omit<Neighbor, "created_at">
+): Promise<Neighbor> {
+  const { data, error } = await supabase
+    .from("neighbors")
+    .upsert(neighbor, { onConflict: "id" })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function upsertNeighbors(
+  neighbors: Omit<Neighbor, "created_at">[]
+): Promise<Neighbor[]> {
+  const { data, error } = await supabase
+    .from("neighbors")
+    .upsert(neighbors, { onConflict: "id" })
+    .select();
+  if (error) throw error;
+  return data || [];
+}
+
+export async function deleteNeighbor(id: string): Promise<void> {
+  const { error } = await supabase.from("neighbors").delete().eq("id", id);
+  if (error) throw error;
 }
