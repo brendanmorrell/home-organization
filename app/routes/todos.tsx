@@ -220,30 +220,74 @@ function TodosMain({
         sort_order: allLists.length,
         owner: newListShared ? null : currentUser,
       }),
-    onSuccess: (newList: { id: string; name: string }) => {
-      queryClient.invalidateQueries({ queryKey: ["todo-lists"] });
-      setActiveListId(newList.id);
-      setRenamingListId(newList.id);
-      setRenamingListName(newList.name);
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: ["todo-lists"] });
+      const prev = queryClient.getQueryData<TodoListWithItems[]>(["todo-lists"]);
+      const tempId = `temp-${Date.now()}`;
+      const optimisticList: TodoListWithItems = {
+        id: tempId,
+        name: "New List",
+        color_index: allLists.length % NEON_COLORS.length,
+        sort_order: allLists.length,
+        owner: newListShared ? null : currentUser,
+        items: [],
+        created_at: new Date().toISOString(),
+      };
+      queryClient.setQueryData<TodoListWithItems[]>(["todo-lists"], (old) => [...(old ?? []), optimisticList]);
+      setActiveListId(tempId);
+      setRenamingListId(tempId);
+      setRenamingListName("New List");
       setNewListShared(false);
+      return { prev, tempId };
+    },
+    onSuccess: (newList: { id: string; name: string }, _, context) => {
+      // Replace temp ID with real ID
+      if (context?.tempId) {
+        if (activeListId === context.tempId) setActiveListId(newList.id);
+        if (renamingListId === context.tempId) setRenamingListId(newList.id);
+      }
+      queryClient.invalidateQueries({ queryKey: ["todo-lists"] });
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.prev) queryClient.setQueryData(["todo-lists"], context.prev);
     },
   });
 
   const updateListMut = useMutation({
     mutationFn: ({ id, updates }: { id: string; updates: Parameters<typeof updateTodoList>[1] }) =>
       updateTodoList(id, updates),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["todo-lists"] }),
+    onMutate: async ({ id, updates }) => {
+      await queryClient.cancelQueries({ queryKey: ["todo-lists"] });
+      const prev = queryClient.getQueryData<TodoListWithItems[]>(["todo-lists"]);
+      queryClient.setQueryData<TodoListWithItems[]>(["todo-lists"], (old) =>
+        old?.map((l) => (l.id === id ? { ...l, ...updates } : l)) ?? []
+      );
+      return { prev };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.prev) queryClient.setQueryData(["todo-lists"], context.prev);
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ["todo-lists"] }),
   });
 
   const deleteListMut = useMutation({
     mutationFn: (id: string) => deleteTodoList(id),
-    onSuccess: (_, deletedId) => {
-      if (activeListId === deletedId) {
-        const remaining = sortedLists.filter((l) => l.id !== deletedId);
+    onMutate: async (id: string) => {
+      await queryClient.cancelQueries({ queryKey: ["todo-lists"] });
+      const prev = queryClient.getQueryData<TodoListWithItems[]>(["todo-lists"]);
+      queryClient.setQueryData<TodoListWithItems[]>(["todo-lists"], (old) =>
+        old?.filter((l) => l.id !== id) ?? []
+      );
+      if (activeListId === id) {
+        const remaining = sortedLists.filter((l) => l.id !== id);
         setActiveListId(remaining.length > 0 ? remaining[0].id : null);
       }
-      queryClient.invalidateQueries({ queryKey: ["todo-lists"] });
+      return { prev };
     },
+    onError: (_err, _id, context) => {
+      if (context?.prev) queryClient.setQueryData(["todo-lists"], context.prev);
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ["todo-lists"] }),
   });
 
   const addItemMut = useMutation({
@@ -253,7 +297,28 @@ function TodosMain({
         text,
         sort_order: activeList ? activeList.items.length : 0,
       }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["todo-lists"] }),
+    onMutate: async (text: string) => {
+      await queryClient.cancelQueries({ queryKey: ["todo-lists"] });
+      const prev = queryClient.getQueryData<TodoListWithItems[]>(["todo-lists"]);
+      const optimisticItem: TodoItem = {
+        id: `temp-${Date.now()}`,
+        list_id: activeListId!,
+        text,
+        status: "todo",
+        sort_order: activeList ? activeList.items.length : 0,
+        created_at: new Date().toISOString(),
+      };
+      queryClient.setQueryData<TodoListWithItems[]>(["todo-lists"], (old) =>
+        old?.map((l) =>
+          l.id === activeListId ? { ...l, items: [...l.items, optimisticItem] } : l
+        ) ?? []
+      );
+      return { prev };
+    },
+    onError: (_err, _text, context) => {
+      if (context?.prev) queryClient.setQueryData(["todo-lists"], context.prev);
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ["todo-lists"] }),
   });
 
   const updateItemMut = useMutation({
