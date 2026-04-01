@@ -9,6 +9,7 @@ const tabs = [
 ];
 
 const moreItems = [
+  { label: "Block Map", icon: "\u{1F3D8}", to: "/neighborhood" },
   { label: "Vehicles", icon: "\u{1F697}", to: "/vehicles" },
   { label: "Documents", icon: "\u{1F4C1}", to: "/docs" },
   { label: "Org Plan", icon: "\u{1F5FA}", to: "/plan" },

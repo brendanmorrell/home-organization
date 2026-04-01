@@ -10,3 +10,5 @@ build/
 .whisper-models/
 video-work/
 *.wav
+.claude/
+quicktodo/QuickTodo.app/
