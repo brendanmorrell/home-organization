@@ -1,5 +1,5 @@
 import { QueryClient, useQuery } from "@tanstack/react-query";
-import { fetchAllRoomsWithFrames, type RoomWithFrames } from "~/lib/supabase";
+import { fetchAllRoomsWithFrames, fetchReferences, type RoomWithFrames, type Reference } from "~/lib/supabase";
 
 // Zone → Room name mapping (shared across modules)
 export const ZONE_ROOM: Record<string, string> = {
@@ -384,5 +384,12 @@ export function useRooms() {
   return useQuery<RoomWithFrames[]>({
     queryKey: ["rooms"],
     queryFn: fetchRoomsWithFallback,
+  });
+}
+
+export function useReferences() {
+  return useQuery<Reference[]>({
+    queryKey: ["references"],
+    queryFn: fetchReferences,
   });
 }

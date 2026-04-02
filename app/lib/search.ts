@@ -80,7 +80,7 @@ interface FuseItem {
 }
 
 const FUSE_OPTIONS: IFuseOptions<FuseItem> = {
-  threshold: 0.4,
+  threshold: 0.3,
   ignoreLocation: true,
   keys: [
     { name: "item_name", weight: 0.6 },

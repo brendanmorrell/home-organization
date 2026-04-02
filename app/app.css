@@ -1866,3 +1866,90 @@ body {
   font-size: 12px;
   font-weight: 600;
 }
+
+/* ---- References Page ---- */
+.references-page { padding: 20px; max-width: 720px; }
+.references-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.references-header h2 { font-size: 18px; font-weight: 600; }
+
+/* Category pills */
+.category-pills { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 16px; -webkit-overflow-scrolling: touch; }
+.category-pills::-webkit-scrollbar { display: none; }
+.cat-pill { font-size: 12px; padding: 6px 14px; border-radius: 16px; background: var(--surface2); color: var(--text-dim); cursor: pointer; border: none; white-space: nowrap; transition: background 0.15s, color 0.15s; display: flex; align-items: center; gap: 6px; }
+.cat-pill:hover { background: var(--border); }
+.cat-pill.active { background: var(--accent-glow); color: var(--accent); }
+.cat-pill-count { font-size: 10px; background: var(--surface); padding: 1px 5px; border-radius: 8px; }
+
+/* Reference cards */
+.ref-card-list { display: flex; flex-direction: column; gap: 12px; }
+.ref-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
+.ref-card-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+.ref-card-title { font-size: 15px; font-weight: 600; color: var(--text); }
+.ref-card-actions { display: flex; gap: 4px; flex-shrink: 0; }
+.ref-card-action { background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 16px; padding: 2px 6px; border-radius: 4px; }
+.ref-card-action:hover { background: var(--surface2); color: var(--text); }
+.ref-card-action-delete:hover { color: var(--red); }
+.ref-card-category { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+.ref-card-content { font-size: 13px; color: var(--text-dim); margin-top: 8px; line-height: 1.6; }
+.ref-card-content h1, .ref-card-content h2, .ref-card-content h3 { font-size: 14px; font-weight: 600; color: var(--text); margin: 8px 0 4px; }
+.ref-card-content ul, .ref-card-content ol { padding-left: 16px; }
+.ref-card-content li { margin-bottom: 2px; }
+.ref-card-content p { margin-bottom: 4px; }
+.ref-card-content code { background: var(--surface2); padding: 1px 4px; border-radius: 3px; font-size: 12px; }
+.ref-card-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.ref-tag { font-size: 11px; background: var(--surface2); padding: 2px 8px; border-radius: 4px; color: var(--text-dim); }
+
+/* Reference form */
+.ref-form { background: var(--surface); border: 1px solid var(--accent); border-radius: var(--radius); padding: 16px; margin-bottom: 16px; }
+.ref-form-header h3 { font-size: 14px; font-weight: 600; margin-bottom: 12px; }
+.ref-form-footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
+.edit-textarea { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; color: var(--text); padding: 8px 10px; font-size: 13px; font-family: inherit; resize: vertical; }
+.edit-textarea:focus { outline: none; border-color: var(--accent); }
+
+/* Skeleton loading */
+.skeleton-list { display: flex; flex-direction: column; gap: 12px; }
+.skeleton-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); height: 100px; animation: skeleton-pulse 1.5s ease-in-out infinite; }
+@keyframes skeleton-pulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 0.8; } }
+
+/* Empty state */
+.empty-state { text-align: center; padding: 40px 20px; }
+.empty-state-text { color: var(--text-dim); font-size: 14px; line-height: 1.6; }
+.empty-state-text a { color: var(--accent); text-decoration: none; }
+.empty-state-text a:hover { text-decoration: underline; }
+
+/* ---- Brief Page ---- */
+.brief-page { padding: 20px; max-width: 640px; }
+.brief-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+.brief-header h2 { font-size: 18px; font-weight: 600; }
+.brief-back { color: var(--text-dim); text-decoration: none; font-size: 14px; }
+.brief-back:hover { color: var(--text); }
+
+.brief-sections { display: flex; flex-direction: column; gap: 24px; }
+.brief-section { border-left: 3px solid; padding-left: 12px; }
+.brief-section-refs { border-color: var(--accent); }
+.brief-section-inventory { border-color: var(--highlight); }
+.brief-section-todos { border-color: var(--success); }
+.brief-section-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-dim); margin-bottom: 8px; font-weight: 600; }
+
+.brief-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; margin-bottom: 8px; }
+.brief-card-title { font-size: 14px; font-weight: 600; color: var(--text); }
+.brief-card-content { font-size: 13px; color: var(--text-dim); margin-top: 6px; line-height: 1.5; }
+.brief-card-content ul { padding-left: 16px; }
+.brief-card-content li { margin-bottom: 2px; }
+.brief-card-content p { margin-bottom: 4px; }
+
+.brief-item-link { text-decoration: none; color: inherit; display: block; }
+.brief-item { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 6px; transition: background 0.15s; }
+.brief-item:hover { background: var(--surface2); }
+.brief-item-name { flex: 1; font-size: 13px; color: var(--text); }
+.brief-item-location { font-size: 12px; color: var(--text-dim); }
+.brief-todo-check { font-size: 16px; color: var(--text-dim); }
+.brief-todo-check.done { color: var(--success); }
+
+/* ---- FAB Mode Toggle ---- */
+.fab-mode-toggle { display: flex; gap: 0; padding: 4px; margin: 0 16px; background: var(--surface2); border-radius: 8px; }
+.fab-mode-btn { flex: 1; padding: 6px 0; font-size: 12px; font-weight: 500; border: none; background: none; color: var(--text-dim); cursor: pointer; border-radius: 6px; transition: background 0.15s, color 0.15s; }
+.fab-mode-btn.active { background: var(--accent); color: white; }
+
+/* Small button variant */
+.btn-sm { font-size: 12px; padding: 6px 14px; }

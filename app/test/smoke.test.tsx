@@ -73,6 +73,7 @@ describe("Sidebar", () => {
     expect(screen.getByText("Dashboard")).toBeInTheDocument();
     expect(screen.getByText("House View")).toBeInTheDocument();
     expect(screen.getByText("Inventory")).toBeInTheDocument();
+    expect(screen.getByText("References")).toBeInTheDocument();
     expect(screen.getByText("To-dos")).toBeInTheDocument();
   });
 });
@@ -84,7 +85,7 @@ describe("BottomTabs", () => {
         <BottomTabs />
       </MemoryRouter>
     );
-    expect(screen.getByText("Home")).toBeInTheDocument();
+    expect(screen.getByText("Refs")).toBeInTheDocument();
     expect(screen.getByText("House")).toBeInTheDocument();
     expect(screen.getByText("Items")).toBeInTheDocument();
     expect(screen.getByText("Todos")).toBeInTheDocument();

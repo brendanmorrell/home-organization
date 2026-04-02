@@ -14,5 +14,7 @@ export default [
     route("/admin", "routes/admin.tsx"),
     route("/plan", "routes/plan.tsx"),
     route("/neighborhood", "routes/neighborhood.tsx"),
+    route("/references", "routes/references.tsx"),
+    route("/brief", "routes/brief.tsx"),
   ]),
 ] satisfies RouteConfig;

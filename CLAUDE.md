@@ -241,6 +241,25 @@ Ground plane: y=-2.5. Grid: y=-2.48.
 - `validate-room.js` — Room validator
 - `scripts/push-to-supabase.ts` — DB push script
 - `check.js` — Quick syntax checker for house-3d.html
+- `scripts/run-migration.sh` — Run SQL migrations against Supabase
+
+## Supabase Migrations
+
+When you need to create or alter tables in Supabase, write a SQL file in `migrations/` and run it:
+
+```bash
+./scripts/run-migration.sh migrations/my-migration.sql
+```
+
+The script uses the Supabase Management API with `SUPABASE_ACCESS_TOKEN` from `.env`. No manual SQL editor needed.
+
+**Important:** `references` is a reserved word in PostgreSQL. Always quote it as `"references"` in SQL. The Supabase JS client (`.from("references")`) handles this automatically.
+
+### .env keys (all in `.env`, gitignored)
+- `VITE_SUPABASE_URL` — Supabase project URL
+- `VITE_SUPABASE_ANON_KEY` — Public anon key (embedded in client)
+- `SUPABASE_SERVICE_ROLE_KEY` — Admin key for server-side operations
+- `SUPABASE_ACCESS_TOKEN` — Personal access token for Management API (migrations)
 
 ## Skill routing
 

@@ -112,6 +112,13 @@ export default function Sidebar({
 
         <div className="nav-section">Modules</div>
         <Link
+          to="/references"
+          className={`nav-item ${location.pathname === "/references" ? "active" : ""}`}
+        >
+          <span className="icon">{"\u{1F4D1}"}</span>
+          <span>References</span>
+        </Link>
+        <Link
           to="/"
           className={`nav-item ${location.pathname === "/" ? "active" : ""}`}
         >
@@ -134,6 +141,27 @@ export default function Sidebar({
           <span>Documents</span>
           <span className="count coming-soon-badge">Soon</span>
         </Link>
+
+        <div className="nav-section">Briefs</div>
+        {[
+          { label: "Travel", context: "travel" },
+          { label: "Grocery", context: "grocery" },
+          { label: "Weekend", context: "weekend" },
+        ].map((brief) => (
+          <Link
+            key={brief.context}
+            to={`/brief?context=${brief.context}`}
+            className={`nav-item nav-item-compact ${
+              location.pathname === "/brief" &&
+              location.search.includes(`context=${brief.context}`)
+                ? "active"
+                : ""
+            }`}
+          >
+            <span className="icon" style={{ fontSize: "11px" }}>{brief.context === "travel" ? "\u2708" : brief.context === "grocery" ? "\u{1F6D2}" : "\u{1F324}"}</span>
+            <span>{brief.label}</span>
+          </Link>
+        ))}
 
         <div className="nav-section">Manage</div>
         <Link

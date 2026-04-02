@@ -222,6 +222,101 @@ export async function uploadFrameImage(
   return publicUrl;
 }
 
+// ---- Reference Types ----
+
+export interface Reference {
+  id: string;
+  title: string;
+  category: string;
+  content: string | null;
+  tags: string[];
+  created_at: string;
+  updated_at: string;
+}
+
+export const REFERENCE_CATEGORIES = [
+  "Credit Cards",
+  "Travel",
+  "Grocery",
+  "Auto-Order",
+  "Medical",
+  "Household",
+  "Financial",
+  "Baby",
+] as const;
+
+export type ReferenceCategory = (typeof REFERENCE_CATEGORIES)[number];
+
+// ---- Reference Data Fetching ----
+
+export async function fetchReferences(): Promise<Reference[]> {
+  const { data, error } = await supabase
+    .from("references")
+    .select("*")
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return data || [];
+}
+
+// ---- Reference Mutations ----
+
+/** Normalize tags: lowercase, trimmed, deduplicated */
+export function normalizeTags(tags: string[]): string[] {
+  const seen = new Set<string>();
+  return tags
+    .map((t) => t.trim().toLowerCase())
+    .filter((t) => {
+      if (!t || seen.has(t)) return false;
+      seen.add(t);
+      return true;
+    });
+}
+
+export async function createReference(ref: {
+  title: string;
+  category: string;
+  content?: string;
+  tags?: string[];
+}): Promise<Reference> {
+  const { data, error } = await supabase
+    .from("references")
+    .insert({
+      title: ref.title,
+      category: ref.category,
+      content: ref.content || null,
+      tags: normalizeTags(ref.tags || []),
+    })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function updateReference(
+  id: string,
+  updates: Partial<Pick<Reference, "title" | "category" | "content" | "tags">>
+): Promise<Reference> {
+  const payload: Record<string, any> = {};
+  if (updates.title !== undefined) payload.title = updates.title;
+  if (updates.category !== undefined) payload.category = updates.category;
+  if (updates.content !== undefined) payload.content = updates.content;
+  if (updates.tags !== undefined) payload.tags = normalizeTags(updates.tags);
+
+  const { data, error } = await supabase
+    .from("references")
+    .update(payload)
+    .eq("id", id)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteReference(id: string): Promise<void> {
+  const { error } = await supabase.from("references").delete().eq("id", id);
+  if (error) throw error;
+}
+
 // ---- Todo Types ----
 
 export type TodoList = {

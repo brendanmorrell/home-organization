@@ -3,12 +3,13 @@ import { useState } from "react";
 
 const tabs = [
   { label: "Todos", icon: "\u2705", to: "/" },
-  { label: "Home", icon: "\u{1F3E0}", to: "/dashboard" },
+  { label: "Refs", icon: "\u{1F4D1}", to: "/references" },
   { label: "House", icon: "3D", to: "/house" },
   { label: "Items", icon: "\u{1F4CB}", to: "/inventory" },
 ];
 
 const moreItems = [
+  { label: "Dashboard", icon: "\u{1F3E0}", to: "/dashboard" },
   { label: "Block Map", icon: "\u{1F3D8}", to: "/neighborhood" },
   { label: "Vehicles", icon: "\u{1F697}", to: "/vehicles" },
   { label: "Documents", icon: "\u{1F4C1}", to: "/docs" },
