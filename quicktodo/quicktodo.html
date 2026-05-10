@@ -733,9 +733,38 @@ let newListShared = false;
 let pendingRenameId = null;
 let pywebviewReady = false;
 
-// ── Identity ──
+// ── Identity (persisted to disk via pywebview, localStorage as fallback) ──
+// pywebview JS API calls return Promises, so all disk I/O must be async.
 
-function getStoredIdentity() {
+let _diskState = {}; // cached disk state: { identity, activeList_brendan, activeList_erin, ... }
+let _diskLoaded = false;
+
+async function _loadDiskState() {
+  if (_diskLoaded) return _diskState;
+  try {
+    if (window.pywebview && window.pywebview.api) {
+      const raw = await window.pywebview.api.load_data();
+      if (raw) {
+        _diskState = JSON.parse(raw);
+      }
+    }
+  } catch(e) { console.log('_loadDiskState error:', e); }
+  _diskLoaded = true;
+  return _diskState;
+}
+
+async function _saveDiskState() {
+  try {
+    if (window.pywebview && window.pywebview.api) {
+      await window.pywebview.api.save_data(JSON.stringify(_diskState));
+    }
+  } catch(e) { console.log('_saveDiskState error:', e); }
+}
+
+async function getStoredIdentity() {
+  const state = await _loadDiskState();
+  if (state.identity === 'brendan' || state.identity === 'erin') return state.identity;
+  // Fallback: check localStorage (for non-pywebview contexts)
   try {
     const val = localStorage.getItem(IDENTITY_KEY);
     if (val === 'brendan' || val === 'erin') return val;
@@ -743,31 +772,47 @@ function getStoredIdentity() {
   return null;
 }
 
-function setStoredIdentity(id) {
-  localStorage.setItem(IDENTITY_KEY, id);
+async function setStoredIdentity(id) {
+  await _loadDiskState();
+  _diskState.identity = id;
+  await _saveDiskState();
+  try { localStorage.setItem(IDENTITY_KEY, id); } catch(e) {}
 }
 
-function clearStoredIdentity() {
-  localStorage.removeItem(IDENTITY_KEY);
+async function clearStoredIdentity() {
+  await _loadDiskState();
+  delete _diskState.identity;
+  await _saveDiskState();
+  try { localStorage.removeItem(IDENTITY_KEY); } catch(e) {}
 }
 
 function getActiveListKey() {
   return 'quicktodo_active_list_' + currentUser;
 }
 
-function getStoredActiveListId() {
+async function getStoredActiveListId() {
+  const state = await _loadDiskState();
+  const key = 'activeList_' + currentUser;
+  if (state[key]) return state[key];
   try {
     return localStorage.getItem(getActiveListKey());
   } catch(e) {}
   return null;
 }
 
-function setStoredActiveListId(id) {
+async function setStoredActiveListId(id) {
+  await _loadDiskState();
+  const key = 'activeList_' + currentUser;
   if (id) {
-    localStorage.setItem(getActiveListKey(), id);
+    _diskState[key] = id;
   } else {
-    localStorage.removeItem(getActiveListKey());
+    delete _diskState[key];
   }
+  await _saveDiskState();
+  try {
+    if (id) localStorage.setItem(getActiveListKey(), id);
+    else localStorage.removeItem(getActiveListKey());
+  } catch(e) {}
 }
 
 // ── List visibility ──
@@ -1191,8 +1236,8 @@ function showMainUI() {
 
 async function selectIdentity(id) {
   currentUser = id;
-  setStoredIdentity(id);
-  activeListId = getStoredActiveListId();
+  await setStoredIdentity(id);
+  activeListId = await getStoredActiveListId();
   showMainUI();
 
   // Load from Supabase
@@ -1208,9 +1253,9 @@ async function selectIdentity(id) {
   document.getElementById('newItemInput').focus();
 }
 
-function switchUser() {
+async function switchUser() {
   currentUser = null;
-  clearStoredIdentity();
+  await clearStoredIdentity();
   activeListId = null;
   allLists = [];
   stopSync();
@@ -1635,25 +1680,42 @@ window.addEventListener('pywebviewready', () => {
 
 // ── Init ──
 
-const storedUser = getStoredIdentity();
-if (storedUser) {
-  currentUser = storedUser;
-  activeListId = getStoredActiveListId();
-  showMainUI();
-  // Load from Supabase
-  sbFetchAll().then(fresh => {
-    allLists = fresh;
-    autoSelectList();
-    render();
-    startSync();
-    input.focus();
-  }).catch(e => {
-    console.log('Initial load failed:', e);
-    render();
-    startSync();
-  });
+async function initApp() {
+  _diskLoaded = false; // reset cache so it re-reads from pywebview if available
+  const storedUser = await getStoredIdentity();
+  if (storedUser) {
+    currentUser = storedUser;
+    activeListId = await getStoredActiveListId();
+    showMainUI();
+    sbFetchAll().then(fresh => {
+      allLists = fresh;
+      autoSelectList();
+      render();
+      startSync();
+      input.focus();
+    }).catch(e => {
+      console.log('Initial load failed:', e);
+      render();
+      startSync();
+    });
+  } else {
+    showIdentityPicker();
+  }
+}
+
+// If pywebview is already ready (unlikely but safe), init now.
+// Otherwise wait briefly for pywebview, then init regardless.
+if (window.pywebview && window.pywebview.api) {
+  initApp();
 } else {
-  showIdentityPicker();
+  let inited = false;
+  window.addEventListener('pywebviewready', () => {
+    if (!inited) { inited = true; initApp(); }
+  });
+  // Fallback: if pywebview doesn't show up in 300ms, we're in a plain browser
+  setTimeout(() => {
+    if (!inited) { inited = true; initApp(); }
+  }, 300);
 }
 </script>
 </body>
