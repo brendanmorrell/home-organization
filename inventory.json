@@ -1,7 +1,7 @@
 {
   "meta": {
     "version": 2,
-    "updatedAt": "2026-03-11T16:14:24.896Z",
+    "updatedAt": "2026-05-09T00:00:00.000Z",
     "sources": [
       "IMG_0529.mov",
       "IMG_0530.mov",
@@ -14,7 +14,7 @@
       "IMG_5351.mov"
     ],
     "notes": "Unified home inventory. 'zone' = current storage zone label from house-3d.html. 'PACKED-BOX:cN' = in a packed moving box. 'UNASSIGNED' = not yet placed.",
-    "itemCount": 153
+    "itemCount": 160
   },
   "items": [
     {
@@ -1147,6 +1147,14 @@
       "zone": "BSMT-SHELVING-EW",
       "source": "user-input",
       "notes": "General plumbing supplies on E-W shelf"
+    },
+    {
+      "id": "i160",
+      "name": "Chair leg protectors",
+      "category": "household",
+      "zone": "WORKHALL-SOUTH-CAB",
+      "source": "user-input",
+      "notes": "Felt/silicone furniture leg pads — kept in southernmost under-counter cabinet/drawer"
     }
   ]
 }
