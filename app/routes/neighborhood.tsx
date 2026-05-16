@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import BlockMap from "~/components/neighborhood/BlockMap";
 import { defaultNeighbors, VALID_IDS } from "~/data/neighbors";
 import {
@@ -13,7 +13,6 @@ export default function Neighborhood() {
   const [neighbors, setNeighbors] = useState<Neighbor[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const saveTimeout = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
   useEffect(() => {
     (async () => {
@@ -84,25 +83,21 @@ export default function Neighborhood() {
     setSelectedId((prev) => (prev === id ? null : id));
   }, []);
 
-  const updateField = useCallback(
+  const commitField = useCallback(
     (id: string, field: "notes" | "names", value: string | string[]) => {
-      setNeighbors((prev) =>
-        prev.map((n) => (n.id === id ? { ...n, [field]: value } : n))
-      );
-
-      if (saveTimeout.current[id]) clearTimeout(saveTimeout.current[id]);
-      saveTimeout.current[id] = setTimeout(() => {
-        setNeighbors((current) => {
-          const neighbor = current.find((n) => n.id === id);
-          if (neighbor) {
-            const { created_at, ...rest } = neighbor;
-            upsertNeighbor(rest).catch((err) =>
-              console.error("Failed to save:", err)
-            );
-          }
-          return current;
-        });
-      }, 800);
+      setNeighbors((prev) => {
+        const next = prev.map((n) =>
+          n.id === id ? { ...n, [field]: value } : n
+        );
+        const neighbor = next.find((n) => n.id === id);
+        if (neighbor) {
+          const { created_at, ...rest } = neighbor;
+          upsertNeighbor(rest).catch((err) =>
+            console.error("Failed to save:", err)
+          );
+        }
+        return next;
+      });
     },
     []
   );
@@ -133,52 +128,96 @@ export default function Neighborhood() {
       />
 
       {selected && !selected.is_us && (
-        <div className="neighbor-detail">
-          <div className="neighbor-detail-header">
-            <h3>{selected.address}</h3>
-            <button
-              className="close-btn"
-              onClick={() => setSelectedId(null)}
-            >
-              ✕
-            </button>
-          </div>
-
-          <div className="neighbor-detail-field">
-            <label>Names</label>
-            <input
-              type="text"
-              className="neighbor-names-input"
-              placeholder="Add names (comma-separated)..."
-              value={selected.names.join(", ")}
-              onChange={(e) =>
-                updateField(
-                  selected.id,
-                  "names",
-                  e.target.value
-                    .split(",")
-                    .map((s) => s.trim())
-                    .filter(Boolean)
-                )
-              }
-            />
-          </div>
-
-          <div className="neighbor-detail-field">
-            <label>Notes</label>
-            <textarea
-              className="neighbor-notes"
-              placeholder="Add notes..."
-              value={selected.notes}
-              onChange={(e) =>
-                updateField(selected.id, "notes", e.target.value)
-              }
-              rows={2}
-            />
-          </div>
-        </div>
+        <NeighborDetail
+          key={selected.id}
+          neighbor={selected}
+          onClose={() => setSelectedId(null)}
+          onCommit={commitField}
+        />
       )}
+    </div>
+  );
+}
 
+function NeighborDetail({
+  neighbor,
+  onClose,
+  onCommit,
+}: {
+  neighbor: Neighbor;
+  onClose: () => void;
+  onCommit: (
+    id: string,
+    field: "notes" | "names",
+    value: string | string[]
+  ) => void;
+}) {
+  // Local drafts so the user can type freely (spaces, commas) without the
+  // value being parsed/trimmed on every keystroke. Committed on blur/Enter.
+  const [namesDraft, setNamesDraft] = useState(neighbor.names.join(", "));
+  const [notesDraft, setNotesDraft] = useState(neighbor.notes ?? "");
+
+  const commitNames = () => {
+    const parsed = namesDraft
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    setNamesDraft(parsed.join(", "));
+    onCommit(neighbor.id, "names", parsed);
+  };
+
+  const commitNotes = () => {
+    onCommit(neighbor.id, "notes", notesDraft);
+  };
+
+  return (
+    <div className="neighbor-detail">
+      <div className="neighbor-detail-header">
+        <h3>{neighbor.address}</h3>
+        <button className="close-btn" onClick={onClose}>
+          ✕
+        </button>
+      </div>
+
+      <div className="neighbor-detail-field">
+        <label>Names</label>
+        <input
+          type="text"
+          className="neighbor-names-input"
+          placeholder="Add names (comma-separated)..."
+          enterKeyHint="done"
+          value={namesDraft}
+          onChange={(e) => setNamesDraft(e.target.value)}
+          onBlur={commitNames}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              commitNames();
+              e.currentTarget.blur();
+            }
+          }}
+        />
+      </div>
+
+      <div className="neighbor-detail-field">
+        <label>Notes</label>
+        <textarea
+          className="neighbor-notes"
+          placeholder="Add notes..."
+          enterKeyHint="done"
+          value={notesDraft}
+          onChange={(e) => setNotesDraft(e.target.value)}
+          onBlur={commitNotes}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              commitNotes();
+              e.currentTarget.blur();
+            }
+          }}
+          rows={2}
+        />
+      </div>
     </div>
   );
 }
