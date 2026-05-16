@@ -79,16 +79,15 @@ describe("Sidebar", () => {
 });
 
 describe("BottomTabs", () => {
-  it("renders 5 tabs", () => {
+  it("renders primary tabs and More", () => {
     render(
       <MemoryRouter>
         <BottomTabs />
       </MemoryRouter>
     );
-    expect(screen.getByText("Refs")).toBeInTheDocument();
-    expect(screen.getByText("House")).toBeInTheDocument();
-    expect(screen.getByText("Items")).toBeInTheDocument();
     expect(screen.getByText("Todos")).toBeInTheDocument();
+    expect(screen.getByText("Block Map")).toBeInTheDocument();
+    expect(screen.getByText("Items")).toBeInTheDocument();
     expect(screen.getByText("More")).toBeInTheDocument();
   });
 });
