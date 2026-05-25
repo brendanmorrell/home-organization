@@ -573,6 +573,75 @@
   .todo-item.dragging { opacity: 0.35; }
   .todo-item.drag-over { box-shadow: 0 -2px 0 var(--neon); }
 
+  /* ── Subtask styles ── */
+  .subtask-row {
+    padding-left: 8px;
+    font-size: 12px;
+  }
+  .subtask-indent {
+    display: inline-block;
+    width: 16px;
+    height: 24px;
+    border-left: 2px solid var(--border-subtle);
+    border-bottom: 2px solid var(--border-subtle);
+    border-bottom-left-radius: 4px;
+    flex-shrink: 0;
+    align-self: center;
+    margin-bottom: -4px;
+  }
+  .subtask-row .todo-check {
+    width: 15px;
+    height: 15px;
+    border-radius: 3px;
+  }
+  .subtask-row .todo-check::after {
+    font-size: 9px;
+  }
+  .subtask-new-dot {
+    color: var(--text-secondary);
+    font-size: 16px;
+    flex-shrink: 0;
+    line-height: 1;
+  }
+  .todo-text--sub { font-size: 12px; }
+  .subtask-edit-input { font-size: 12px; padding: 1px 6px; }
+  .subtask-badge {
+    font-size: 10px;
+    color: var(--text-muted);
+    background: rgba(255,255,255,0.06);
+    padding: 1px 6px;
+    border-radius: 8px;
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+  .add-sub-btn {
+    opacity: 0;
+    font-size: 14px;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 1px 5px;
+    flex-shrink: 0;
+    line-height: 1;
+    border-radius: 50%;
+    border: 1px solid transparent;
+    transition: all 0.15s;
+  }
+  .todo-item:hover .add-sub-btn { opacity: 0.7; }
+  .add-sub-btn:hover {
+    opacity: 1 !important;
+    color: var(--neon);
+    border-color: var(--neon-dim);
+  }
+
+  /* ── Tab drag-target pulse ── */
+  .tab.drag-target {
+    animation: tab-drag-pulse 0.5s ease infinite alternate;
+  }
+  @keyframes tab-drag-pulse {
+    from { box-shadow: 0 0 6px var(--neon-glow); }
+    to   { box-shadow: 0 0 20px var(--neon-glow), 0 0 40px var(--neon-glow); }
+  }
+
   /* ── Context menu ── */
   .ctx-menu {
     position: fixed;
@@ -879,6 +948,7 @@ async function sbFetchAll() {
       text: it.text,
       status: it.status || 'todo',
       sort_order: it.sort_order ?? 0,
+      parent_id: it.parent_id || null,
       created_at: it.created_at,
     }))
   }));
@@ -1058,7 +1128,7 @@ async function deleteList(id) {
   }
 }
 
-async function addItem(text) {
+async function addItem(text, parentId) {
   const list = getActiveList();
   if (!list) return;
   const snapshot = snapshotLists();
@@ -1069,6 +1139,7 @@ async function addItem(text) {
     text: text,
     status: 'todo',
     sort_order: list.items.length,
+    parent_id: parentId || null,
     created_at: new Date().toISOString()
   };
   list.items.push(optimistic);
@@ -1076,19 +1147,52 @@ async function addItem(text) {
 
   if (list.id.startsWith('temp-')) return;
   try {
-    const created = await sbCreateItem({
-      list_id: list.id,
-      text: text,
-      sort_order: list.items.length - 1
-    });
+    const payload = { list_id: list.id, text: text, sort_order: list.items.length - 1 };
+    if (parentId) payload.parent_id = parentId;
+    const created = await sbCreateItem(payload);
     // Replace temp
     const currentList = allLists.find(l => l.id === list.id);
     if (currentList) {
       const itemIdx = currentList.items.findIndex(i => i.id === tempId);
-      if (itemIdx !== -1) currentList.items[itemIdx].id = created.id;
+      if (itemIdx !== -1) {
+        currentList.items[itemIdx].id = created.id;
+        if (created.parent_id) currentList.items[itemIdx].parent_id = created.parent_id;
+      }
     }
   } catch(e) {
     console.log('addItem error:', e);
+    rollback(snapshot);
+  }
+}
+
+async function moveItemToList(itemId, targetListId) {
+  const snapshot = snapshotLists();
+  let movedItem = null;
+  let sourceList = null;
+  for (const list of allLists) {
+    const item = list.items.find(i => i.id === itemId);
+    if (item) { movedItem = item; sourceList = list; break; }
+  }
+  if (!movedItem || !sourceList) return;
+  const subtasks = sourceList.items.filter(i => i.parent_id === itemId);
+
+  // Optimistic: remove from source, add to target
+  sourceList.items = sourceList.items.filter(i => i.id !== itemId && i.parent_id !== itemId);
+  const targetList = allLists.find(l => l.id === targetListId);
+  if (targetList) {
+    movedItem.list_id = targetListId;
+    targetList.items.push(movedItem);
+    for (const s of subtasks) { s.list_id = targetListId; targetList.items.push(s); }
+  }
+  activeListId = targetListId;
+  setStoredActiveListId(targetListId);
+  render();
+
+  try {
+    await sbUpdateItem(itemId, { list_id: targetListId });
+    for (const s of subtasks) await sbUpdateItem(s.id, { list_id: targetListId });
+  } catch(e) {
+    console.log('moveItemToList error:', e);
     rollback(snapshot);
   }
 }
@@ -1116,14 +1220,16 @@ async function updateItem(id, updates) {
 async function deleteItem(id) {
   if (id.startsWith('temp-')) {
     for (const list of allLists) {
-      list.items = list.items.filter(i => i.id !== id);
+      // Also remove subtasks
+      list.items = list.items.filter(i => i.id !== id && i.parent_id !== id);
     }
     render();
     return;
   }
   const snapshot = snapshotLists();
   for (const list of allLists) {
-    list.items = list.items.filter(i => i.id !== id);
+    // Optimistically remove subtasks too (DB cascade will handle server-side)
+    list.items = list.items.filter(i => i.id !== id && i.parent_id !== id);
   }
   render();
 
@@ -1138,7 +1244,8 @@ async function deleteItem(id) {
 async function clearDoneItems() {
   const list = getActiveList();
   if (!list) return;
-  const doneItems = list.items.filter(i => i.status === 'done');
+  // Only delete top-level done items; subtasks are handled by DB cascade
+  const doneItems = list.items.filter(i => i.status === 'done' && !i.parent_id);
   for (const item of doneItems) {
     deleteItem(item.id);
   }
@@ -1339,7 +1446,7 @@ function renderTabs() {
 
     const count = document.createElement('span');
     count.className = 'tab-count';
-    count.textContent = list.items.length;
+    count.textContent = list.items.filter(i => !i.parent_id).length;
     tab.appendChild(count);
 
     const close = document.createElement('span');
@@ -1351,6 +1458,37 @@ function renderTabs() {
       deleteList(list.id);
     });
     tab.appendChild(close);
+
+    // Cross-list drag: hovering a dragged item over a tab switches list
+    tab.addEventListener('dragover', (e) => {
+      if (!dragSrcItemId || list.id === activeListId) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      if (!tab.classList.contains('drag-target')) {
+        tab.classList.add('drag-target');
+        tabDragTimers[list.id] = setTimeout(() => {
+          activeListId = list.id;
+          setStoredActiveListId(list.id);
+          render();
+        }, 600);
+      }
+    });
+    tab.addEventListener('dragleave', () => {
+      tab.classList.remove('drag-target');
+      if (tabDragTimers[list.id]) { clearTimeout(tabDragTimers[list.id]); delete tabDragTimers[list.id]; }
+    });
+    tab.addEventListener('drop', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      tab.classList.remove('drag-target');
+      if (tabDragTimers[list.id]) { clearTimeout(tabDragTimers[list.id]); delete tabDragTimers[list.id]; }
+      if (dragSrcItemId && list.id !== activeListId) {
+        const srcId = dragSrcItemId;
+        dragSrcItemId = null;
+        dragSrcIndex = null;
+        moveItemToList(srcId, list.id);
+      }
+    });
 
     bar.appendChild(tab);
   });
@@ -1409,6 +1547,123 @@ function startRenameTab(tabEl, nameEl, list) {
 }
 
 let dragSrcIndex = null;
+let dragSrcItemId = null; // for cross-list drag
+let tabDragTimers = {};   // timers for tab hover-to-switch
+
+function makeItemRow(item, list, displayIdx, topLevelItems) {
+  const row = document.createElement('div');
+  row.className = 'todo-item'
+    + (item.status === 'done' ? ' done' : '')
+    + (item.status === 'inflight' ? ' inflight' : '');
+  row.draggable = !item.parent_id; // only top-level items are draggable
+  row.dataset.id = item.id;
+
+  if (!item.parent_id) {
+    row.addEventListener('dragstart', (e) => {
+      dragSrcIndex = displayIdx;
+      dragSrcItemId = item.id;
+      row.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', item.id);
+    });
+    row.addEventListener('dragend', () => {
+      row.classList.remove('dragging');
+      document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+      dragSrcIndex = null;
+      dragSrcItemId = null;
+    });
+    row.addEventListener('dragover', (e) => {
+      if (dragSrcItemId === null) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      row.classList.add('drag-over');
+    });
+    row.addEventListener('dragleave', () => row.classList.remove('drag-over'));
+    row.addEventListener('drop', (e) => {
+      e.preventDefault();
+      row.classList.remove('drag-over');
+      if (dragSrcIndex !== null && dragSrcIndex !== displayIdx) {
+        const srcItem = list.items.find(i => i.id === dragSrcItemId);
+        if (srcItem) {
+          list.items = list.items.filter(i => i.id !== srcItem.id);
+          const targetIdx = list.items.findIndex(i => i.id === item.id);
+          list.items.splice(targetIdx, 0, srcItem);
+          list.items.forEach((it, idx) => {
+            it.sort_order = idx;
+            if (!it.id.startsWith('temp-')) sbUpdateItem(it.id, { sort_order: idx }).catch(() => {});
+          });
+          render();
+        }
+      }
+    });
+  }
+
+  const check = document.createElement('div');
+  check.className = 'todo-check';
+  check.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const nextStatus = item.status === 'done' ? 'todo' : 'done';
+    updateItem(item.id, { status: nextStatus });
+    if (!item.parent_id && nextStatus === 'done') {
+      // Cascade: mark all subtasks done
+      const subs = list.items.filter(i => i.parent_id === item.id);
+      for (const s of subs) updateItem(s.id, { status: 'done' });
+    } else if (item.parent_id && nextStatus === 'done') {
+      // Auto-complete parent if all siblings done
+      const siblings = list.items.filter(i => i.parent_id === item.parent_id && i.id !== item.id);
+      if (siblings.every(s => s.status === 'done')) {
+        updateItem(item.parent_id, { status: 'done' });
+      }
+    }
+  });
+  check.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const nextStatus = item.status === 'inflight' ? 'todo' : 'inflight';
+    updateItem(item.id, { status: nextStatus });
+  });
+
+  const textEl = document.createElement('div');
+  textEl.className = 'todo-text' + (item.parent_id ? ' todo-text--sub' : '');
+  textEl.textContent = item.text;
+  textEl.addEventListener('dblclick', (e) => {
+    e.stopPropagation();
+    row.draggable = false;
+    const inp = document.createElement('input');
+    inp.type = 'text';
+    inp.className = 'todo-edit-input';
+    inp.value = item.text;
+    textEl.replaceWith(inp);
+    inp.focus();
+    inp.select();
+    let finished = false;
+    const finish = () => {
+      if (finished) return;
+      finished = true;
+      const val = inp.value.trim();
+      if (val && val !== item.text) updateItem(item.id, { text: val });
+      else if (!val) deleteItem(item.id);
+      else render();
+    };
+    inp.addEventListener('blur', finish);
+    inp.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Enter') { ev.preventDefault(); finish(); }
+      if (ev.key === 'Escape') { finished = true; render(); }
+    });
+  });
+
+  const del = document.createElement('span');
+  del.className = 'todo-delete';
+  del.textContent = '\u00d7';
+  del.addEventListener('click', (e) => {
+    e.stopPropagation();
+    deleteItem(item.id);
+  });
+
+  row.appendChild(check);
+  row.appendChild(textEl);
+  return { row, del };
+}
 
 function renderList() {
   const area = document.getElementById('listArea');
@@ -1425,8 +1680,10 @@ function renderList() {
     return;
   }
 
-  const sorted = sortItems(list.items);
-  if (sorted.length === 0) {
+  // Separate top-level items from subtasks
+  const topLevelItems = sortItems(list.items.filter(i => !i.parent_id));
+
+  if (topLevelItems.length === 0) {
     area.innerHTML = `
       <div class="empty-state">
         <div>No tasks yet</div>
@@ -1435,114 +1692,89 @@ function renderList() {
     return;
   }
 
-  sorted.forEach((item, displayIdx) => {
-    const row = document.createElement('div');
-    row.className = 'todo-item'
-      + (item.status === 'done' ? ' done' : '')
-      + (item.status === 'inflight' ? ' inflight' : '');
-    row.draggable = true;
-    row.dataset.id = item.id;
+  topLevelItems.forEach((item, displayIdx) => {
+    const { row, del } = makeItemRow(item, list, displayIdx, topLevelItems);
+    const subs = sortItems(list.items.filter(i => i.parent_id === item.id));
+    const doneSubs = subs.filter(s => s.status === 'done').length;
 
-    row.addEventListener('dragstart', (e) => {
-      dragSrcIndex = displayIdx;
-      row.classList.add('dragging');
-      e.dataTransfer.effectAllowed = 'move';
-    });
-    row.addEventListener('dragend', () => {
-      row.classList.remove('dragging');
-      document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
-      dragSrcIndex = null;
-    });
-    row.addEventListener('dragover', (e) => {
-      e.preventDefault();
-      e.dataTransfer.dropEffect = 'move';
-      row.classList.add('drag-over');
-    });
-    row.addEventListener('dragleave', () => row.classList.remove('drag-over'));
-    row.addEventListener('drop', (e) => {
-      e.preventDefault();
-      row.classList.remove('drag-over');
-      if (dragSrcIndex !== null && dragSrcIndex !== displayIdx) {
-        // Reorder in the actual list items array
-        const sortedIds = sorted.map(i => i.id);
-        const srcId = sortedIds[dragSrcIndex];
-        const srcItem = list.items.find(i => i.id === srcId);
-        if (srcItem) {
-          list.items = list.items.filter(i => i.id !== srcId);
-          const targetItem = list.items.find(i => i.id === item.id);
-          const targetIdx = list.items.indexOf(targetItem);
-          list.items.splice(targetIdx, 0, srcItem);
-          // Update sort_orders
-          list.items.forEach((it, idx) => {
-            it.sort_order = idx;
-            if (!it.id.startsWith('temp-')) {
-              sbUpdateItem(it.id, { sort_order: idx }).catch(() => {});
-            }
-          });
-          render();
-        }
-      }
-    });
+    // Subtask badge
+    if (subs.length > 0) {
+      const badge = document.createElement('span');
+      badge.className = 'subtask-badge';
+      badge.textContent = `${doneSubs}/${subs.length}`;
+      badge.title = `${doneSubs} of ${subs.length} subtasks done`;
+      row.appendChild(badge);
+    }
 
-    const check = document.createElement('div');
-    check.className = 'todo-check';
-    check.addEventListener('click', (e) => {
+    // Add-subtask button
+    const addSubBtn = document.createElement('span');
+    addSubBtn.className = 'add-sub-btn';
+    addSubBtn.textContent = '+';
+    addSubBtn.title = 'Add subtask';
+    addSubBtn.addEventListener('click', (e) => {
       e.stopPropagation();
-      const nextStatus = item.status === 'done' ? 'todo' : 'done';
-      updateItem(item.id, { status: nextStatus });
-    });
-    check.addEventListener('contextmenu', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      const nextStatus = item.status === 'inflight' ? 'todo' : 'inflight';
-      updateItem(item.id, { status: nextStatus });
-    });
-
-    const text = document.createElement('div');
-    text.className = 'todo-text';
-    text.textContent = item.text;
-    text.addEventListener('dblclick', (e) => {
-      e.stopPropagation();
-      row.draggable = false;
+      // Append an inline subtask input row after this item's subtasks
+      const inputRow = document.createElement('div');
+      inputRow.className = 'todo-item subtask-row subtask-add-row';
+      const indent = document.createElement('span');
+      indent.className = 'subtask-indent';
+      const dot = document.createElement('span');
+      dot.className = 'subtask-new-dot';
+      dot.textContent = '\u25e6';
       const inp = document.createElement('input');
       inp.type = 'text';
-      inp.className = 'todo-edit-input';
-      inp.value = item.text;
-      text.replaceWith(inp);
+      inp.className = 'todo-edit-input subtask-edit-input';
+      inp.placeholder = 'New subtask\u2026';
+      inputRow.appendChild(indent);
+      inputRow.appendChild(dot);
+      inputRow.appendChild(inp);
+      // Insert after the last subtask row or after the item row
+      let insertAfter = row;
+      const nextEl = insertAfter.nextSibling;
+      // Skip past existing subtask rows
+      let cursor = row.nextSibling;
+      while (cursor && cursor.classList && cursor.classList.contains('subtask-row')) {
+        insertAfter = cursor;
+        cursor = cursor.nextSibling;
+      }
+      if (insertAfter.nextSibling) {
+        area.insertBefore(inputRow, insertAfter.nextSibling);
+      } else {
+        area.appendChild(inputRow);
+      }
       inp.focus();
-      inp.select();
-      let finished = false;
-      const finish = () => {
-        if (finished) return;
-        finished = true;
+      let done = false;
+      const commit = () => {
+        if (done) return;
+        done = true;
         const val = inp.value.trim();
-        if (val && val !== item.text) {
-          updateItem(item.id, { text: val });
-        } else if (!val) {
-          deleteItem(item.id);
-        } else {
-          render();
-        }
+        if (val) addItem(val, item.id);
+        else render();
       };
-      inp.addEventListener('blur', finish);
+      inp.addEventListener('blur', commit);
       inp.addEventListener('keydown', (ev) => {
-        if (ev.key === 'Enter') { ev.preventDefault(); finish(); }
-        if (ev.key === 'Escape') { finished = true; render(); }
+        if (ev.key === 'Enter') { ev.preventDefault(); commit(); }
+        if (ev.key === 'Escape') { done = true; render(); }
       });
     });
 
-    const del = document.createElement('span');
-    del.className = 'todo-delete';
-    del.textContent = '\u00d7';
-    del.addEventListener('click', (e) => {
-      e.stopPropagation();
-      deleteItem(item.id);
-    });
-
-    row.appendChild(check);
-    row.appendChild(text);
+    row.appendChild(addSubBtn);
     row.appendChild(del);
     area.appendChild(row);
+
+    // Render subtask rows
+    subs.forEach((sub) => {
+      const { row: subRow, del: subDel } = makeItemRow(sub, list, -1, topLevelItems);
+      subRow.classList.add('subtask-row');
+
+      // Add indent element at the start
+      const indent = document.createElement('span');
+      indent.className = 'subtask-indent';
+      subRow.insertBefore(indent, subRow.firstChild);
+
+      subRow.appendChild(subDel);
+      area.appendChild(subRow);
+    });
   });
 }
 
@@ -1559,7 +1791,9 @@ function renderStatus() {
   const todo = items.length - done - inflight;
   document.getElementById('statusText').textContent =
     items.length === 0 ? '' : `${todo} to do \u00b7 ${inflight} in flight \u00b7 ${done} done`;
-  document.getElementById('clearDone').style.display = done > 0 ? 'inline' : 'none';
+  // Show "clear done" only if there are done TOP-LEVEL items
+  const doneTopLevel = items.filter(i => i.status === 'done' && !i.parent_id).length;
+  document.getElementById('clearDone').style.display = doneTopLevel > 0 ? 'inline' : 'none';
 }
 
 // ── Input handling ──
