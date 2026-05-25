@@ -13,7 +13,12 @@ export default function Neighborhood() {
   const [neighbors, setNeighbors] = useState<Neighbor[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  // Local draft for names input — prevents comma/space being swallowed by controlled re-render
+  const [draftNames, setDraftNames] = useState<string | null>(null);
+  // Visual save feedback
+  const [savedId, setSavedId] = useState<string | null>(null);
   const saveTimeout = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  const savedFeedbackTimeout = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
   useEffect(() => {
     (async () => {
@@ -80,8 +85,37 @@ export default function Neighborhood() {
     })();
   }, []);
 
+  // Reset draft whenever the selected lot changes
+  useEffect(() => {
+    setDraftNames(null);
+  }, [selectedId]);
+
   const handleSelect = useCallback((id: string) => {
     setSelectedId((prev) => (prev === id ? null : id));
+  }, []);
+
+  const triggerSave = useCallback((id: string) => {
+    if (saveTimeout.current[id]) clearTimeout(saveTimeout.current[id]);
+    saveTimeout.current[id] = setTimeout(() => {
+      setNeighbors((current) => {
+        const neighbor = current.find((n) => n.id === id);
+        if (neighbor) {
+          const { created_at, ...rest } = neighbor;
+          upsertNeighbor(rest)
+            .then(() => {
+              // Show "Saved" feedback
+              setSavedId(id);
+              if (savedFeedbackTimeout.current[id])
+                clearTimeout(savedFeedbackTimeout.current[id]);
+              savedFeedbackTimeout.current[id] = setTimeout(() => {
+                setSavedId((prev) => (prev === id ? null : prev));
+              }, 1800);
+            })
+            .catch((err) => console.error("Failed to save:", err));
+        }
+        return current;
+      });
+    }, 800);
   }, []);
 
   const updateField = useCallback(
@@ -89,23 +123,21 @@ export default function Neighborhood() {
       setNeighbors((prev) =>
         prev.map((n) => (n.id === id ? { ...n, [field]: value } : n))
       );
-
-      if (saveTimeout.current[id]) clearTimeout(saveTimeout.current[id]);
-      saveTimeout.current[id] = setTimeout(() => {
-        setNeighbors((current) => {
-          const neighbor = current.find((n) => n.id === id);
-          if (neighbor) {
-            const { created_at, ...rest } = neighbor;
-            upsertNeighbor(rest).catch((err) =>
-              console.error("Failed to save:", err)
-            );
-          }
-          return current;
-        });
-      }, 800);
+      triggerSave(id);
     },
-    []
+    [triggerSave]
   );
+
+  // Commit the names draft to the neighbor state and trigger save
+  const commitNamesDraft = useCallback(() => {
+    if (!selectedId || draftNames === null) return;
+    const parsed = draftNames
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    updateField(selectedId, "names", parsed);
+    setDraftNames(null);
+  }, [selectedId, draftNames, updateField]);
 
   const selected = neighbors.find((n) => n.id === selectedId);
 
@@ -136,49 +168,76 @@ export default function Neighborhood() {
         <div className="neighbor-detail">
           <div className="neighbor-detail-header">
             <h3>{selected.address}</h3>
-            <button
-              className="close-btn"
-              onClick={() => setSelectedId(null)}
-            >
-              ✕
-            </button>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              {savedId === selected.id && (
+                <span className="neighbor-saved-badge">✓ Saved</span>
+              )}
+              <button
+                className="close-btn"
+                onClick={() => setSelectedId(null)}
+              >
+                ✕
+              </button>
+            </div>
           </div>
 
           <div className="neighbor-detail-field">
             <label>Names</label>
+            {/* Use draftNames as local state — avoids comma/space being swallowed
+                by the parse-then-join round-trip on every keystroke */}
             <input
               type="text"
-              className="neighbor-names-input"
+              className={`neighbor-names-input${savedId === selected.id ? " neighbor-input--saved" : ""}`}
               placeholder="Add names (comma-separated)..."
-              value={selected.names.join(", ")}
-              onChange={(e) =>
-                updateField(
-                  selected.id,
-                  "names",
-                  e.target.value
-                    .split(",")
-                    .map((s) => s.trim())
-                    .filter(Boolean)
-                )
-              }
+              value={draftNames ?? selected.names.join(", ")}
+              onChange={(e) => setDraftNames(e.target.value)}
+              onBlur={commitNamesDraft}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  commitNamesDraft();
+                  (e.target as HTMLInputElement).blur();
+                }
+                if (e.key === "Escape") {
+                  setDraftNames(null);
+                  (e.target as HTMLInputElement).blur();
+                }
+              }}
             />
           </div>
 
           <div className="neighbor-detail-field">
             <label>Notes</label>
             <textarea
-              className="neighbor-notes"
+              className={`neighbor-notes${savedId === selected.id ? " neighbor-input--saved" : ""}`}
               placeholder="Add notes..."
               value={selected.notes}
               onChange={(e) =>
                 updateField(selected.id, "notes", e.target.value)
               }
+              onBlur={() => triggerSave(selected.id)}
               rows={2}
             />
           </div>
         </div>
       )}
 
+      <style>{`
+        .neighbor-saved-badge {
+          font-size: 12px;
+          color: var(--success, #66bb6a);
+          font-weight: 600;
+          animation: neighbor-fade-in 0.2s ease;
+        }
+        @keyframes neighbor-fade-in {
+          from { opacity: 0; transform: translateY(2px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        .neighbor-input--saved {
+          border-color: var(--success, #66bb6a) !important;
+          box-shadow: 0 0 0 2px rgba(102, 187, 106, 0.2) !important;
+          transition: border-color 0.3s, box-shadow 0.3s;
+        }
+      `}</style>
     </div>
   );
 }

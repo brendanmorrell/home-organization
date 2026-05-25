@@ -334,6 +334,7 @@ export type TodoItem = {
   text: string;
   status: "todo" | "inflight" | "done";
   sort_order: number;
+  parent_id: string | null;
   created_at: string;
 };
 
@@ -362,7 +363,7 @@ export async function fetchTodoListsWithItems(): Promise<TodoListWithItems[]> {
   const itemsByListId = (items || []).reduce(
     (acc: Record<string, TodoItem[]>, item: TodoItem) => {
       if (!acc[item.list_id]) acc[item.list_id] = [];
-      acc[item.list_id].push(item);
+      acc[item.list_id].push({ ...item, parent_id: item.parent_id ?? null });
       return acc;
     },
     {}
@@ -418,6 +419,7 @@ export async function createTodoItem(item: {
   text: string;
   status?: string;
   sort_order: number;
+  parent_id?: string | null;
 }): Promise<TodoItem> {
   const { data, error } = await supabase
     .from("todo_items")
@@ -430,7 +432,7 @@ export async function createTodoItem(item: {
 
 export async function updateTodoItem(
   id: string,
-  updates: Partial<Pick<TodoItem, "text" | "status" | "sort_order">>
+  updates: Partial<Pick<TodoItem, "text" | "status" | "sort_order" | "list_id" | "parent_id">>
 ): Promise<TodoItem> {
   const { data, error } = await supabase
     .from("todo_items")

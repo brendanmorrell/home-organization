@@ -40,15 +40,11 @@ function sortItems(items: TodoItem[]): TodoItem[] {
   );
 }
 
-/** Check if a list is visible to a given user */
 function isListVisibleTo(list: TodoListWithItems, user: Identity): boolean {
-  // Shared lists (owner is null/undefined) are visible to everyone
   if (!list.owner) return true;
-  // Personal lists are only visible to their owner
   return list.owner === user;
 }
 
-/** Check if a list is shared (no owner) */
 function isSharedList(list: TodoListWithItems): boolean {
   return !list.owner;
 }
@@ -81,7 +77,6 @@ function IdentityPicker({ onSelect }: { onSelect: (id: Identity) => void }) {
 }
 
 export default function TodosPage() {
-  const queryClient = useQueryClient();
   const [currentUser, setCurrentUser] = useState<Identity | null>(() => getIdentity());
   const [newListShared, setNewListShared] = useState(false);
 
@@ -95,7 +90,6 @@ export default function TodosPage() {
     setCurrentUser(null);
   }, []);
 
-  // If no identity, show picker
   if (!currentUser) {
     return <IdentityPicker onSelect={handleSelectIdentity} />;
   }
@@ -128,13 +122,11 @@ function TodosMain({
   const { data: allLists = [], isLoading } = useQuery<TodoListWithItems[]>({
     queryKey: ["todo-lists"],
     queryFn: fetchTodoListsWithItems,
-    refetchInterval: realtimeHealthy ? false : 10000, // only poll when realtime is down
+    refetchInterval: realtimeHealthy ? false : 10000,
   });
 
-  // Filter lists visible to the current user
   const lists = allLists.filter((l) => isListVisibleTo(l, currentUser));
 
-  // Sort: user's own lists first, then shared
   const sortedLists = [...lists].sort((a, b) => {
     const aOwned = a.owner === currentUser ? 0 : 1;
     const bOwned = b.owner === currentUser ? 0 : 1;
@@ -153,31 +145,45 @@ function TodosMain({
         queryClient.invalidateQueries({ queryKey: ["todo-lists"] });
       })
       .subscribe((status) => {
-        if (status === 'SUBSCRIBED') {
-          setRealtimeHealthy(true);
-        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
-          setRealtimeHealthy(false);
-        }
+        if (status === 'SUBSCRIBED') setRealtimeHealthy(true);
+        else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') setRealtimeHealthy(false);
       });
     return () => { supabase.removeChannel(channel); };
   }, [queryClient]);
 
-  // --- Local UI state ---
+  // --- Active list state ---
   const activeListKey = getActiveListKey(currentUser);
   const [activeListId, setActiveListIdRaw] = useState<string | null>(() => {
     if (typeof window === "undefined") return null;
     return localStorage.getItem(activeListKey);
   });
 
+  // Track manual selections to prevent auto-select from overriding
+  const userSelectedRef = useRef(false);
+
   const setActiveListId = useCallback((id: string | null) => {
+    userSelectedRef.current = true;
     setActiveListIdRaw(id);
-    if (id) {
-      localStorage.setItem(activeListKey, id);
-    } else {
-      localStorage.removeItem(activeListKey);
-    }
+    if (id) localStorage.setItem(activeListKey, id);
+    else localStorage.removeItem(activeListKey);
   }, [activeListKey]);
 
+  // Auto-select first list only when selection becomes invalid AND user hasn't manually picked
+  const visibleListIds = sortedLists.map(l => l.id).join(",");
+  useEffect(() => {
+    if (sortedLists.length === 0) return;
+    if (activeListId && sortedLists.some((l) => l.id === activeListId)) return;
+    // Only auto-select if user hasn't manually chosen something
+    if (!userSelectedRef.current) {
+      setActiveListId(sortedLists[0].id);
+    } else {
+      // User selected something that no longer exists — reset
+      userSelectedRef.current = false;
+      setActiveListId(sortedLists[0].id);
+    }
+  }, [visibleListIds]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // --- UI state ---
   const [newInput, setNewInput] = useState("");
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [editingItemText, setEditingItemText] = useState("");
@@ -185,38 +191,51 @@ function TodosMain({
   const [renamingListName, setRenamingListName] = useState("");
   const [hoveredTab, setHoveredTab] = useState<string | null>(null);
   const [hoveredItemId, setHoveredItemId] = useState<string | null>(null);
+  const [addingSubtaskFor, setAddingSubtaskFor] = useState<string | null>(null);
+  const [subtaskDraft, setSubtaskDraft] = useState("");
+
+  // --- Drag state ---
+  const [draggingItem, setDraggingItem] = useState<TodoItem | null>(null);
+  const [ghostPos, setGhostPos] = useState({ x: 0, y: 0 });
+  const [dragTargetTabId, setDragTargetTabId] = useState<string | null>(null);
+  const dragActiveRef = useRef(false);
+  const capturedItemRef = useRef<TodoItem | null>(null);
+  const startPosRef = useRef({ x: 0, y: 0 });
+  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const tabSwitchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const inputRef = useRef<HTMLInputElement>(null);
   const renameRef = useRef<HTMLInputElement>(null);
   const editRef = useRef<HTMLInputElement>(null);
-  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const subtaskRef = useRef<HTMLInputElement>(null);
 
-  // Auto-select first list ONLY if no valid active list exists
-  // Use list IDs as stable dependency, not the array reference
-  const visibleListIds = sortedLists.map(l => l.id).join(",");
-  useEffect(() => {
-    if (sortedLists.length === 0) return;
-    if (activeListId && sortedLists.some((l) => l.id === activeListId)) return;
-    // Only auto-select if current selection is genuinely invalid
-    setActiveListId(sortedLists[0].id);
-  }, [visibleListIds]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Focus rename input when renaming
   useEffect(() => {
     if (renamingListId) renameRef.current?.focus();
   }, [renamingListId]);
 
-  // Focus edit input when editing
   useEffect(() => {
     if (editingItemId) editRef.current?.focus();
   }, [editingItemId]);
 
+  useEffect(() => {
+    if (addingSubtaskFor) subtaskRef.current?.focus();
+  }, [addingSubtaskFor]);
+
   const activeList = sortedLists.find((l) => l.id === activeListId) ?? null;
   const activeColor = activeList ? NEON_COLORS[activeList.color_index % NEON_COLORS.length] : NEON_COLORS[0];
-  const sortedItems = activeList ? sortItems(activeList.items) : [];
 
-  const todoCt = sortedItems.filter((i) => i.status === "todo").length;
-  const inflightCt = sortedItems.filter((i) => i.status === "inflight").length;
-  const doneCt = sortedItems.filter((i) => i.status === "done").length;
+  // Separate top-level items from subtasks
+  const topLevelItems = activeList ? sortItems(activeList.items.filter(i => !i.parent_id)) : [];
+  const subtasksOf = useCallback((parentId: string): TodoItem[] => {
+    if (!activeList) return [];
+    return sortItems(activeList.items.filter(i => i.parent_id === parentId));
+  }, [activeList]);
+
+  // Counts include subtasks
+  const todoCt = activeList ? activeList.items.filter(i => i.status === "todo").length : 0;
+  const inflightCt = activeList ? activeList.items.filter(i => i.status === "inflight").length : 0;
+  const doneCt = activeList ? activeList.items.filter(i => i.status === "done").length : 0;
 
   // --- Mutations ---
 
@@ -249,7 +268,6 @@ function TodosMain({
       return { prev, tempId };
     },
     onSuccess: (newList: { id: string; name: string }, _, context) => {
-      // Replace temp ID with real ID
       if (context?.tempId) {
         if (activeListId === context.tempId) setActiveListId(newList.id);
         if (renamingListId === context.tempId) setRenamingListId(newList.id);
@@ -299,13 +317,14 @@ function TodosMain({
   });
 
   const addItemMut = useMutation({
-    mutationFn: (text: string) =>
+    mutationFn: (params: { text: string; parentId?: string | null }) =>
       createTodoItem({
         list_id: activeListId!,
-        text,
+        text: params.text,
         sort_order: activeList ? activeList.items.length : 0,
+        parent_id: params.parentId ?? null,
       }),
-    onMutate: async (text: string) => {
+    onMutate: async ({ text, parentId }) => {
       await queryClient.cancelQueries({ queryKey: ["todo-lists"] });
       const prev = queryClient.getQueryData<TodoListWithItems[]>(["todo-lists"]);
       const optimisticItem: TodoItem = {
@@ -314,6 +333,7 @@ function TodosMain({
         text,
         status: "todo",
         sort_order: activeList ? activeList.items.length : 0,
+        parent_id: parentId ?? null,
         created_at: new Date().toISOString(),
       };
       queryClient.setQueryData<TodoListWithItems[]>(["todo-lists"], (old) =>
@@ -352,15 +372,47 @@ function TodosMain({
   const deleteItemMut = useMutation({
     mutationFn: (id: string) => deleteTodoItem(id),
     onMutate: async (id: string) => {
-      // Optimistic: remove item from cache immediately
       await queryClient.cancelQueries({ queryKey: ["todo-lists"] });
       const prev = queryClient.getQueryData<TodoListWithItems[]>(["todo-lists"]);
       queryClient.setQueryData<TodoListWithItems[]>(["todo-lists"], (old) =>
-        old?.map((l) => ({ ...l, items: l.items.filter((i) => i.id !== id) })) ?? []
+        old?.map((l) => ({
+          ...l,
+          // Also remove subtasks of the deleted item
+          items: l.items.filter((i) => i.id !== id && i.parent_id !== id),
+        })) ?? []
       );
       return { prev };
     },
     onError: (_err, _id, context) => {
+      if (context?.prev) queryClient.setQueryData(["todo-lists"], context.prev);
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ["todo-lists"] }),
+  });
+
+  // Move item to a different list
+  const moveItemMut = useMutation({
+    mutationFn: ({ itemId, newListId }: { itemId: string; newListId: string }) =>
+      updateTodoItem(itemId, { list_id: newListId }),
+    onMutate: async ({ itemId, newListId }) => {
+      await queryClient.cancelQueries({ queryKey: ["todo-lists"] });
+      const prev = queryClient.getQueryData<TodoListWithItems[]>(["todo-lists"]);
+      const sourceList = allLists.find(l => l.items.some(i => i.id === itemId));
+      const item = sourceList?.items.find(i => i.id === itemId);
+      if (!item || !sourceList) return { prev };
+      queryClient.setQueryData<TodoListWithItems[]>(["todo-lists"], (old) =>
+        old?.map((l) => {
+          if (l.id === sourceList.id) {
+            return { ...l, items: l.items.filter(i => i.id !== itemId && i.parent_id !== itemId) };
+          }
+          if (l.id === newListId) {
+            return { ...l, items: [...l.items, { ...item, list_id: newListId }] };
+          }
+          return l;
+        }) ?? []
+      );
+      return { prev };
+    },
+    onError: (_err, _vars, context) => {
       if (context?.prev) queryClient.setQueryData(["todo-lists"], context.prev);
     },
     onSettled: () => queryClient.invalidateQueries({ queryKey: ["todo-lists"] }),
@@ -372,18 +424,47 @@ function TodosMain({
     if (!newInput.trim() || !activeListId) return;
     const lines = newInput.split("\n").map((l) => l.trim()).filter(Boolean);
     for (const line of lines) {
-      addItemMut.mutate(line);
+      addItemMut.mutate({ text: line });
     }
     setNewInput("");
     inputRef.current?.focus();
   }, [newInput, activeListId, addItemMut]);
 
+  const handleAddSubtask = useCallback(() => {
+    if (!subtaskDraft.trim() || !addingSubtaskFor || !activeListId) return;
+    addItemMut.mutate({ text: subtaskDraft.trim(), parentId: addingSubtaskFor });
+    setSubtaskDraft("");
+    setAddingSubtaskFor(null);
+  }, [subtaskDraft, addingSubtaskFor, activeListId, addItemMut]);
+
+  // Cascade checkbox: completing parent marks all subtasks done;
+  // completing all subtasks auto-completes the parent.
   const handleCheckboxClick = useCallback(
     (item: TodoItem) => {
       const nextStatus = item.status === "done" ? "todo" : "done";
       updateItemMut.mutate({ id: item.id, updates: { status: nextStatus } });
+
+      if (!item.parent_id) {
+        // Parent: cascade to subtasks when marking done
+        if (nextStatus === "done" && activeList) {
+          const subs = activeList.items.filter(i => i.parent_id === item.id);
+          for (const s of subs) {
+            updateItemMut.mutate({ id: s.id, updates: { status: "done" } });
+          }
+        }
+      } else {
+        // Subtask: auto-complete parent if all siblings will be done
+        if (nextStatus === "done" && activeList) {
+          const siblings = activeList.items.filter(
+            i => i.parent_id === item.parent_id && i.id !== item.id
+          );
+          if (siblings.every(s => s.status === "done")) {
+            updateItemMut.mutate({ id: item.parent_id, updates: { status: "done" } });
+          }
+        }
+      }
     },
-    [updateItemMut]
+    [updateItemMut, activeList]
   );
 
   const handleCheckboxContext = useCallback(
@@ -415,7 +496,8 @@ function TodosMain({
 
   const handleClearDone = useCallback(() => {
     if (!activeList) return;
-    const doneItems = activeList.items.filter((i) => i.status === "done");
+    // Delete top-level done items (cascade in DB handles subtasks)
+    const doneItems = activeList.items.filter((i) => i.status === "done" && !i.parent_id);
     for (const item of doneItems) {
       deleteItemMut.mutate(item.id);
     }
@@ -446,6 +528,99 @@ function TodosMain({
     [sortedLists, deleteListMut]
   );
 
+  // --- Drag handlers (cross-list) ---
+
+  const handleItemPointerDown = useCallback((e: React.PointerEvent, item: TodoItem) => {
+    if (item.parent_id) return; // Subtasks not draggable
+    startPosRef.current = { x: e.clientX, y: e.clientY };
+    capturedItemRef.current = item;
+
+    longPressTimerRef.current = setTimeout(() => {
+      dragActiveRef.current = true;
+      setDraggingItem(item);
+      setGhostPos({ x: e.clientX, y: e.clientY });
+      // Prevent parent long-press timer from firing
+      if (longPressTimer.current) {
+        clearTimeout(longPressTimer.current);
+        longPressTimer.current = null;
+      }
+    }, 450);
+  }, []);
+
+  const handleItemPointerMove = useCallback((e: React.PointerEvent) => {
+    if (!capturedItemRef.current) return;
+
+    const dx = e.clientX - startPosRef.current.x;
+    const dy = e.clientY - startPosRef.current.y;
+
+    if (!dragActiveRef.current) {
+      // Cancel long-press if user scrolls/moves before threshold
+      if (Math.abs(dx) > 8 || Math.abs(dy) > 8) {
+        if (longPressTimerRef.current) {
+          clearTimeout(longPressTimerRef.current);
+          longPressTimerRef.current = null;
+        }
+        capturedItemRef.current = null;
+      }
+      return;
+    }
+
+    e.preventDefault();
+    setGhostPos({ x: e.clientX, y: e.clientY });
+
+    // Find what tab (if any) is under the pointer
+    const el = document.elementFromPoint(e.clientX, e.clientY) as HTMLElement | null;
+    const tabEl = el?.closest('[data-tab-list-id]') as HTMLElement | null;
+    const newTargetId = tabEl?.dataset.tabListId ?? null;
+
+    setDragTargetTabId(prev => {
+      if (newTargetId !== prev) {
+        if (tabSwitchTimerRef.current) clearTimeout(tabSwitchTimerRef.current);
+        if (newTargetId && newTargetId !== capturedItemRef.current?.list_id) {
+          tabSwitchTimerRef.current = setTimeout(() => {
+            setActiveListId(newTargetId!);
+          }, 600);
+        }
+      }
+      return newTargetId;
+    });
+  }, [setActiveListId]);
+
+  const handleItemPointerUp = useCallback((e: React.PointerEvent) => {
+    if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
+    if (tabSwitchTimerRef.current) clearTimeout(tabSwitchTimerRef.current);
+
+    if (dragActiveRef.current && capturedItemRef.current) {
+      const el = document.elementFromPoint(e.clientX, e.clientY) as HTMLElement | null;
+      const tabEl = el?.closest('[data-tab-list-id]') as HTMLElement | null;
+      const targetListId = tabEl?.dataset.tabListId ?? null;
+
+      if (targetListId && targetListId !== capturedItemRef.current.list_id) {
+        moveItemMut.mutate({ itemId: capturedItemRef.current.id, newListId: targetListId });
+      }
+    }
+
+    dragActiveRef.current = false;
+    capturedItemRef.current = null;
+    setDraggingItem(null);
+    setDragTargetTabId(null);
+  }, [moveItemMut]);
+
+  // Clean up drag if pointer leaves the window
+  useEffect(() => {
+    const cleanup = () => {
+      if (dragActiveRef.current) {
+        dragActiveRef.current = false;
+        capturedItemRef.current = null;
+        setDraggingItem(null);
+        setDragTargetTabId(null);
+        if (tabSwitchTimerRef.current) clearTimeout(tabSwitchTimerRef.current);
+      }
+    };
+    window.addEventListener('pointercancel', cleanup);
+    return () => window.removeEventListener('pointercancel', cleanup);
+  }, []);
+
   // --- Render ---
 
   if (isLoading) {
@@ -460,6 +635,16 @@ function TodosMain({
   return (
     <div className="todo-page" style={{ "--todo-accent": activeColor } as React.CSSProperties}>
       <style>{styles}</style>
+
+      {/* Drag ghost */}
+      {draggingItem && (
+        <div
+          className="todo-drag-ghost"
+          style={{ left: ghostPos.x - 100, top: ghostPos.y - 20 }}
+        >
+          {draggingItem.text}
+        </div>
+      )}
 
       {/* User header */}
       <div className="todo-user-bar">
@@ -478,10 +663,13 @@ function TodosMain({
             const color = NEON_COLORS[list.color_index % NEON_COLORS.length];
             const isActive = list.id === activeListId;
             const shared = isSharedList(list);
+            const isDragTarget = dragTargetTabId === list.id;
             return (
-              <div
+              <button
                 key={list.id}
-                className={`todo-tab ${isActive ? "active" : ""} ${shared ? "todo-tab--shared" : ""}`}
+                type="button"
+                data-tab-list-id={list.id}
+                className={`todo-tab${isActive ? " active" : ""}${shared ? " todo-tab--shared" : ""}${isDragTarget ? " todo-tab--drag-target" : ""}`}
                 style={{ "--tab-color": color } as React.CSSProperties}
                 onClick={() => setActiveListId(list.id)}
                 onMouseEnter={() => setHoveredTab(list.id)}
@@ -513,8 +701,8 @@ function TodosMain({
                   </span>
                 )}
                 {shared && <span className="todo-tab-shared-badge">shared</span>}
-                <span className="todo-tab-count">{list.items.length}</span>
-                {hoveredTab === list.id && (
+                <span className="todo-tab-count">{list.items.filter(i => !i.parent_id).length}</span>
+                {hoveredTab === list.id && !isDragTarget && (
                   <button
                     className="todo-tab-delete"
                     onClick={(e) => handleDeleteList(e, list.id)}
@@ -523,11 +711,11 @@ function TodosMain({
                     &times;
                   </button>
                 )}
-              </div>
+              </button>
             );
           })}
 
-          {/* New list button with shared toggle */}
+          {/* New list button */}
           <div className="todo-tab-add-group">
             <button
               className="todo-tab todo-tab-add"
@@ -551,71 +739,193 @@ function TodosMain({
       {/* Item list */}
       {activeList ? (
         <div className="todo-items-container">
-          {sortedItems.length === 0 ? (
+          {topLevelItems.length === 0 ? (
             <div className="todo-empty">No tasks yet. Add one below.</div>
           ) : (
             <div className="todo-items">
-              {sortedItems.map((item) => (
-                <div
-                  key={item.id}
-                  className={`todo-item todo-item--${item.status}`}
-                  onMouseEnter={() => setHoveredItemId(item.id)}
-                  onMouseLeave={() => setHoveredItemId(null)}
-                >
-                  <button
-                    className={`todo-checkbox todo-checkbox--${item.status}`}
-                    onClick={() => handleCheckboxClick(item)}
-                    onContextMenu={(e) => handleCheckboxContext(e, item)}
-                    onPointerDown={() => handlePointerDown(item)}
-                    onPointerUp={handlePointerUp}
-                    onPointerCancel={handlePointerUp}
-                    title="Click: toggle done. Right-click/long-press: toggle in-flight"
-                  >
-                    {item.status === "done" && (
-                      <svg viewBox="0 0 16 16" width="14" height="14">
-                        <path d="M3 8l3 3 7-7" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    )}
-                    {item.status === "inflight" && (
-                      <svg viewBox="0 0 16 16" width="12" height="12">
-                        <path d="M5 3l8 5-8 5V3z" fill="currentColor" />
-                      </svg>
-                    )}
-                  </button>
-
-                  {editingItemId === item.id ? (
-                    <input
-                      ref={editRef}
-                      className="todo-item-edit"
-                      value={editingItemText}
-                      onChange={(e) => setEditingItemText(e.target.value)}
-                      onBlur={commitItemEdit}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") commitItemEdit();
-                        if (e.key === "Escape") setEditingItemId(null);
-                      }}
-                    />
-                  ) : (
-                    <span
-                      className="todo-item-text"
-                      onDoubleClick={() => {
-                        setEditingItemId(item.id);
-                        setEditingItemText(item.text);
-                      }}
+              {topLevelItems.map((item) => {
+                const subs = subtasksOf(item.id);
+                const doneSubs = subs.filter(s => s.status === "done").length;
+                return (
+                  <div key={item.id}>
+                    {/* Top-level item row */}
+                    <div
+                      className={`todo-item todo-item--${item.status}${draggingItem?.id === item.id ? " todo-item--dragging" : ""}`}
+                      onMouseEnter={() => setHoveredItemId(item.id)}
+                      onMouseLeave={() => setHoveredItemId(null)}
+                      onPointerDown={(e) => handleItemPointerDown(e, item)}
+                      onPointerMove={handleItemPointerMove}
+                      onPointerUp={handleItemPointerUp}
+                      style={{ touchAction: dragActiveRef.current ? "none" : "auto" }}
                     >
-                      {item.text}
-                    </span>
-                  )}
+                      <button
+                        className={`todo-checkbox todo-checkbox--${item.status}`}
+                        onClick={() => handleCheckboxClick(item)}
+                        onContextMenu={(e) => handleCheckboxContext(e, item)}
+                        onPointerDown={(e) => { e.stopPropagation(); handlePointerDown(item); }}
+                        onPointerUp={(e) => { e.stopPropagation(); handlePointerUp(); }}
+                        onPointerCancel={handlePointerUp}
+                        title="Click: toggle done. Right-click/long-press: toggle in-flight"
+                      >
+                        {item.status === "done" && (
+                          <svg viewBox="0 0 16 16" width="14" height="14">
+                            <path d="M3 8l3 3 7-7" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        )}
+                        {item.status === "inflight" && (
+                          <svg viewBox="0 0 16 16" width="12" height="12">
+                            <path d="M5 3l8 5-8 5V3z" fill="currentColor" />
+                          </svg>
+                        )}
+                      </button>
 
-                  <button
-                    className={`todo-item-delete ${hoveredItemId === item.id ? "visible" : ""}`}
-                    onClick={() => deleteItemMut.mutate(item.id)}
-                    title="Delete task"
-                  >
-                    &times;
-                  </button>
-                </div>
-              ))}
+                      {editingItemId === item.id ? (
+                        <input
+                          ref={editRef}
+                          className="todo-item-edit"
+                          value={editingItemText}
+                          onChange={(e) => setEditingItemText(e.target.value)}
+                          onBlur={commitItemEdit}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") commitItemEdit();
+                            if (e.key === "Escape") setEditingItemId(null);
+                          }}
+                        />
+                      ) : (
+                        <span
+                          className="todo-item-text"
+                          onDoubleClick={() => {
+                            setEditingItemId(item.id);
+                            setEditingItemText(item.text);
+                          }}
+                        >
+                          {item.text}
+                        </span>
+                      )}
+
+                      {/* Subtask count badge */}
+                      {subs.length > 0 && (
+                        <span className="todo-subtask-badge" title={`${doneSubs}/${subs.length} subtasks done`}>
+                          {doneSubs}/{subs.length}
+                        </span>
+                      )}
+
+                      {/* Add subtask button */}
+                      {(hoveredItemId === item.id || addingSubtaskFor === item.id) && item.status !== "done" && (
+                        <button
+                          className="todo-add-subtask-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setAddingSubtaskFor(item.id);
+                            setSubtaskDraft("");
+                          }}
+                          title="Add subtask"
+                        >
+                          +
+                        </button>
+                      )}
+
+                      <button
+                        className={`todo-item-delete ${hoveredItemId === item.id ? "visible" : ""}`}
+                        onClick={() => deleteItemMut.mutate(item.id)}
+                        title="Delete task"
+                      >
+                        &times;
+                      </button>
+                    </div>
+
+                    {/* Subtask rows */}
+                    {subs.map((sub) => (
+                      <div
+                        key={sub.id}
+                        className={`todo-item todo-item--subtask todo-item--${sub.status}`}
+                        onMouseEnter={() => setHoveredItemId(sub.id)}
+                        onMouseLeave={() => setHoveredItemId(null)}
+                      >
+                        <span className="todo-subtask-indent" />
+                        <button
+                          className={`todo-checkbox todo-checkbox--${sub.status}`}
+                          onClick={() => handleCheckboxClick(sub)}
+                          onContextMenu={(e) => handleCheckboxContext(e, sub)}
+                          onPointerDown={() => handlePointerDown(sub)}
+                          onPointerUp={handlePointerUp}
+                          onPointerCancel={handlePointerUp}
+                          title="Click: toggle done. Right-click/long-press: toggle in-flight"
+                        >
+                          {sub.status === "done" && (
+                            <svg viewBox="0 0 16 16" width="12" height="12">
+                              <path d="M3 8l3 3 7-7" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                          )}
+                          {sub.status === "inflight" && (
+                            <svg viewBox="0 0 16 16" width="10" height="10">
+                              <path d="M5 3l8 5-8 5V3z" fill="currentColor" />
+                            </svg>
+                          )}
+                        </button>
+
+                        {editingItemId === sub.id ? (
+                          <input
+                            ref={editRef}
+                            className="todo-item-edit"
+                            value={editingItemText}
+                            onChange={(e) => setEditingItemText(e.target.value)}
+                            onBlur={commitItemEdit}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") commitItemEdit();
+                              if (e.key === "Escape") setEditingItemId(null);
+                            }}
+                          />
+                        ) : (
+                          <span
+                            className="todo-item-text"
+                            onDoubleClick={() => {
+                              setEditingItemId(sub.id);
+                              setEditingItemText(sub.text);
+                            }}
+                          >
+                            {sub.text}
+                          </span>
+                        )}
+
+                        <button
+                          className={`todo-item-delete ${hoveredItemId === sub.id ? "visible" : ""}`}
+                          onClick={() => deleteItemMut.mutate(sub.id)}
+                          title="Delete subtask"
+                        >
+                          &times;
+                        </button>
+                      </div>
+                    ))}
+
+                    {/* Add subtask input row */}
+                    {addingSubtaskFor === item.id && (
+                      <div className="todo-item todo-item--subtask todo-item--add-subtask">
+                        <span className="todo-subtask-indent" />
+                        <span className="todo-subtask-new-dot">◦</span>
+                        <input
+                          ref={subtaskRef}
+                          className="todo-item-edit todo-subtask-input"
+                          placeholder="New subtask…"
+                          value={subtaskDraft}
+                          onChange={(e) => setSubtaskDraft(e.target.value)}
+                          onBlur={() => {
+                            if (subtaskDraft.trim()) handleAddSubtask();
+                            else setAddingSubtaskFor(null);
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") handleAddSubtask();
+                            if (e.key === "Escape") {
+                              setAddingSubtaskFor(null);
+                              setSubtaskDraft("");
+                            }
+                          }}
+                        />
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
 
@@ -631,14 +941,18 @@ function TodosMain({
             )}
           </div>
 
-          {/* Input bar */}
+          {/* Input bar — onBlur fires when iOS "Done" button dismisses keyboard */}
           <div className="todo-input-bar">
             <input
               ref={inputRef}
               className="todo-input"
-              placeholder="Add a task..."
+              placeholder="Add a task…"
               value={newInput}
+              enterKeyHint="done"
               onChange={(e) => setNewInput(e.target.value)}
+              onBlur={() => {
+                if (newInput.trim()) handleAddItems();
+              }}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
@@ -651,7 +965,7 @@ function TodosMain({
                   e.preventDefault();
                   const lines = pasted.split("\n").map((l) => l.trim()).filter(Boolean);
                   for (const line of lines) {
-                    addItemMut.mutate(line);
+                    addItemMut.mutate({ text: line });
                   }
                 }
               }}
@@ -757,6 +1071,7 @@ const styles = `
   background: var(--bg);
   color: var(--text);
   --todo-accent: #00e5ff;
+  position: relative;
 }
 
 .todo-loading,
@@ -833,6 +1148,7 @@ const styles = `
   white-space: nowrap;
   position: relative;
   user-select: none;
+  font-family: inherit;
 }
 
 .todo-tab:hover {
@@ -853,6 +1169,16 @@ const styles = `
 }
 .todo-tab--shared.active {
   border-style: solid;
+}
+
+/* Drag-target tab: pulsing glow */
+.todo-tab--drag-target {
+  border-color: var(--tab-color) !important;
+  animation: tab-drag-pulse 0.5s ease infinite alternate;
+}
+@keyframes tab-drag-pulse {
+  from { box-shadow: 0 0 6px color-mix(in srgb, var(--tab-color) 40%, transparent); }
+  to   { box-shadow: 0 0 22px color-mix(in srgb, var(--tab-color) 90%, transparent), 0 0 8px color-mix(in srgb, var(--tab-color) 50%, transparent); }
 }
 
 .todo-tab-shared-badge {
@@ -969,6 +1295,40 @@ const styles = `
 .todo-item:hover {
   background: var(--surface2);
 }
+.todo-item--dragging {
+  opacity: 0.35;
+}
+
+/* Subtask indent */
+.todo-item--subtask {
+  padding-left: 16px;
+  background: transparent;
+}
+.todo-item--subtask:hover {
+  background: var(--surface2);
+}
+.todo-subtask-indent {
+  display: block;
+  width: 24px;
+  flex-shrink: 0;
+  border-left: 2px solid var(--border);
+  height: 28px;
+  margin-left: 4px;
+  border-bottom: 2px solid var(--border);
+  border-bottom-left-radius: 4px;
+  align-self: center;
+  margin-bottom: -4px;
+}
+.todo-subtask-new-dot {
+  color: var(--text-dim);
+  font-size: 18px;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.todo-item--add-subtask {
+  opacity: 0.7;
+}
 
 /* Checkbox */
 .todo-checkbox {
@@ -985,6 +1345,10 @@ const styles = `
   transition: all 0.15s;
   color: transparent;
   padding: 0;
+}
+.todo-item--subtask .todo-checkbox {
+  width: 18px;
+  height: 18px;
 }
 
 .todo-checkbox--todo:hover {
@@ -1032,6 +1396,44 @@ const styles = `
   font-size: 16px;
   padding: 4px 8px;
   outline: none;
+  font-family: inherit;
+}
+.todo-subtask-input {
+  font-size: 14px;
+}
+
+/* Subtask count badge */
+.todo-subtask-badge {
+  font-size: 11px;
+  color: var(--text-dim);
+  background: rgba(255,255,255,0.06);
+  padding: 1px 7px;
+  border-radius: 10px;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+/* Add subtask button */
+.todo-add-subtask-btn {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  font-size: 14px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.15s;
+  line-height: 1;
+  padding: 0;
+}
+.todo-add-subtask-btn:hover {
+  border-color: var(--todo-accent);
+  color: var(--todo-accent);
 }
 
 .todo-item-delete {
@@ -1052,6 +1454,27 @@ const styles = `
 .todo-item-delete:hover {
   opacity: 1;
   color: var(--red);
+}
+
+/* Drag ghost */
+.todo-drag-ghost {
+  position: fixed;
+  pointer-events: none;
+  z-index: 9999;
+  background: var(--surface);
+  border: 2px solid var(--todo-accent);
+  border-radius: 10px;
+  padding: 8px 14px;
+  font-size: 14px;
+  color: var(--text);
+  max-width: 220px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: 0.92;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.45);
+  transform: rotate(-2deg);
+  transition: box-shadow 0.1s;
 }
 
 /* ---- Status bar ---- */
@@ -1079,6 +1502,7 @@ const styles = `
   border-radius: 12px;
   cursor: pointer;
   transition: all 0.15s;
+  font-family: inherit;
 }
 .todo-clear-done:hover {
   border-color: var(--red);
@@ -1102,6 +1526,7 @@ const styles = `
   padding: 10px 14px;
   outline: none;
   transition: border-color 0.15s;
+  font-family: inherit;
 }
 .todo-input::placeholder {
   color: var(--text-dim);
@@ -1125,9 +1550,16 @@ const styles = `
     gap: 12px;
     min-height: 48px;
   }
+  .todo-item--subtask {
+    padding-left: 12px;
+  }
   .todo-checkbox {
     width: 28px;
     height: 28px;
+  }
+  .todo-item--subtask .todo-checkbox {
+    width: 22px;
+    height: 22px;
   }
   .todo-item-text {
     font-size: 15px;
@@ -1136,6 +1568,10 @@ const styles = `
   .todo-item-delete {
     display: flex;
     opacity: 0.4;
+  }
+  /* Always show add-subtask on touch */
+  .todo-add-subtask-btn {
+    display: flex;
   }
   .todo-input-bar {
     padding: 10px 12px;
