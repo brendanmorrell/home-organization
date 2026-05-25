@@ -9,18 +9,38 @@ import {
   type Neighbor,
 } from "~/lib/supabase";
 
+type SaveStatus = "idle" | "saving" | "saved";
+
+function parseNames(raw: string): string[] {
+  return raw
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
 export default function Neighborhood() {
   const [neighbors, setNeighbors] = useState<Neighbor[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const saveTimeout = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  // Raw string editing buffer for the names field — avoids array round-trip
+  // that strips trailing commas/spaces as the user types.
+  const [namesDraft, setNamesDraft] = useState<string>("");
+  const [notesDraft, setNotesDraft] = useState<string>("");
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
+  const saveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const savedFlashTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Track pending writes so blur can flush immediately.
+  const pendingWriteRef = useRef<{
+    id: string;
+    names: string[];
+    notes: string;
+  } | null>(null);
 
   useEffect(() => {
     (async () => {
       try {
         let data = await fetchNeighbors();
 
-        // Remove entries not in the valid set
         const badIds = data
           .filter((n) => !VALID_IDS.has(n.id))
           .map((n) => n.id);
@@ -31,7 +51,6 @@ export default function Neighborhood() {
           data = data.filter((n) => VALID_IDS.has(n.id));
         }
 
-        // Migrate Kenton from 315 → 309 Institute if needed
         const inst315 = data.find((n) => n.id === "315-institute");
         const inst309 = data.find((n) => n.id === "309-institute");
         if (
@@ -57,7 +76,6 @@ export default function Neighborhood() {
           }
         }
 
-        // Upsert any defaults not already in the DB
         const existingIds = new Set(data.map((n) => n.id));
         const missing = defaultNeighbors.filter(
           (n) => !existingIds.has(n.id)
@@ -81,31 +99,85 @@ export default function Neighborhood() {
   }, []);
 
   const handleSelect = useCallback((id: string) => {
-    setSelectedId((prev) => (prev === id ? null : id));
+    setSelectedId((prev) => {
+      // Flush any pending save when switching selection
+      flushPendingSave();
+      return prev === id ? null : id;
+    });
   }, []);
 
-  const updateField = useCallback(
-    (id: string, field: "notes" | "names", value: string | string[]) => {
-      setNeighbors((prev) =>
-        prev.map((n) => (n.id === id ? { ...n, [field]: value } : n))
-      );
+  // Sync drafts when a different neighbor is selected
+  useEffect(() => {
+    if (!selectedId) {
+      setNamesDraft("");
+      setNotesDraft("");
+      return;
+    }
+    const n = neighbors.find((x) => x.id === selectedId);
+    if (n) {
+      setNamesDraft(n.names.join(", "));
+      setNotesDraft(n.notes ?? "");
+    }
+    // Don't re-sync on every neighbors change — only when selection changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedId]);
 
-      if (saveTimeout.current[id]) clearTimeout(saveTimeout.current[id]);
-      saveTimeout.current[id] = setTimeout(() => {
-        setNeighbors((current) => {
-          const neighbor = current.find((n) => n.id === id);
-          if (neighbor) {
-            const { created_at, ...rest } = neighbor;
-            upsertNeighbor(rest).catch((err) =>
-              console.error("Failed to save:", err)
-            );
-          }
-          return current;
-        });
-      }, 800);
+  const persist = useCallback(
+    async (id: string, names: string[], notes: string) => {
+      pendingWriteRef.current = null;
+      setSaveStatus("saving");
+      // Optimistic local update
+      setNeighbors((prev) =>
+        prev.map((n) => (n.id === id ? { ...n, names, notes } : n))
+      );
+      try {
+        const target = neighbors.find((n) => n.id === id);
+        if (!target) return;
+        const { created_at, ...rest } = target;
+        await upsertNeighbor({ ...rest, names, notes });
+        setSaveStatus("saved");
+        if (savedFlashTimeout.current) clearTimeout(savedFlashTimeout.current);
+        savedFlashTimeout.current = setTimeout(() => {
+          setSaveStatus("idle");
+        }, 1600);
+      } catch (err) {
+        console.error("Failed to save neighbor:", err);
+        setSaveStatus("idle");
+      }
     },
-    []
+    [neighbors]
   );
+
+  const flushPendingSave = useCallback(() => {
+    if (saveTimeout.current) {
+      clearTimeout(saveTimeout.current);
+      saveTimeout.current = null;
+    }
+    const pending = pendingWriteRef.current;
+    if (pending) {
+      persist(pending.id, pending.names, pending.notes);
+    }
+  }, [persist]);
+
+  const scheduleSave = useCallback(
+    (id: string, names: string[], notes: string) => {
+      pendingWriteRef.current = { id, names, notes };
+      setSaveStatus("saving");
+      if (saveTimeout.current) clearTimeout(saveTimeout.current);
+      saveTimeout.current = setTimeout(() => {
+        flushPendingSave();
+      }, 700);
+    },
+    [flushPendingSave]
+  );
+
+  // Flush pending on unmount
+  useEffect(() => {
+    return () => {
+      flushPendingSave();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const selected = neighbors.find((n) => n.id === selectedId);
 
@@ -136,12 +208,18 @@ export default function Neighborhood() {
         <div className="neighbor-detail">
           <div className="neighbor-detail-header">
             <h3>{selected.address}</h3>
-            <button
-              className="close-btn"
-              onClick={() => setSelectedId(null)}
-            >
-              ✕
-            </button>
+            <div className="neighbor-detail-actions">
+              <SaveStatusBadge status={saveStatus} />
+              <button
+                className="close-btn"
+                onClick={() => {
+                  flushPendingSave();
+                  setSelectedId(null);
+                }}
+              >
+                ✕
+              </button>
+            </div>
           </div>
 
           <div className="neighbor-detail-field">
@@ -150,17 +228,23 @@ export default function Neighborhood() {
               type="text"
               className="neighbor-names-input"
               placeholder="Add names (comma-separated)..."
-              value={selected.names.join(", ")}
-              onChange={(e) =>
-                updateField(
+              value={namesDraft}
+              enterKeyHint="done"
+              onChange={(e) => {
+                setNamesDraft(e.target.value);
+                scheduleSave(
                   selected.id,
-                  "names",
-                  e.target.value
-                    .split(",")
-                    .map((s) => s.trim())
-                    .filter(Boolean)
-                )
-              }
+                  parseNames(e.target.value),
+                  notesDraft
+                );
+              }}
+              onBlur={flushPendingSave}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  (e.target as HTMLInputElement).blur();
+                }
+              }}
             />
           </div>
 
@@ -169,16 +253,41 @@ export default function Neighborhood() {
             <textarea
               className="neighbor-notes"
               placeholder="Add notes..."
-              value={selected.notes}
-              onChange={(e) =>
-                updateField(selected.id, "notes", e.target.value)
-              }
+              value={notesDraft}
+              enterKeyHint="done"
+              onChange={(e) => {
+                setNotesDraft(e.target.value);
+                scheduleSave(
+                  selected.id,
+                  parseNames(namesDraft),
+                  e.target.value
+                );
+              }}
+              onBlur={flushPendingSave}
               rows={2}
             />
           </div>
         </div>
       )}
-
     </div>
+  );
+}
+
+function SaveStatusBadge({ status }: { status: SaveStatus }) {
+  if (status === "idle") return null;
+  return (
+    <span className={`save-status save-status--${status}`}>
+      {status === "saving" ? (
+        <>
+          <span className="save-spinner" />
+          Saving…
+        </>
+      ) : (
+        <>
+          <span className="save-check">✓</span>
+          Saved
+        </>
+      )}
+    </span>
   );
 }

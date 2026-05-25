@@ -27,6 +27,22 @@ export default function Sidebar({
       <div className="sidebar-nav">
         <div className="nav-section">Navigate</div>
         <Link
+          to="/"
+          className={`nav-item ${location.pathname === "/" ? "active" : ""}`}
+          onClick={() => setActiveRoomId(null)}
+        >
+          <span className="icon">{"✅"}</span>
+          <span>To-dos</span>
+        </Link>
+        <Link
+          to="/neighborhood"
+          className={`nav-item ${location.pathname === "/neighborhood" ? "active" : ""}`}
+          onClick={() => setActiveRoomId(null)}
+        >
+          <span className="icon">{"\u{1F3D8}"}</span>
+          <span>Block Map</span>
+        </Link>
+        <Link
           to="/dashboard"
           className={`nav-item ${location.pathname === "/dashboard" ? "active" : ""}`}
           onClick={() => setActiveRoomId(null)}
@@ -119,13 +135,6 @@ export default function Sidebar({
           <span>References</span>
         </Link>
         <Link
-          to="/"
-          className={`nav-item ${location.pathname === "/" ? "active" : ""}`}
-        >
-          <span className="icon">{"\u2705"}</span>
-          <span>To-dos</span>
-        </Link>
-        <Link
           to="/vehicles"
           className={`nav-item ${location.pathname === "/vehicles" ? "active" : ""}`}
         >
@@ -170,13 +179,6 @@ export default function Sidebar({
         >
           <span className="icon">{"\u{1F5FA}"}</span>
           <span>Org Plan</span>
-        </Link>
-        <Link
-          to="/neighborhood"
-          className={`nav-item ${location.pathname === "/neighborhood" ? "active" : ""}`}
-        >
-          <span className="icon">{"\u{1F3D8}"}</span>
-          <span>Block Map</span>
         </Link>
         <Link
           to="/admin"

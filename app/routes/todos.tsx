@@ -638,7 +638,11 @@ function TodosMain({
               className="todo-input"
               placeholder="Add a task..."
               value={newInput}
+              enterKeyHint="done"
               onChange={(e) => setNewInput(e.target.value)}
+              onBlur={() => {
+                if (newInput.trim()) handleAddItems();
+              }}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();

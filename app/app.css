@@ -1760,13 +1760,13 @@ body {
   background: var(--surface);
   border: 1px solid var(--highlight);
   border-radius: var(--radius);
-  padding: 12px 16px;
+  padding: 14px 16px;
   box-shadow: 0 0 12px var(--highlight-glow);
   max-width: 480px;
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px 16px;
-  align-items: center;
+  flex-direction: column;
+  gap: 14px;
+  align-items: stretch;
 }
 
 .neighbor-detail.is-us {
@@ -1783,21 +1783,29 @@ body {
 
 .neighbor-detail-header h3 {
   font-family: monospace;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
   color: var(--text);
   margin: 0;
   flex: 1;
 }
 
+.neighbor-detail-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .neighbor-detail .close-btn {
   background: none;
   border: none;
   color: var(--text-dim);
-  font-size: 14px;
+  font-size: 16px;
   cursor: pointer;
-  padding: 2px 6px;
-  border-radius: 4px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  min-height: 32px;
+  min-width: 32px;
 }
 
 .neighbor-detail .close-btn:hover {
@@ -1807,8 +1815,10 @@ body {
 
 .neighbor-detail-field {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: stretch;
   gap: 6px;
+  width: 100%;
 }
 
 .neighbor-detail-field label {
@@ -1817,36 +1827,37 @@ body {
   color: var(--text-dim);
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  white-space: nowrap;
 }
 
 .neighbor-names-input {
   background: var(--bg);
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 8px;
   color: var(--text);
-  font-size: 12px;
-  padding: 4px 8px;
+  font-size: 16px; /* 16px prevents iOS zoom on focus */
+  padding: 10px 12px;
   font-family: inherit;
-  width: 200px;
+  width: 100%;
+  min-height: 40px;
 }
 
 .neighbor-names-input:focus {
   outline: none;
   border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
 }
 
 .neighbor-notes {
   background: var(--bg);
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 8px;
   color: var(--text);
-  font-size: 12px;
-  padding: 4px 8px;
-  resize: none;
+  font-size: 16px; /* 16px prevents iOS zoom on focus */
+  padding: 10px 12px;
+  resize: vertical;
   font-family: inherit;
-  width: 200px;
-  height: 28px;
+  width: 100%;
+  min-height: 60px;
 }
 
 .neighbor-notes::placeholder {
@@ -1865,6 +1876,55 @@ body {
   border-radius: 12px;
   font-size: 12px;
   font-weight: 600;
+}
+
+.save-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 3px 8px;
+  border-radius: 10px;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+  transition: opacity 0.2s ease;
+}
+
+.save-status--saving {
+  background: var(--surface2);
+  color: var(--text-dim);
+}
+
+.save-status--saved {
+  background: rgba(76, 175, 80, 0.16);
+  color: #66bb6a;
+  animation: saveFlash 0.25s ease-out;
+}
+
+.save-spinner {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border: 1.5px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: saveSpin 0.7s linear infinite;
+}
+
+.save-check {
+  font-weight: 700;
+  font-size: 12px;
+  line-height: 1;
+}
+
+@keyframes saveSpin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes saveFlash {
+  from { transform: scale(0.92); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
 }
 
 /* ---- References Page ---- */
