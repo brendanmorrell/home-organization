@@ -4,7 +4,7 @@ APP = ['launch-quicktodo.py']
 DATA_FILES = [('', ['quicktodo.html'])]
 OPTIONS = {
     'argv_emulation': False,
-    'iconfile': None,
+    'iconfile': 'AppIcon.icns',
     'plist': {
         'CFBundleName': 'QuickTodo',
         'CFBundleDisplayName': 'QuickTodo',
