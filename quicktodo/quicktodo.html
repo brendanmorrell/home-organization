@@ -1434,6 +1434,7 @@ function renderTabs() {
 
     const handleTabClick = (e) => {
       e.stopPropagation();
+      if (activeListId === list.id) return; // already active — skip re-render so dblclick fires on same elements
       activeListId = list.id;
       setStoredActiveListId(list.id);
       render();

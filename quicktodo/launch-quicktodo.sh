@@ -1,8 +1,4 @@
 #!/bin/bash
-# Launch QuickTodo or toggle its visibility if already running.
-# Keep this script in the same folder as quicktodo.html and launch-quicktodo.py.
-# On first run, creates a hidden .venv and installs pywebview automatically.
-
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 VENV_DIR="$SCRIPT_DIR/.quicktodo-venv"
 PY_SCRIPT="$SCRIPT_DIR/launch-quicktodo.py"
@@ -11,19 +7,17 @@ PY_SCRIPT="$SCRIPT_DIR/launch-quicktodo.py"
 PID=$(pgrep -f "[Pp]ython.*launch-quicktodo.py")
 
 if [ -n "$PID" ]; then
-  # Already running — toggle visibility via AppleScript
-  osascript -e '
-    tell application "System Events"
-      set frontApp to name of first application process whose unix id is '"$PID"'
-      set proc to first application process whose unix id is '"$PID"'
-      set isVisible to visible of proc
-      if isVisible then
-        set visible of proc to false
+  # Already running — toggle visibility via Hammerspoon (fast, ~0.2s vs 4s for osascript)
+  hs -c '
+    local win = hs.window.find("QuickTodo")
+    if win then
+      local app = win:application()
+      if app:isHidden() then
+        app:unhide(); win:focus(); win:raise()
       else
-        set visible of proc to true
-        set frontmost of proc to true
-      end if
-    end tell
+        app:hide()
+      end
+    end
   '
 else
   # Not running — set up venv if needed, then launch
