@@ -569,6 +569,17 @@
     box-shadow: 0 0 10px var(--neon-glow);
   }
 
+  /* ── Check completion animation ── */
+  @keyframes check-pop {
+    0%   { transform: scale(1); }
+    40%  { transform: scale(1.35); }
+    70%  { transform: scale(0.88); }
+    100% { transform: scale(1); }
+  }
+  .todo-item.completing .todo-check {
+    animation: check-pop 0.35s ease forwards;
+  }
+
   /* ── Drag styles ── */
   .todo-item.dragging { opacity: 0.35; }
   .todo-item.drag-over { box-shadow: 0 -2px 0 var(--neon); }
@@ -801,6 +812,7 @@ let activeListId = null;      // UUID string
 let newListShared = false;
 let pendingRenameId = null;
 let pywebviewReady = false;
+const recentlyDone = new Set();
 
 // ── Identity (persisted to disk via pywebview, localStorage as fallback) ──
 // pywebview JS API calls return Promises, so all disk I/O must be async.
@@ -911,9 +923,11 @@ function getSortedVisibleLists() {
 }
 
 function sortItems(items) {
-  return [...items].sort((a, b) =>
-    (STATUS_ORDER[a.status] ?? 0) - (STATUS_ORDER[b.status] ?? 0) || a.sort_order - b.sort_order
-  );
+  return [...items].sort((a, b) => {
+    const aStatus = recentlyDone.has(a.id) ? 'todo' : a.status;
+    const bStatus = recentlyDone.has(b.id) ? 'todo' : b.status;
+    return (STATUS_ORDER[aStatus] ?? 0) - (STATUS_ORDER[bStatus] ?? 0) || a.sort_order - b.sort_order;
+  });
 }
 
 function getActiveList() {
@@ -1022,6 +1036,7 @@ function snapshotLists() {
 
 function rollback(snapshot) {
   allLists = snapshot;
+  recentlyDone.clear();
   render();
 }
 
@@ -1207,7 +1222,14 @@ async function updateItem(id, updates) {
       break;
     }
   }
-  render();
+
+  if (updates.status === 'done') {
+    recentlyDone.add(id);
+    render();
+    setTimeout(() => { recentlyDone.delete(id); render(); }, 500);
+  } else {
+    render();
+  }
 
   try {
     await sbUpdateItem(id, updates);
@@ -1410,20 +1432,14 @@ function renderTabs() {
     name.className = 'tab-name';
     name.textContent = list.name;
 
-    let clickTimer = null;
     const handleTabClick = (e) => {
       e.stopPropagation();
-      if (clickTimer) return;
-      clickTimer = setTimeout(() => {
-        clickTimer = null;
-        activeListId = list.id;
-        setStoredActiveListId(list.id);
-        render();
-      }, 250);
+      activeListId = list.id;
+      setStoredActiveListId(list.id);
+      render();
     };
     const handleTabDblClick = (e) => {
       e.stopPropagation();
-      if (clickTimer) { clearTimeout(clickTimer); clickTimer = null; }
       startRenameTab(tab, name, list);
     };
     name.addEventListener('click', handleTabClick);
@@ -1554,7 +1570,8 @@ function makeItemRow(item, list, displayIdx, topLevelItems) {
   const row = document.createElement('div');
   row.className = 'todo-item'
     + (item.status === 'done' ? ' done' : '')
-    + (item.status === 'inflight' ? ' inflight' : '');
+    + (item.status === 'inflight' ? ' inflight' : '')
+    + (recentlyDone.has(item.id) ? ' completing' : '');
   row.draggable = !item.parent_id; // only top-level items are draggable
   row.dataset.id = item.id;
 
