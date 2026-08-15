@@ -6,6 +6,21 @@ import { MemoryRouter } from "react-router";
 vi.mock("~/lib/supabase", () => ({
   fetchAllRoomsWithFrames: vi.fn().mockResolvedValue([]),
   createItem: vi.fn(),
+  fetchTodoListsWithItems: vi.fn().mockResolvedValue([]),
+  createTodoList: vi.fn(),
+  updateTodoList: vi.fn(),
+  deleteTodoList: vi.fn(),
+  createTodoItem: vi.fn(),
+  updateTodoItem: vi.fn(),
+  deleteTodoItem: vi.fn(),
+  reorderTodoItems: vi.fn(),
+  supabase: {
+    channel: vi.fn(() => ({
+      on: vi.fn().mockReturnThis(),
+      subscribe: vi.fn(),
+    })),
+    removeChannel: vi.fn(),
+  },
 }));
 
 import TodosPage from "~/routes/todos";
@@ -16,14 +31,16 @@ import Sidebar from "~/components/Sidebar";
 import BottomTabs from "~/components/BottomTabs";
 
 describe("Stub pages", () => {
-  it("TodosPage renders title", () => {
+  it("TodosPage shows identity picker when no user is set", () => {
+    localStorage.removeItem("homebase_user");
     render(
       <MemoryRouter>
         <TodosPage />
       </MemoryRouter>
     );
-    expect(screen.getByText("To-dos")).toBeInTheDocument();
-    expect(screen.getByText("Coming Soon")).toBeInTheDocument();
+    expect(screen.getByText("Who are you?")).toBeInTheDocument();
+    expect(screen.getByText("Brendan")).toBeInTheDocument();
+    expect(screen.getByText("Erin")).toBeInTheDocument();
   });
 
   it("WeeklyPage renders title", () => {
@@ -85,10 +102,10 @@ describe("BottomTabs", () => {
         <BottomTabs />
       </MemoryRouter>
     );
-    expect(screen.getByText("Refs")).toBeInTheDocument();
+    expect(screen.getByText("Todos")).toBeInTheDocument();
+    expect(screen.getByText("Block Map")).toBeInTheDocument();
     expect(screen.getByText("House")).toBeInTheDocument();
     expect(screen.getByText("Items")).toBeInTheDocument();
-    expect(screen.getByText("Todos")).toBeInTheDocument();
     expect(screen.getByText("More")).toBeInTheDocument();
   });
 });

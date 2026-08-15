@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+import { Fragment, useState, useRef, useCallback, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   fetchTodoListsWithItems,
@@ -8,6 +8,7 @@ import {
   createTodoItem,
   updateTodoItem,
   deleteTodoItem,
+  reorderTodoItems,
   supabase,
   type TodoListWithItems,
   type TodoItem,
@@ -34,10 +35,39 @@ const NEON_COLORS = [
 
 const STATUS_ORDER: Record<string, number> = { todo: 0, inflight: 1, done: 2 };
 
-function sortItems(items: TodoItem[]): TodoItem[] {
-  return [...items].sort(
-    (a, b) => (STATUS_ORDER[a.status] ?? 0) - (STATUS_ORDER[b.status] ?? 0) || a.sort_order - b.sort_order
-  );
+// Matches "- ", "* ", "• ", "1. ", "1) ", "[x] " etc. at the start of a pasted line
+const BULLET_PREFIX = /^(?:[-*•–—]\s+|\d+[.)]\s+|\[.\]\s+)/;
+
+// How long a just-completed item stays in place before sorting down to the done section
+const DONE_SORT_DELAY_MS = 500;
+// Long-press duration before a touch drag activates
+const DRAG_LONG_PRESS_MS = 300;
+// How long a dragged item must hover a tab before the view switches to that list
+const TAB_DWELL_MS = 600;
+
+function sortItems(items: TodoItem[], recentlyDone?: Set<string>): TodoItem[] {
+  return [...items].sort((a, b) => {
+    const aStatus = recentlyDone?.has(a.id) ? "todo" : a.status;
+    const bStatus = recentlyDone?.has(b.id) ? "todo" : b.status;
+    return (
+      (STATUS_ORDER[aStatus] ?? 0) - (STATUS_ORDER[bStatus] ?? 0) ||
+      a.sort_order - b.sort_order
+    );
+  });
+}
+
+function stripBulletPrefix(line: string): string {
+  return line.replace(BULLET_PREFIX, "");
+}
+
+/** Split free text into task lines, trimming and stripping bullet/number prefixes */
+function splitTaskLines(text: string): string[] {
+  return text
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter(Boolean)
+    .map(stripBulletPrefix)
+    .filter(Boolean);
 }
 
 /** Check if a list is visible to a given user */
@@ -81,7 +111,6 @@ function IdentityPicker({ onSelect }: { onSelect: (id: Identity) => void }) {
 }
 
 export default function TodosPage() {
-  const queryClient = useQueryClient();
   const [currentUser, setCurrentUser] = useState<Identity | null>(() => getIdentity());
   const [newListShared, setNewListShared] = useState(false);
 
@@ -185,9 +214,14 @@ function TodosMain({
   const [renamingListName, setRenamingListName] = useState("");
   const [hoveredTab, setHoveredTab] = useState<string | null>(null);
   const [hoveredItemId, setHoveredItemId] = useState<string | null>(null);
+  const [addingSubtaskFor, setAddingSubtaskFor] = useState<string | null>(null);
+  const [subtaskText, setSubtaskText] = useState("");
+  // Just-completed items keep their spot (and animate) briefly before sorting down
+  const [recentlyDone, setRecentlyDone] = useState<Set<string>>(() => new Set());
   const inputRef = useRef<HTMLInputElement>(null);
   const renameRef = useRef<HTMLInputElement>(null);
   const editRef = useRef<HTMLInputElement>(null);
+  const subInputRef = useRef<HTMLInputElement>(null);
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Auto-select first list ONLY if no valid active list exists
@@ -210,13 +244,35 @@ function TodosMain({
     if (editingItemId) editRef.current?.focus();
   }, [editingItemId]);
 
+  // Focus subtask input when it opens
+  useEffect(() => {
+    if (addingSubtaskFor) subInputRef.current?.focus();
+  }, [addingSubtaskFor]);
+
   const activeList = sortedLists.find((l) => l.id === activeListId) ?? null;
   const activeColor = activeList ? NEON_COLORS[activeList.color_index % NEON_COLORS.length] : NEON_COLORS[0];
-  const sortedItems = activeList ? sortItems(activeList.items) : [];
 
-  const todoCt = sortedItems.filter((i) => i.status === "todo").length;
-  const inflightCt = sortedItems.filter((i) => i.status === "inflight").length;
-  const doneCt = sortedItems.filter((i) => i.status === "done").length;
+  // Top-level items and their subtasks, both status-sorted (with done-sort delay)
+  const sortedTopLevel = activeList
+    ? sortItems(activeList.items.filter((i) => !i.parent_id), recentlyDone)
+    : [];
+  const subsByParent: Record<string, TodoItem[]> = {};
+  if (activeList) {
+    for (const item of activeList.items) {
+      if (item.parent_id) {
+        (subsByParent[item.parent_id] ??= []).push(item);
+      }
+    }
+    for (const key of Object.keys(subsByParent)) {
+      subsByParent[key] = sortItems(subsByParent[key], recentlyDone);
+    }
+  }
+
+  const allItems = activeList ? activeList.items : [];
+  const todoCt = allItems.filter((i) => i.status === "todo").length;
+  const inflightCt = allItems.filter((i) => i.status === "inflight").length;
+  const doneCt = allItems.filter((i) => i.status === "done").length;
+  const doneTopLevelCt = allItems.filter((i) => i.status === "done" && !i.parent_id).length;
 
   // --- Mutations ---
 
@@ -243,17 +299,15 @@ function TodosMain({
       };
       queryClient.setQueryData<TodoListWithItems[]>(["todo-lists"], (old) => [...(old ?? []), optimisticList]);
       setActiveListId(tempId);
-      setRenamingListId(tempId);
-      setRenamingListName("New List");
       setNewListShared(false);
       return { prev, tempId };
     },
     onSuccess: (newList: { id: string; name: string }, _, context) => {
-      // Replace temp ID with real ID
-      if (context?.tempId) {
-        if (activeListId === context.tempId) setActiveListId(newList.id);
-        if (renamingListId === context.tempId) setRenamingListId(newList.id);
-      }
+      if (context?.tempId && activeListId === context.tempId) setActiveListId(newList.id);
+      // Only enter rename mode once the real id exists — renaming the optimistic
+      // temp row would send a PATCH against an id the server has never seen
+      setRenamingListId(newList.id);
+      setRenamingListName("New List");
       queryClient.invalidateQueries({ queryKey: ["todo-lists"] });
     },
     onError: (_err, _vars, context) => {
@@ -299,21 +353,23 @@ function TodosMain({
   });
 
   const addItemMut = useMutation({
-    mutationFn: (text: string) =>
+    mutationFn: ({ text, parentId, sortOrder }: { text: string; parentId?: string; sortOrder: number }) =>
       createTodoItem({
         list_id: activeListId!,
         text,
-        sort_order: activeList ? activeList.items.length : 0,
+        sort_order: sortOrder,
+        ...(parentId ? { parent_id: parentId } : {}),
       }),
-    onMutate: async (text: string) => {
+    onMutate: async ({ text, parentId, sortOrder }) => {
       await queryClient.cancelQueries({ queryKey: ["todo-lists"] });
       const prev = queryClient.getQueryData<TodoListWithItems[]>(["todo-lists"]);
       const optimisticItem: TodoItem = {
-        id: `temp-${Date.now()}`,
+        id: `temp-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
         list_id: activeListId!,
         text,
         status: "todo",
-        sort_order: activeList ? activeList.items.length : 0,
+        sort_order: sortOrder,
+        parent_id: parentId ?? null,
         created_at: new Date().toISOString(),
       };
       queryClient.setQueryData<TodoListWithItems[]>(["todo-lists"], (old) =>
@@ -323,7 +379,7 @@ function TodosMain({
       );
       return { prev };
     },
-    onError: (_err, _text, context) => {
+    onError: (_err, _vars, context) => {
       if (context?.prev) queryClient.setQueryData(["todo-lists"], context.prev);
     },
     onSettled: () => queryClient.invalidateQueries({ queryKey: ["todo-lists"] }),
@@ -352,11 +408,14 @@ function TodosMain({
   const deleteItemMut = useMutation({
     mutationFn: (id: string) => deleteTodoItem(id),
     onMutate: async (id: string) => {
-      // Optimistic: remove item from cache immediately
+      // Optimistic: remove item AND its subtasks from cache immediately
       await queryClient.cancelQueries({ queryKey: ["todo-lists"] });
       const prev = queryClient.getQueryData<TodoListWithItems[]>(["todo-lists"]);
       queryClient.setQueryData<TodoListWithItems[]>(["todo-lists"], (old) =>
-        old?.map((l) => ({ ...l, items: l.items.filter((i) => i.id !== id) })) ?? []
+        old?.map((l) => ({
+          ...l,
+          items: l.items.filter((i) => i.id !== id && i.parent_id !== id),
+        })) ?? []
       );
       return { prev };
     },
@@ -366,44 +425,126 @@ function TodosMain({
     onSettled: () => queryClient.invalidateQueries({ queryKey: ["todo-lists"] }),
   });
 
-  // --- Handlers ---
+  const moveItemMut = useMutation({
+    mutationFn: async ({ itemId, targetListId, childIds }: { itemId: string; targetListId: string; childIds: string[] }) => {
+      await updateTodoItem(itemId, { list_id: targetListId });
+      await Promise.all(childIds.map((cid) => updateTodoItem(cid, { list_id: targetListId })));
+    },
+    onMutate: async ({ itemId, targetListId, childIds }) => {
+      await queryClient.cancelQueries({ queryKey: ["todo-lists"] });
+      const prev = queryClient.getQueryData<TodoListWithItems[]>(["todo-lists"]);
+      const movingIds = new Set([itemId, ...childIds]);
+      queryClient.setQueryData<TodoListWithItems[]>(["todo-lists"], (old) => {
+        if (!old) return [];
+        const moving: TodoItem[] = [];
+        for (const l of old) {
+          for (const i of l.items) {
+            if (movingIds.has(i.id)) moving.push({ ...i, list_id: targetListId });
+          }
+        }
+        return old.map((l) => {
+          const kept = l.items.filter((i) => !movingIds.has(i.id));
+          return l.id === targetListId
+            ? { ...l, items: [...kept, ...moving] }
+            : { ...l, items: kept };
+        });
+      });
+      // Follow the item to its new list, like the desktop app
+      setActiveListId(targetListId);
+      return { prev };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.prev) queryClient.setQueryData(["todo-lists"], context.prev);
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ["todo-lists"] }),
+  });
 
-  const handleAddItems = useCallback(() => {
-    if (!newInput.trim() || !activeListId) return;
-    const lines = newInput.split("\n").map((l) => l.trim()).filter(Boolean);
-    for (const line of lines) {
-      addItemMut.mutate(line);
-    }
-    setNewInput("");
-    inputRef.current?.focus();
-  }, [newInput, activeListId, addItemMut]);
+  const reorderMut = useMutation({
+    mutationFn: (updates: { id: string; sort_order: number }[]) =>
+      reorderTodoItems(updates.filter((u) => !u.id.startsWith("temp-"))),
+    onMutate: async (updates) => {
+      await queryClient.cancelQueries({ queryKey: ["todo-lists"] });
+      const prev = queryClient.getQueryData<TodoListWithItems[]>(["todo-lists"]);
+      const orderById = new Map(updates.map((u) => [u.id, u.sort_order]));
+      queryClient.setQueryData<TodoListWithItems[]>(["todo-lists"], (old) =>
+        old?.map((l) => ({
+          ...l,
+          items: l.items.map((i) =>
+            orderById.has(i.id) ? { ...i, sort_order: orderById.get(i.id)! } : i
+          ),
+        })) ?? []
+      );
+      return { prev };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.prev) queryClient.setQueryData(["todo-lists"], context.prev);
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ["todo-lists"] }),
+  });
+
+  // --- Status changes with done-sort delay + cascades ---
+
+  const markRecentlyDone = useCallback((id: string) => {
+    setRecentlyDone((prevSet) => new Set(prevSet).add(id));
+    setTimeout(() => {
+      setRecentlyDone((prevSet) => {
+        const next = new Set(prevSet);
+        next.delete(id);
+        return next;
+      });
+    }, DONE_SORT_DELAY_MS);
+  }, []);
+
+  const setItemStatus = useCallback(
+    (item: TodoItem, status: TodoItem["status"]) => {
+      if (status === "done" && item.status !== "done") markRecentlyDone(item.id);
+      updateItemMut.mutate({ id: item.id, updates: { status } });
+    },
+    [markRecentlyDone, updateItemMut]
+  );
 
   const handleCheckboxClick = useCallback(
     (item: TodoItem) => {
       const nextStatus = item.status === "done" ? "todo" : "done";
-      updateItemMut.mutate({ id: item.id, updates: { status: nextStatus } });
+      setItemStatus(item, nextStatus);
+      if (!activeList) return;
+      if (!item.parent_id && nextStatus === "done") {
+        // Cascade: completing a parent completes all its subtasks
+        activeList.items
+          .filter((i) => i.parent_id === item.id && i.status !== "done")
+          .forEach((sub) => setItemStatus(sub, "done"));
+      } else if (item.parent_id && nextStatus === "done") {
+        // Auto-complete the parent when every sibling is done
+        const siblings = activeList.items.filter(
+          (i) => i.parent_id === item.parent_id && i.id !== item.id
+        );
+        const parent = activeList.items.find((i) => i.id === item.parent_id);
+        if (parent && parent.status !== "done" && siblings.every((s) => s.status === "done")) {
+          setItemStatus(parent, "done");
+        }
+      }
     },
-    [updateItemMut]
+    [activeList, setItemStatus]
   );
 
   const handleCheckboxContext = useCallback(
     (e: React.MouseEvent, item: TodoItem) => {
       e.preventDefault();
       const nextStatus = item.status === "inflight" ? "todo" : "inflight";
-      updateItemMut.mutate({ id: item.id, updates: { status: nextStatus } });
+      setItemStatus(item, nextStatus);
     },
-    [updateItemMut]
+    [setItemStatus]
   );
 
   const handlePointerDown = useCallback(
     (item: TodoItem) => {
       longPressTimer.current = setTimeout(() => {
         const nextStatus = item.status === "inflight" ? "todo" : "inflight";
-        updateItemMut.mutate({ id: item.id, updates: { status: nextStatus } });
+        setItemStatus(item, nextStatus);
         longPressTimer.current = null;
       }, 500);
     },
-    [updateItemMut]
+    [setItemStatus]
   );
 
   const handlePointerUp = useCallback(() => {
@@ -413,9 +554,29 @@ function TodosMain({
     }
   }, []);
 
+  // --- Other handlers ---
+
+  const addTaskLines = useCallback(
+    (text: string) => {
+      if (!activeList) return;
+      const lines = splitTaskLines(text);
+      const base = activeList.items.length;
+      lines.forEach((line, i) => addItemMut.mutate({ text: line, sortOrder: base + i }));
+    },
+    [activeList, addItemMut]
+  );
+
+  const handleAddItems = useCallback(() => {
+    if (!newInput.trim() || !activeListId) return;
+    addTaskLines(newInput);
+    setNewInput("");
+    inputRef.current?.focus();
+  }, [newInput, activeListId, addTaskLines]);
+
   const handleClearDone = useCallback(() => {
     if (!activeList) return;
-    const doneItems = activeList.items.filter((i) => i.status === "done");
+    // Only top-level done items — their subtasks are removed with them
+    const doneItems = activeList.items.filter((i) => i.status === "done" && !i.parent_id);
     for (const item of doneItems) {
       deleteItemMut.mutate(item.id);
     }
@@ -429,11 +590,29 @@ function TodosMain({
   }, [renamingListId, renamingListName, updateListMut]);
 
   const commitItemEdit = useCallback(() => {
-    if (editingItemId && editingItemText.trim()) {
-      updateItemMut.mutate({ id: editingItemId, updates: { text: editingItemText.trim() } });
+    if (editingItemId) {
+      const trimmed = editingItemText.trim();
+      if (trimmed) {
+        updateItemMut.mutate({ id: editingItemId, updates: { text: trimmed } });
+      } else {
+        // Editing an item down to nothing deletes it, like the desktop app
+        deleteItemMut.mutate(editingItemId);
+      }
     }
     setEditingItemId(null);
-  }, [editingItemId, editingItemText, updateItemMut]);
+  }, [editingItemId, editingItemText, updateItemMut, deleteItemMut]);
+
+  const commitSubtask = useCallback(
+    (parentId: string, keepOpen: boolean) => {
+      const trimmed = subtaskText.trim();
+      if (trimmed && activeList) {
+        addItemMut.mutate({ text: trimmed, parentId, sortOrder: activeList.items.length });
+      }
+      setSubtaskText("");
+      if (!keepOpen) setAddingSubtaskFor(null);
+    },
+    [subtaskText, activeList, addItemMut]
+  );
 
   const handleDeleteList = useCallback(
     (e: React.MouseEvent, listId: string) => {
@@ -446,6 +625,256 @@ function TodosMain({
     [sortedLists, deleteListMut]
   );
 
+  // --- Keyboard shortcuts (Cmd/Ctrl+N focus input, +T new list, +1..9 switch list) ---
+
+  const shortcutCtx = useRef<{
+    sortedLists: TodoListWithItems[];
+    setActiveListId: (id: string | null) => void;
+    addList: () => void;
+  }>({ sortedLists, setActiveListId, addList: () => {} });
+  shortcutCtx.current = {
+    sortedLists,
+    setActiveListId,
+    addList: () => addListMut.mutate(),
+  };
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!(e.metaKey || e.ctrlKey) || e.altKey || e.shiftKey) return;
+      if (e.key === "n") {
+        e.preventDefault();
+        inputRef.current?.focus();
+      } else if (e.key === "t") {
+        e.preventDefault();
+        shortcutCtx.current.addList();
+      } else if (e.key >= "1" && e.key <= "9") {
+        const idx = parseInt(e.key, 10) - 1;
+        const lists = shortcutCtx.current.sortedLists;
+        if (idx < lists.length) {
+          e.preventDefault();
+          shortcutCtx.current.setActiveListId(lists[idx].id);
+        }
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, []);
+
+  // --- Drag: reorder within a list + move to another list via its tab ---
+  // Pointer-events based so it works with both touch (long-press) and mouse (press-and-move).
+
+  const [dragItemId, setDragItemId] = useState<string | null>(null);
+  const [dropTarget, setDropTarget] = useState<{ itemId: string; after: boolean } | null>(null);
+  const [dragOverTabId, setDragOverTabId] = useState<string | null>(null);
+  const dropTargetRef = useRef<{ itemId: string; after: boolean } | null>(null);
+  const dragOverTabRef = useRef<string | null>(null);
+  const tabDwellTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const ghostRef = useRef<HTMLDivElement>(null);
+  const itemsScrollRef = useRef<HTMLDivElement>(null);
+  // Fresh data for handlers that outlive the render they were created in
+  const dragCtx = useRef({ allLists, activeListId, recentlyDone });
+  dragCtx.current = { allLists, activeListId, recentlyDone };
+  const dragGesture = useRef<{
+    pointerId: number;
+    itemId: string;
+    text: string;
+    pointerType: string;
+    startX: number;
+    startY: number;
+    active: boolean;
+  } | null>(null);
+
+  const setDropTargetBoth = (v: { itemId: string; after: boolean } | null) => {
+    const cur = dropTargetRef.current;
+    if (cur?.itemId === v?.itemId && cur?.after === v?.after) return;
+    dropTargetRef.current = v;
+    setDropTarget(v);
+  };
+  const setDragOverTabBoth = (v: string | null) => {
+    if (dragOverTabRef.current === v) return;
+    dragOverTabRef.current = v;
+    setDragOverTabId(v);
+    if (tabDwellTimer.current) {
+      clearTimeout(tabDwellTimer.current);
+      tabDwellTimer.current = null;
+    }
+    // Hovering a different list's tab for a moment switches the view to it
+    if (v && v !== dragCtx.current.activeListId) {
+      tabDwellTimer.current = setTimeout(() => {
+        setActiveListId(v);
+      }, TAB_DWELL_MS);
+    }
+  };
+
+  const preventTouchScroll = useCallback((ev: TouchEvent) => ev.preventDefault(), []);
+
+  const endDragCleanup = useCallback(() => {
+    dragGesture.current = null;
+    setDragItemId(null);
+    setDropTargetBoth(null);
+    setDragOverTabBoth(null);
+    if (tabDwellTimer.current) {
+      clearTimeout(tabDwellTimer.current);
+      tabDwellTimer.current = null;
+    }
+    if (ghostRef.current) ghostRef.current.style.display = "none";
+    document.removeEventListener("touchmove", preventTouchScroll);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => endDragCleanup, [endDragCleanup]); // clean up if unmounted mid-drag
+
+  const handleRowPointerDown = (e: React.PointerEvent, item: TodoItem) => {
+    if (item.parent_id) return; // only top-level items are draggable, like the desktop app
+    if (e.button !== 0 && e.pointerType === "mouse") return;
+    const target = e.target as HTMLElement;
+    if (target.closest("button, input")) return; // don't hijack checkbox/delete/edit taps
+    if (editingItemId) return;
+
+    const gesture = {
+      pointerId: e.pointerId,
+      itemId: item.id,
+      text: item.text,
+      pointerType: e.pointerType,
+      startX: e.clientX,
+      startY: e.clientY,
+      active: false,
+    };
+    dragGesture.current = gesture;
+
+    const activate = (x: number, y: number) => {
+      if (!dragGesture.current || dragGesture.current.active) return;
+      dragGesture.current.active = true;
+      setDragItemId(gesture.itemId);
+      if (gesture.pointerType !== "mouse") {
+        document.addEventListener("touchmove", preventTouchScroll, { passive: false });
+        navigator.vibrate?.(10);
+      }
+      const ghost = ghostRef.current;
+      if (ghost) {
+        ghost.textContent = gesture.text;
+        ghost.style.display = "block";
+        ghost.style.transform = `translate(${x + 14}px, ${y + 14}px)`;
+      }
+    };
+
+    let longPressDragTimer: ReturnType<typeof setTimeout> | null = null;
+    if (e.pointerType !== "mouse") {
+      longPressDragTimer = setTimeout(() => activate(gesture.startX, gesture.startY), DRAG_LONG_PRESS_MS);
+    }
+
+    const finish = (ev: PointerEvent, dropped: boolean) => {
+      if (longPressDragTimer) clearTimeout(longPressDragTimer);
+      document.removeEventListener("pointermove", onMove);
+      document.removeEventListener("pointerup", onUp);
+      document.removeEventListener("pointercancel", onCancel);
+      const g = dragGesture.current;
+      const dropTab = dragOverTabRef.current;
+      const dropTgt = dropTargetRef.current;
+      endDragCleanup();
+      if (!g?.active || !dropped) return;
+
+      const { allLists: listsNow, activeListId: activeNow, recentlyDone: recentNow } = dragCtx.current;
+      let sourceList: TodoListWithItems | undefined;
+      let draggedItem: TodoItem | undefined;
+      for (const l of listsNow) {
+        const found = l.items.find((i) => i.id === g.itemId);
+        if (found) { sourceList = l; draggedItem = found; break; }
+      }
+      if (!sourceList || !draggedItem || draggedItem.id.startsWith("temp-")) return;
+      const childIds = sourceList.items
+        .filter((i) => i.parent_id === draggedItem!.id)
+        .map((i) => i.id);
+
+      // 1) Dropped on another list's tab → move it (and its subtasks) there
+      if (dropTab && dropTab !== draggedItem.list_id && !dropTab.startsWith("temp-")) {
+        moveItemMut.mutate({ itemId: draggedItem.id, targetListId: dropTab, childIds });
+        return;
+      }
+      // 2) The view switched lists mid-drag (tab dwell) and the drop landed in the
+      //    list area → move the item into the now-active list
+      if (activeNow && draggedItem.list_id !== activeNow) {
+        const el = document.elementFromPoint(ev.clientX, ev.clientY);
+        if (el && itemsScrollRef.current?.contains(el) && !activeNow.startsWith("temp-")) {
+          moveItemMut.mutate({ itemId: draggedItem.id, targetListId: activeNow, childIds });
+        }
+        return;
+      }
+      // 3) Reorder within the current list
+      if (dropTgt && dropTgt.itemId !== draggedItem.id) {
+        const top = sortItems(
+          sourceList.items.filter((i) => !i.parent_id),
+          recentNow
+        ).filter((i) => i.id !== draggedItem!.id);
+        let insertIdx = top.findIndex((i) => i.id === dropTgt.itemId);
+        if (insertIdx === -1) return;
+        if (dropTgt.after) insertIdx += 1;
+        top.splice(insertIdx, 0, draggedItem);
+        reorderMut.mutate(top.map((it, idx) => ({ id: it.id, sort_order: idx })));
+      }
+    };
+
+    const onMove = (ev: PointerEvent) => {
+      const g = dragGesture.current;
+      if (!g || ev.pointerId !== g.pointerId) return;
+      const dx = ev.clientX - g.startX;
+      const dy = ev.clientY - g.startY;
+      if (!g.active) {
+        const dist = Math.hypot(dx, dy);
+        if (g.pointerType === "mouse") {
+          if (dist > 5) activate(ev.clientX, ev.clientY);
+        } else if (dist > 12) {
+          // Finger is scrolling — give the gesture back to the browser
+          finish(ev, false);
+          return;
+        }
+        if (!g.active) return;
+      }
+
+      const ghost = ghostRef.current;
+      if (ghost) ghost.style.transform = `translate(${ev.clientX + 14}px, ${ev.clientY + 14}px)`;
+
+      const el = document.elementFromPoint(ev.clientX, ev.clientY) as HTMLElement | null;
+      const tabEl = el?.closest?.("[data-tab-id]") as HTMLElement | null;
+      if (tabEl) {
+        setDropTargetBoth(null);
+        setDragOverTabBoth(tabEl.dataset.tabId ?? null);
+      } else {
+        setDragOverTabBoth(null);
+        const rowEl = el?.closest?.('[data-item-id][data-top="1"]') as HTMLElement | null;
+        if (rowEl && rowEl.dataset.itemId !== g.itemId) {
+          const rect = rowEl.getBoundingClientRect();
+          setDropTargetBoth({
+            itemId: rowEl.dataset.itemId!,
+            after: ev.clientY > rect.top + rect.height / 2,
+          });
+        } else {
+          setDropTargetBoth(null);
+        }
+      }
+
+      // Auto-scroll the list when dragging near its edges
+      const scroller = itemsScrollRef.current;
+      if (scroller) {
+        const rect = scroller.getBoundingClientRect();
+        if (ev.clientY < rect.top + 56) scroller.scrollTop -= 10;
+        else if (ev.clientY > rect.bottom - 56) scroller.scrollTop += 10;
+      }
+    };
+
+    const onUp = (ev: PointerEvent) => {
+      if (ev.pointerId !== gesture.pointerId) return;
+      finish(ev, true);
+    };
+    const onCancel = (ev: PointerEvent) => {
+      if (ev.pointerId !== gesture.pointerId) return;
+      finish(ev, false);
+    };
+
+    document.addEventListener("pointermove", onMove);
+    document.addEventListener("pointerup", onUp);
+    document.addEventListener("pointercancel", onCancel);
+  };
+
   // --- Render ---
 
   if (isLoading) {
@@ -456,6 +885,109 @@ function TodosMain({
       </div>
     );
   }
+
+  const renderRow = (item: TodoItem, isSub: boolean) => {
+    const subs = isSub ? [] : subsByParent[item.id] ?? [];
+    const doneSubs = subs.filter((s) => s.status === "done").length;
+    const isDropBefore = dropTarget?.itemId === item.id && !dropTarget.after;
+    const isDropAfter = dropTarget?.itemId === item.id && dropTarget.after;
+    return (
+      <div
+        key={item.id}
+        data-item-id={item.id}
+        data-top={isSub ? undefined : "1"}
+        className={[
+          "todo-item",
+          `todo-item--${item.status}`,
+          isSub ? "todo-subtask-row" : "",
+          dragItemId === item.id ? "dragging" : "",
+          isDropBefore ? "drop-before" : "",
+          isDropAfter ? "drop-after" : "",
+          recentlyDone.has(item.id) ? "completing" : "",
+        ].filter(Boolean).join(" ")}
+        onMouseEnter={() => setHoveredItemId(item.id)}
+        onMouseLeave={() => setHoveredItemId(null)}
+        onPointerDown={isSub ? undefined : (e) => handleRowPointerDown(e, item)}
+        onContextMenu={(e) => {
+          // Android long-press fires contextmenu — suppress it while a drag is armed
+          if (dragGesture.current) e.preventDefault();
+        }}
+      >
+        {isSub && <span className="todo-subtask-indent" />}
+        <button
+          className={`todo-checkbox todo-checkbox--${item.status}`}
+          onClick={() => handleCheckboxClick(item)}
+          onContextMenu={(e) => handleCheckboxContext(e, item)}
+          onPointerDown={() => handlePointerDown(item)}
+          onPointerUp={handlePointerUp}
+          onPointerCancel={handlePointerUp}
+          title="Click: toggle done. Right-click/long-press: toggle in-flight"
+        >
+          {item.status === "done" && (
+            <svg viewBox="0 0 16 16" width="14" height="14">
+              <path d="M3 8l3 3 7-7" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          )}
+          {item.status === "inflight" && (
+            <svg viewBox="0 0 16 16" width="12" height="12">
+              <path d="M5 3l8 5-8 5V3z" fill="currentColor" />
+            </svg>
+          )}
+        </button>
+
+        {editingItemId === item.id ? (
+          <input
+            ref={editRef}
+            className="todo-item-edit"
+            value={editingItemText}
+            onChange={(e) => setEditingItemText(e.target.value)}
+            onBlur={commitItemEdit}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") commitItemEdit();
+              if (e.key === "Escape") setEditingItemId(null);
+            }}
+          />
+        ) : (
+          <span
+            className="todo-item-text"
+            onDoubleClick={() => {
+              setEditingItemId(item.id);
+              setEditingItemText(item.text);
+            }}
+          >
+            {item.text}
+          </span>
+        )}
+
+        {!isSub && subs.length > 0 && (
+          <span className="todo-subtask-badge" title={`${doneSubs} of ${subs.length} subtasks done`}>
+            {doneSubs}/{subs.length}
+          </span>
+        )}
+
+        {!isSub && (
+          <button
+            className={`todo-item-addsub ${hoveredItemId === item.id ? "visible" : ""}`}
+            onClick={() => {
+              setSubtaskText("");
+              setAddingSubtaskFor(addingSubtaskFor === item.id ? null : item.id);
+            }}
+            title="Add subtask"
+          >
+            +
+          </button>
+        )}
+
+        <button
+          className={`todo-item-delete ${hoveredItemId === item.id ? "visible" : ""}`}
+          onClick={() => deleteItemMut.mutate(item.id)}
+          title="Delete task"
+        >
+          &times;
+        </button>
+      </div>
+    );
+  };
 
   return (
     <div className="todo-page" style={{ "--todo-accent": activeColor } as React.CSSProperties}>
@@ -481,7 +1013,13 @@ function TodosMain({
             return (
               <div
                 key={list.id}
-                className={`todo-tab ${isActive ? "active" : ""} ${shared ? "todo-tab--shared" : ""}`}
+                data-tab-id={list.id}
+                className={[
+                  "todo-tab",
+                  isActive ? "active" : "",
+                  shared ? "todo-tab--shared" : "",
+                  dragOverTabId === list.id && !isActive ? "drag-target" : "",
+                ].filter(Boolean).join(" ")}
                 style={{ "--tab-color": color } as React.CSSProperties}
                 onClick={() => setActiveListId(list.id)}
                 onMouseEnter={() => setHoveredTab(list.id)}
@@ -513,7 +1051,9 @@ function TodosMain({
                   </span>
                 )}
                 {shared && <span className="todo-tab-shared-badge">shared</span>}
-                <span className="todo-tab-count">{list.items.length}</span>
+                <span className="todo-tab-count">
+                  {list.items.filter((i) => !i.parent_id).length}
+                </span>
                 {hoveredTab === list.id && (
                   <button
                     className="todo-tab-delete"
@@ -551,70 +1091,42 @@ function TodosMain({
       {/* Item list */}
       {activeList ? (
         <div className="todo-items-container">
-          {sortedItems.length === 0 ? (
-            <div className="todo-empty">No tasks yet. Add one below.</div>
+          {sortedTopLevel.length === 0 ? (
+            <div className="todo-empty">
+              <div>No tasks yet</div>
+              <div className="todo-empty-hint">Type below and hit Enter</div>
+            </div>
           ) : (
-            <div className="todo-items">
-              {sortedItems.map((item) => (
-                <div
-                  key={item.id}
-                  className={`todo-item todo-item--${item.status}`}
-                  onMouseEnter={() => setHoveredItemId(item.id)}
-                  onMouseLeave={() => setHoveredItemId(null)}
-                >
-                  <button
-                    className={`todo-checkbox todo-checkbox--${item.status}`}
-                    onClick={() => handleCheckboxClick(item)}
-                    onContextMenu={(e) => handleCheckboxContext(e, item)}
-                    onPointerDown={() => handlePointerDown(item)}
-                    onPointerUp={handlePointerUp}
-                    onPointerCancel={handlePointerUp}
-                    title="Click: toggle done. Right-click/long-press: toggle in-flight"
-                  >
-                    {item.status === "done" && (
-                      <svg viewBox="0 0 16 16" width="14" height="14">
-                        <path d="M3 8l3 3 7-7" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    )}
-                    {item.status === "inflight" && (
-                      <svg viewBox="0 0 16 16" width="12" height="12">
-                        <path d="M5 3l8 5-8 5V3z" fill="currentColor" />
-                      </svg>
-                    )}
-                  </button>
-
-                  {editingItemId === item.id ? (
-                    <input
-                      ref={editRef}
-                      className="todo-item-edit"
-                      value={editingItemText}
-                      onChange={(e) => setEditingItemText(e.target.value)}
-                      onBlur={commitItemEdit}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") commitItemEdit();
-                        if (e.key === "Escape") setEditingItemId(null);
-                      }}
-                    />
-                  ) : (
-                    <span
-                      className="todo-item-text"
-                      onDoubleClick={() => {
-                        setEditingItemId(item.id);
-                        setEditingItemText(item.text);
-                      }}
-                    >
-                      {item.text}
-                    </span>
+            <div className="todo-items" ref={itemsScrollRef}>
+              {sortedTopLevel.map((item) => (
+                <Fragment key={item.id}>
+                  {renderRow(item, false)}
+                  {(subsByParent[item.id] ?? []).map((sub) => renderRow(sub, true))}
+                  {addingSubtaskFor === item.id && (
+                    <div className="todo-item todo-subtask-row todo-subtask-add-row">
+                      <span className="todo-subtask-indent" />
+                      <span className="todo-subtask-dot">&#9702;</span>
+                      <input
+                        ref={subInputRef}
+                        className="todo-subtask-input"
+                        placeholder="New subtask&hellip;"
+                        value={subtaskText}
+                        onChange={(e) => setSubtaskText(e.target.value)}
+                        onBlur={() => commitSubtask(item.id, false)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            commitSubtask(item.id, true);
+                          }
+                          if (e.key === "Escape") {
+                            setSubtaskText("");
+                            setAddingSubtaskFor(null);
+                          }
+                        }}
+                      />
+                    </div>
                   )}
-
-                  <button
-                    className={`todo-item-delete ${hoveredItemId === item.id ? "visible" : ""}`}
-                    onClick={() => deleteItemMut.mutate(item.id)}
-                    title="Delete task"
-                  >
-                    &times;
-                  </button>
-                </div>
+                </Fragment>
               ))}
             </div>
           )}
@@ -624,7 +1136,7 @@ function TodosMain({
             <span className="todo-status-counts">
               {todoCt} to do &middot; {inflightCt} in flight &middot; {doneCt} done
             </span>
-            {doneCt > 0 && (
+            {doneTopLevelCt > 0 && (
               <button className="todo-clear-done" onClick={handleClearDone}>
                 clear done
               </button>
@@ -653,10 +1165,11 @@ function TodosMain({
                 const pasted = e.clipboardData.getData("text");
                 if (pasted.includes("\n")) {
                   e.preventDefault();
-                  const lines = pasted.split("\n").map((l) => l.trim()).filter(Boolean);
-                  for (const line of lines) {
-                    addItemMut.mutate(line);
-                  }
+                  const el = e.currentTarget;
+                  const prefix = newInput.slice(0, el.selectionStart ?? newInput.length);
+                  const suffix = newInput.slice(el.selectionEnd ?? newInput.length);
+                  addTaskLines(prefix + pasted + suffix);
+                  setNewInput("");
                 }
               }}
             />
@@ -664,11 +1177,15 @@ function TodosMain({
         </div>
       ) : (
         <div className="todo-empty">
-          {sortedLists.length === 0
-            ? 'No lists yet. Click "+" to create one.'
-            : "Select a list to view tasks."}
+          <div>{sortedLists.length === 0 ? "No lists yet" : "Select a list"}</div>
+          <div className="todo-empty-hint">
+            {sortedLists.length === 0 ? 'Hit "+" to create one' : "Tap a tab above"}
+          </div>
         </div>
       )}
+
+      {/* Floating label that follows the pointer while dragging */}
+      <div ref={ghostRef} className="todo-drag-ghost" />
     </div>
   );
 }
@@ -758,7 +1275,7 @@ const styles = `
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: var(--bg);
+  background: color-mix(in srgb, var(--todo-accent) 4%, var(--bg));
   color: var(--text);
   --todo-accent: #00e5ff;
 }
@@ -766,11 +1283,18 @@ const styles = `
 .todo-loading,
 .todo-empty {
   display: flex;
+  flex-direction: column;
+  gap: 6px;
   align-items: center;
   justify-content: center;
   flex: 1;
   color: var(--text-dim);
   font-size: 14px;
+}
+
+.todo-empty-hint {
+  font-size: 12px;
+  opacity: 0.6;
 }
 
 /* ---- User bar ---- */
@@ -857,6 +1381,15 @@ const styles = `
 }
 .todo-tab--shared.active {
   border-style: solid;
+}
+
+.todo-tab.drag-target {
+  animation: todo-tab-drag-pulse 0.5s ease infinite alternate;
+  border-color: var(--tab-color);
+}
+@keyframes todo-tab-drag-pulse {
+  from { box-shadow: 0 0 6px color-mix(in srgb, var(--tab-color) 35%, transparent); }
+  to   { box-shadow: 0 0 18px color-mix(in srgb, var(--tab-color) 60%, transparent); }
 }
 
 .todo-tab-shared-badge {
@@ -969,9 +1502,44 @@ const styles = `
   padding: 10px 16px;
   transition: background 0.1s;
   min-height: 42px;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  touch-action: pan-y;
 }
 .todo-item:hover {
   background: var(--surface2);
+}
+
+/* Drag states */
+.todo-item.dragging {
+  opacity: 0.35;
+}
+.todo-item.drop-before {
+  box-shadow: 0 -2px 0 var(--todo-accent);
+}
+.todo-item.drop-after {
+  box-shadow: 0 2px 0 var(--todo-accent);
+}
+
+.todo-drag-ghost {
+  position: fixed;
+  top: 0;
+  left: 0;
+  display: none;
+  z-index: 1000;
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  background: var(--surface2);
+  border: 1px solid var(--todo-accent);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 13px;
+  pointer-events: none;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
 }
 
 /* Checkbox */
@@ -1007,6 +1575,17 @@ const styles = `
   color: #ffb74d;
 }
 
+/* Completion pop — plays while the item holds its spot before sorting down */
+@keyframes todo-check-pop {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.35); }
+  70%  { transform: scale(0.88); }
+  100% { transform: scale(1); }
+}
+.todo-item.completing .todo-checkbox {
+  animation: todo-check-pop 0.35s ease forwards;
+}
+
 /* Item text */
 .todo-item-text {
   flex: 1;
@@ -1036,6 +1615,7 @@ const styles = `
   font-size: 16px;
   padding: 4px 8px;
   outline: none;
+  min-width: 0;
 }
 
 .todo-item-delete {
@@ -1056,6 +1636,94 @@ const styles = `
 .todo-item-delete:hover {
   opacity: 1;
   color: var(--red);
+}
+
+.todo-item-addsub {
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 50%;
+  color: var(--text-dim);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 0 5px;
+  line-height: 1.2;
+  opacity: 0;
+  transition: opacity 0.1s, color 0.1s;
+  flex-shrink: 0;
+}
+.todo-item-addsub.visible {
+  opacity: 0.5;
+}
+.todo-item-addsub:hover {
+  opacity: 1;
+  color: var(--todo-accent);
+  border-color: var(--todo-accent);
+}
+
+/* ---- Subtasks ---- */
+.todo-subtask-row {
+  padding-left: 28px;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  min-height: 34px;
+}
+
+.todo-subtask-indent {
+  display: inline-block;
+  width: 16px;
+  height: 22px;
+  border-left: 2px solid var(--border);
+  border-bottom: 2px solid var(--border);
+  border-bottom-left-radius: 4px;
+  flex-shrink: 0;
+  align-self: center;
+  margin-bottom: 8px;
+}
+
+.todo-subtask-row .todo-checkbox {
+  width: 17px;
+  height: 17px;
+  border-radius: 5px;
+}
+.todo-subtask-row .todo-checkbox svg {
+  width: 11px;
+  height: 11px;
+}
+
+.todo-subtask-row .todo-item-text {
+  font-size: 13px;
+}
+
+.todo-subtask-badge {
+  font-size: 10px;
+  color: var(--text-dim);
+  background: rgba(255,255,255,0.06);
+  padding: 1px 6px;
+  border-radius: 8px;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.todo-subtask-dot {
+  color: var(--text-dim);
+  font-size: 16px;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.todo-subtask-input {
+  flex: 1;
+  background: var(--surface);
+  border: 1px solid var(--todo-accent);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 14px;
+  padding: 3px 8px;
+  outline: none;
+  min-width: 0;
+}
+.todo-subtask-input::placeholder {
+  color: var(--text-dim);
 }
 
 /* ---- Status bar ---- */
@@ -1136,8 +1804,26 @@ const styles = `
   .todo-item-text {
     font-size: 15px;
   }
-  /* Always show delete on touch — no hover */
+  .todo-subtask-row {
+    padding-left: 22px;
+    min-height: 40px;
+  }
+  .todo-subtask-row .todo-checkbox {
+    width: 22px;
+    height: 22px;
+  }
+  .todo-subtask-row .todo-item-text {
+    font-size: 14px;
+  }
+  .todo-subtask-input {
+    font-size: 16px;
+  }
+  /* Always show row actions on touch — no hover */
   .todo-item-delete {
+    display: flex;
+    opacity: 0.4;
+  }
+  .todo-item-addsub {
     display: flex;
     opacity: 0.4;
   }
