@@ -334,6 +334,7 @@ export type TodoItem = {
   text: string;
   status: "todo" | "inflight" | "done";
   sort_order: number;
+  parent_id?: string | null;
   created_at: string;
 };
 
@@ -418,6 +419,7 @@ export async function createTodoItem(item: {
   text: string;
   status?: string;
   sort_order: number;
+  parent_id?: string | null;
 }): Promise<TodoItem> {
   const { data, error } = await supabase
     .from("todo_items")
@@ -430,7 +432,7 @@ export async function createTodoItem(item: {
 
 export async function updateTodoItem(
   id: string,
-  updates: Partial<Pick<TodoItem, "text" | "status" | "sort_order">>
+  updates: Partial<Pick<TodoItem, "text" | "status" | "sort_order" | "list_id">>
 ): Promise<TodoItem> {
   const { data, error } = await supabase
     .from("todo_items")
@@ -443,6 +445,13 @@ export async function updateTodoItem(
 }
 
 export async function deleteTodoItem(id: string): Promise<void> {
+  // Remove subtasks first so parents never leave orphans, regardless of
+  // whether the DB-side FK cascade is configured
+  const { error: subError } = await supabase
+    .from("todo_items")
+    .delete()
+    .eq("parent_id", id);
+  if (subError) throw subError;
   const { error } = await supabase
     .from("todo_items")
     .delete()
