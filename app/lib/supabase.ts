@@ -406,6 +406,22 @@ export async function updateTodoList(
   return data;
 }
 
+export async function reorderTodoLists(
+  lists: { id: string; sort_order: number }[]
+): Promise<void> {
+  await Promise.all(
+    lists.map(({ id, sort_order }) =>
+      supabase
+        .from("todo_lists")
+        .update({ sort_order })
+        .eq("id", id)
+        .then(({ error }) => {
+          if (error) throw error;
+        })
+    )
+  );
+}
+
 export async function deleteTodoList(id: string): Promise<void> {
   const { error } = await supabase
     .from("todo_lists")

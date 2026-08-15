@@ -12,3 +12,4 @@ video-work/
 *.wav
 .claude/
 quicktodo/QuickTodo.app/
+.env*

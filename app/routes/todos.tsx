@@ -9,6 +9,7 @@ import {
   updateTodoItem,
   deleteTodoItem,
   reorderTodoItems,
+  reorderTodoLists,
   supabase,
   type TodoListWithItems,
   type TodoItem,
@@ -163,13 +164,11 @@ function TodosMain({
   // Filter lists visible to the current user
   const lists = allLists.filter((l) => isListVisibleTo(l, currentUser));
 
-  // Sort: user's own lists first, then shared
-  const sortedLists = [...lists].sort((a, b) => {
-    const aOwned = a.owner === currentUser ? 0 : 1;
-    const bOwned = b.owner === currentUser ? 0 : 1;
-    if (aOwned !== bOwned) return aOwned - bOwned;
-    return a.sort_order - b.sort_order;
-  });
+  // Sort purely by sort_order so tabs can be freely rearranged by dragging,
+  // mixing personal and shared lists in any order (matches the desktop app)
+  const sortedLists = [...lists].sort(
+    (a, b) => a.sort_order - b.sort_order || a.id.localeCompare(b.id)
+  );
 
   // --- Realtime ---
   useEffect(() => {
@@ -482,6 +481,26 @@ function TodosMain({
     onSettled: () => queryClient.invalidateQueries({ queryKey: ["todo-lists"] }),
   });
 
+  const reorderListsMut = useMutation({
+    mutationFn: (updates: { id: string; sort_order: number }[]) =>
+      reorderTodoLists(updates.filter((u) => !u.id.startsWith("temp-"))),
+    onMutate: async (updates) => {
+      await queryClient.cancelQueries({ queryKey: ["todo-lists"] });
+      const prev = queryClient.getQueryData<TodoListWithItems[]>(["todo-lists"]);
+      const orderById = new Map(updates.map((u) => [u.id, u.sort_order]));
+      queryClient.setQueryData<TodoListWithItems[]>(["todo-lists"], (old) =>
+        old?.map((l) =>
+          orderById.has(l.id) ? { ...l, sort_order: orderById.get(l.id)! } : l
+        ) ?? []
+      );
+      return { prev };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.prev) queryClient.setQueryData(["todo-lists"], context.prev);
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ["todo-lists"] }),
+  });
+
   // --- Status changes with done-sort delay + cascades ---
 
   const markRecentlyDone = useCallback((id: string) => {
@@ -671,8 +690,8 @@ function TodosMain({
   const ghostRef = useRef<HTMLDivElement>(null);
   const itemsScrollRef = useRef<HTMLDivElement>(null);
   // Fresh data for handlers that outlive the render they were created in
-  const dragCtx = useRef({ allLists, activeListId, recentlyDone });
-  dragCtx.current = { allLists, activeListId, recentlyDone };
+  const dragCtx = useRef({ allLists, sortedLists, activeListId, recentlyDone });
+  dragCtx.current = { allLists, sortedLists, activeListId, recentlyDone };
   const dragGesture = useRef<{
     pointerId: number;
     itemId: string;
@@ -875,6 +894,161 @@ function TodosMain({
     document.addEventListener("pointercancel", onCancel);
   };
 
+  // --- Drag: reorder the list tabs themselves ---
+  // Same gesture model as items: long-press on touch, press-and-move on mouse.
+
+  const [dragListId, setDragListId] = useState<string | null>(null);
+  const [tabDropTarget, setTabDropTarget] = useState<{ listId: string; after: boolean } | null>(null);
+  const tabDropTargetRef = useRef<{ listId: string; after: boolean } | null>(null);
+  const tabsScrollRef = useRef<HTMLDivElement>(null);
+  // A completed tab drag must not fire the tab's onClick (which would switch lists)
+  const suppressTabClick = useRef(false);
+  const tabDragGesture = useRef<{
+    pointerId: number;
+    listId: string;
+    name: string;
+    pointerType: string;
+    startX: number;
+    startY: number;
+    active: boolean;
+  } | null>(null);
+
+  const setTabDropTargetBoth = (v: { listId: string; after: boolean } | null) => {
+    const cur = tabDropTargetRef.current;
+    if (cur?.listId === v?.listId && cur?.after === v?.after) return;
+    tabDropTargetRef.current = v;
+    setTabDropTarget(v);
+  };
+
+  const endTabDragCleanup = useCallback(() => {
+    tabDragGesture.current = null;
+    setDragListId(null);
+    setTabDropTargetBoth(null);
+    if (ghostRef.current) ghostRef.current.style.display = "none";
+    document.removeEventListener("touchmove", preventTouchScroll);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => endTabDragCleanup, [endTabDragCleanup]); // clean up if unmounted mid-drag
+
+  const handleTabPointerDown = (e: React.PointerEvent, list: TodoListWithItems) => {
+    if (e.button !== 0 && e.pointerType === "mouse") return;
+    if (renamingListId === list.id) return;
+    const target = e.target as HTMLElement;
+    if (target.closest("button, input")) return; // don't hijack delete/rename taps
+
+    const gesture = {
+      pointerId: e.pointerId,
+      listId: list.id,
+      name: list.name,
+      pointerType: e.pointerType,
+      startX: e.clientX,
+      startY: e.clientY,
+      active: false,
+    };
+    tabDragGesture.current = gesture;
+
+    const activate = (x: number, y: number) => {
+      if (!tabDragGesture.current || tabDragGesture.current.active) return;
+      tabDragGesture.current.active = true;
+      setDragListId(gesture.listId);
+      if (gesture.pointerType !== "mouse") {
+        document.addEventListener("touchmove", preventTouchScroll, { passive: false });
+        navigator.vibrate?.(10);
+      }
+      const ghost = ghostRef.current;
+      if (ghost) {
+        ghost.textContent = gesture.name;
+        ghost.style.display = "block";
+        ghost.style.transform = `translate(${x + 14}px, ${y + 14}px)`;
+      }
+    };
+
+    let longPressDragTimer: ReturnType<typeof setTimeout> | null = null;
+    if (e.pointerType !== "mouse") {
+      longPressDragTimer = setTimeout(() => activate(gesture.startX, gesture.startY), DRAG_LONG_PRESS_MS);
+    }
+
+    const finish = (dropped: boolean) => {
+      if (longPressDragTimer) clearTimeout(longPressDragTimer);
+      document.removeEventListener("pointermove", onMove);
+      document.removeEventListener("pointerup", onUp);
+      document.removeEventListener("pointercancel", onCancel);
+      const g = tabDragGesture.current;
+      const dropTgt = tabDropTargetRef.current;
+      endTabDragCleanup();
+      if (!g?.active) return;
+      // The click event fires synchronously right after pointerup, then the flag clears
+      suppressTabClick.current = true;
+      setTimeout(() => { suppressTabClick.current = false; }, 0);
+      if (!dropped || !dropTgt || dropTgt.listId === g.listId) return;
+
+      const { sortedLists: listsNow } = dragCtx.current;
+      const src = listsNow.find((l) => l.id === g.listId);
+      if (!src || src.id.startsWith("temp-")) return;
+      const without = listsNow.filter((l) => l.id !== g.listId);
+      let insertIdx = without.findIndex((l) => l.id === dropTgt.listId);
+      if (insertIdx === -1) return;
+      if (dropTgt.after) insertIdx += 1;
+      without.splice(insertIdx, 0, src);
+      reorderListsMut.mutate(without.map((l, idx) => ({ id: l.id, sort_order: idx })));
+    };
+
+    const onMove = (ev: PointerEvent) => {
+      const g = tabDragGesture.current;
+      if (!g || ev.pointerId !== g.pointerId) return;
+      const dx = ev.clientX - g.startX;
+      const dy = ev.clientY - g.startY;
+      if (!g.active) {
+        const dist = Math.hypot(dx, dy);
+        if (g.pointerType === "mouse") {
+          if (dist > 5) activate(ev.clientX, ev.clientY);
+        } else if (dist > 12) {
+          // Finger is scrolling the tab bar — give the gesture back to the browser
+          finish(false);
+          return;
+        }
+        if (!g.active) return;
+      }
+
+      const ghost = ghostRef.current;
+      if (ghost) ghost.style.transform = `translate(${ev.clientX + 14}px, ${ev.clientY + 14}px)`;
+
+      const el = document.elementFromPoint(ev.clientX, ev.clientY) as HTMLElement | null;
+      const tabEl = el?.closest?.("[data-tab-id]") as HTMLElement | null;
+      if (tabEl && tabEl.dataset.tabId !== g.listId) {
+        const rect = tabEl.getBoundingClientRect();
+        setTabDropTargetBoth({
+          listId: tabEl.dataset.tabId!,
+          after: ev.clientX > rect.left + rect.width / 2,
+        });
+      } else {
+        setTabDropTargetBoth(null);
+      }
+
+      // Auto-scroll the tab bar when dragging near its edges
+      const scroller = tabsScrollRef.current;
+      if (scroller) {
+        const rect = scroller.getBoundingClientRect();
+        if (ev.clientX < rect.left + 48) scroller.scrollLeft -= 10;
+        else if (ev.clientX > rect.right - 48) scroller.scrollLeft += 10;
+      }
+    };
+
+    const onUp = (ev: PointerEvent) => {
+      if (ev.pointerId !== gesture.pointerId) return;
+      finish(true);
+    };
+    const onCancel = (ev: PointerEvent) => {
+      if (ev.pointerId !== gesture.pointerId) return;
+      finish(false);
+    };
+
+    document.addEventListener("pointermove", onMove);
+    document.addEventListener("pointerup", onUp);
+    document.addEventListener("pointercancel", onCancel);
+  };
+
   // --- Render ---
 
   if (isLoading) {
@@ -1005,7 +1179,7 @@ function TodosMain({
 
       {/* Tab bar */}
       <div className="todo-tabs">
-        <div className="todo-tabs-scroll">
+        <div className="todo-tabs-scroll" ref={tabsScrollRef}>
           {sortedLists.map((list) => {
             const color = NEON_COLORS[list.color_index % NEON_COLORS.length];
             const isActive = list.id === activeListId;
@@ -1019,9 +1193,20 @@ function TodosMain({
                   isActive ? "active" : "",
                   shared ? "todo-tab--shared" : "",
                   dragOverTabId === list.id && !isActive ? "drag-target" : "",
+                  dragListId === list.id ? "dragging" : "",
+                  tabDropTarget?.listId === list.id && !tabDropTarget.after ? "tab-drop-before" : "",
+                  tabDropTarget?.listId === list.id && tabDropTarget.after ? "tab-drop-after" : "",
                 ].filter(Boolean).join(" ")}
                 style={{ "--tab-color": color } as React.CSSProperties}
-                onClick={() => setActiveListId(list.id)}
+                onClick={() => {
+                  if (suppressTabClick.current) return;
+                  setActiveListId(list.id);
+                }}
+                onPointerDown={(e) => handleTabPointerDown(e, list)}
+                onContextMenu={(e) => {
+                  // Android long-press fires contextmenu — suppress it while a drag is armed
+                  if (tabDragGesture.current) e.preventDefault();
+                }}
                 onMouseEnter={() => setHoveredTab(list.id)}
                 onMouseLeave={() => setHoveredTab(null)}
               >
@@ -1387,6 +1572,23 @@ const styles = `
   animation: todo-tab-drag-pulse 0.5s ease infinite alternate;
   border-color: var(--tab-color);
 }
+
+.todo-tab.dragging {
+  opacity: 0.35;
+}
+.todo-tab.tab-drop-before::before,
+.todo-tab.tab-drop-after::after {
+  content: "";
+  position: absolute;
+  top: 15%;
+  height: 70%;
+  width: 3px;
+  border-radius: 2px;
+  background: var(--tab-color, var(--accent));
+  box-shadow: 0 0 6px var(--tab-color, var(--accent));
+}
+.todo-tab.tab-drop-before::before { left: -5px; }
+.todo-tab.tab-drop-after::after { right: -5px; }
 @keyframes todo-tab-drag-pulse {
   from { box-shadow: 0 0 6px color-mix(in srgb, var(--tab-color) 35%, transparent); }
   to   { box-shadow: 0 0 18px color-mix(in srgb, var(--tab-color) 60%, transparent); }

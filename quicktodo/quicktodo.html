@@ -246,6 +246,7 @@
     flex-shrink: 0;
     transition: all 0.2s ease;
     letter-spacing: 0.2px;
+    position: relative; /* anchors the tab-drop indicator bars */
   }
   .tab:hover {
     background: var(--neon-wash-strong);
@@ -653,6 +654,22 @@
     to   { box-shadow: 0 0 20px var(--neon-glow), 0 0 40px var(--neon-glow); }
   }
 
+  /* ── Tab reorder drag ── */
+  .tab.dragging { opacity: 0.35; }
+  .tab.tab-drop-before::before,
+  .tab.tab-drop-after::after {
+    content: '';
+    position: absolute;
+    top: 15%;
+    height: 70%;
+    width: 3px;
+    border-radius: 2px;
+    background: var(--neon);
+    box-shadow: 0 0 6px var(--neon-glow);
+  }
+  .tab.tab-drop-before::before { left: -5px; }
+  .tab.tab-drop-after::after { right: -5px; }
+
   /* ── Context menu ── */
   .ctx-menu {
     position: fixed;
@@ -914,12 +931,11 @@ function getVisibleLists() {
 
 function getSortedVisibleLists() {
   const visible = getVisibleLists();
-  return visible.sort((a, b) => {
-    const aOwned = a.owner === currentUser ? 0 : 1;
-    const bOwned = b.owner === currentUser ? 0 : 1;
-    if (aOwned !== bOwned) return aOwned - bOwned;
-    return a.sort_order - b.sort_order;
-  });
+  // Pure sort_order so tabs can be freely rearranged by dragging,
+  // mixing personal and shared lists in any order
+  return visible.sort((a, b) =>
+    a.sort_order - b.sort_order || String(a.id).localeCompare(String(b.id))
+  );
 }
 
 function sortItems(items) {
@@ -1040,10 +1056,49 @@ function rollback(snapshot) {
   render();
 }
 
+// Refreshes must not clobber optimistic state while a write is in flight:
+// replacing allLists mid-mutation orphans the object references addList /
+// updateList mutate in place (e.g. a rename typed before the create
+// roundtrip finishes would be lost). Defer the refresh until writes settle.
+let _inflightWrites = 0;
+let _refreshPending = false;
+
+function _writeSettled() {
+  _inflightWrites = Math.max(0, _inflightWrites - 1);
+  if (_inflightWrites === 0 && _refreshPending) {
+    _refreshPending = false;
+    refreshFromSupabase();
+  }
+}
+
+// Wrap every mutating Supabase helper with the in-flight counter (function
+// declarations are hoisted, so the raw versions exist when this runs)
+['sbCreateList', 'sbUpdateList', 'sbDeleteList',
+ 'sbCreateItem', 'sbUpdateItem', 'sbDeleteItem'].forEach(name => {
+  const raw = window[name];
+  window[name] = async function(...args) {
+    _inflightWrites++;
+    try { return await raw.apply(null, args); }
+    finally { _writeSettled(); }
+  };
+});
+
+function applyFreshLists(fresh) {
+  if (_inflightWrites > 0) {
+    _refreshPending = true;
+    return false;
+  }
+  // Keep optimistic temp- lists the server doesn't know about yet (same
+  // object identity — addList swaps the real id into them in place)
+  const temps = allLists.filter(l => String(l.id).startsWith('temp-'));
+  allLists = fresh.concat(temps);
+  return true;
+}
+
 async function refreshFromSupabase() {
   try {
     const fresh = await sbFetchAll();
-    allLists = fresh;
+    if (!applyFreshLists(fresh)) return; // deferred until writes settle
     autoSelectList();
     render();
   } catch(e) {
@@ -1109,16 +1164,48 @@ async function addList() {
 }
 
 async function updateList(id, updates) {
-  if (id.startsWith('temp-')) return; // can't update a temp list
   const snapshot = snapshotLists();
   const list = allLists.find(l => l.id === id);
   if (list) Object.assign(list, updates);
   render();
 
   try {
-    await sbUpdateList(id, updates);
+    // A just-created list may not have its server id yet (e.g. renaming faster
+    // than the create roundtrip) — addList swaps the real id into this same
+    // object when it arrives, so wait for it instead of dropping the update
+    for (let i = 0; i < 40 && list && list.id.startsWith('temp-'); i++) {
+      await new Promise(r => setTimeout(r, 250));
+    }
+    if (!list || list.id.startsWith('temp-')) return; // creation failed and rolled back
+    await sbUpdateList(list.id, updates);
   } catch(e) {
     console.log('updateList error:', e);
+    rollback(snapshot);
+  }
+}
+
+async function reorderLists(srcId, targetId, after) {
+  const sorted = getSortedVisibleLists();
+  const src = sorted.find(l => l.id === srcId);
+  if (!src || src.id.startsWith('temp-')) return;
+  const without = sorted.filter(l => l.id !== srcId);
+  let idx = without.findIndex(l => l.id === targetId);
+  if (idx === -1) return;
+  if (after) idx += 1;
+  without.splice(idx, 0, src);
+
+  const snapshot = snapshotLists();
+  without.forEach((l, i) => { l.sort_order = i; });
+  render();
+
+  try {
+    await Promise.all(
+      without
+        .filter(l => !l.id.startsWith('temp-'))
+        .map(l => sbUpdateList(l.id, { sort_order: l.sort_order }))
+    );
+  } catch(e) {
+    console.log('reorderLists error:', e);
     rollback(snapshot);
   }
 }
@@ -1314,14 +1401,7 @@ function stopSync() {
 
 function startFallbackPolling() {
   if (_pollTimer) return; // already polling
-  _pollTimer = setInterval(async () => {
-    try {
-      const fresh = await sbFetchAll();
-      allLists = fresh;
-      autoSelectList();
-      render();
-    } catch(e) {}
-  }, 10000);
+  _pollTimer = setInterval(refreshFromSupabase, 10000);
   console.log('Fallback polling started (10s)');
 }
 
@@ -1476,8 +1556,35 @@ function renderTabs() {
     });
     tab.appendChild(close);
 
-    // Cross-list drag: hovering a dragged item over a tab switches list
+    // Tab drag: reorder lists by dragging their tabs left/right
+    tab.draggable = true;
+    tab.addEventListener('dragstart', (e) => {
+      if (tab.querySelector('input')) { e.preventDefault(); return; } // renaming — leave the input alone
+      dragSrcListId = list.id;
+      tab.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', 'list:' + list.id);
+    });
+    tab.addEventListener('dragend', () => {
+      tab.classList.remove('dragging');
+      document.querySelectorAll('.tab-drop-before, .tab-drop-after')
+        .forEach(el => el.classList.remove('tab-drop-before', 'tab-drop-after'));
+      dragSrcListId = null;
+    });
+
+    // Cross-list drag: hovering a dragged item over a tab switches list.
+    // Tab drag: show a before/after drop indicator instead.
     tab.addEventListener('dragover', (e) => {
+      if (dragSrcListId) {
+        if (dragSrcListId === list.id) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        const rect = tab.getBoundingClientRect();
+        const after = e.clientX > rect.left + rect.width / 2;
+        tab.classList.toggle('tab-drop-before', !after);
+        tab.classList.toggle('tab-drop-after', after);
+        return;
+      }
       if (!dragSrcItemId || list.id === activeListId) return;
       e.preventDefault();
       e.dataTransfer.dropEffect = 'move';
@@ -1491,14 +1598,22 @@ function renderTabs() {
       }
     });
     tab.addEventListener('dragleave', () => {
-      tab.classList.remove('drag-target');
+      tab.classList.remove('drag-target', 'tab-drop-before', 'tab-drop-after');
       if (tabDragTimers[list.id]) { clearTimeout(tabDragTimers[list.id]); delete tabDragTimers[list.id]; }
     });
     tab.addEventListener('drop', (e) => {
       e.preventDefault();
       e.stopPropagation();
-      tab.classList.remove('drag-target');
+      tab.classList.remove('drag-target', 'tab-drop-before', 'tab-drop-after');
       if (tabDragTimers[list.id]) { clearTimeout(tabDragTimers[list.id]); delete tabDragTimers[list.id]; }
+      if (dragSrcListId && dragSrcListId !== list.id) {
+        const rect = tab.getBoundingClientRect();
+        const after = e.clientX > rect.left + rect.width / 2;
+        const srcId = dragSrcListId;
+        dragSrcListId = null;
+        reorderLists(srcId, list.id, after);
+        return;
+      }
       if (dragSrcItemId && list.id !== activeListId) {
         const srcId = dragSrcItemId;
         dragSrcItemId = null;
@@ -1535,6 +1650,7 @@ function renderTabs() {
 }
 
 function startRenameTab(tabEl, nameEl, list) {
+  tabEl.draggable = false; // let the mouse select text in the input; render() restores it
   const inp = document.createElement('input');
   inp.type = 'text';
   inp.className = 'tab-rename-input';
@@ -1565,6 +1681,7 @@ function startRenameTab(tabEl, nameEl, list) {
 
 let dragSrcIndex = null;
 let dragSrcItemId = null; // for cross-list drag
+let dragSrcListId = null; // for tab (list) reordering
 let tabDragTimers = {};   // timers for tab hover-to-switch
 
 function makeItemRow(item, list, displayIdx, topLevelItems) {

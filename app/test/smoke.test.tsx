@@ -14,6 +14,7 @@ vi.mock("~/lib/supabase", () => ({
   updateTodoItem: vi.fn(),
   deleteTodoItem: vi.fn(),
   reorderTodoItems: vi.fn(),
+  reorderTodoLists: vi.fn(),
   supabase: {
     channel: vi.fn(() => ({
       on: vi.fn().mockReturnThis(),
