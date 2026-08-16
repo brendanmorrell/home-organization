@@ -438,6 +438,7 @@
     line-height: 1.45;
     padding: 0;
     word-break: break-word;
+    white-space: pre-wrap;
     color: var(--text-primary);
     transition: all 0.2s ease;
   }
@@ -473,7 +474,8 @@
     background: var(--neon-tint-surface);
     border-top: 1px solid var(--border-subtle);
   }
-  .input-area input {
+  .input-area textarea {
+    display: block;
     width: 100%;
     padding: 9px 14px;
     background: var(--neon-tint-input);
@@ -483,14 +485,19 @@
     color: var(--text-primary);
     font-family: inherit;
     font-size: 13px;
-    transition: all 0.25s ease;
+    line-height: 1.45;
+    /* not `all` — height is JS-managed by autoGrow and must not animate */
+    transition: border-color 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
+    resize: none;
+    overflow-y: auto;
+    max-height: 200px;
   }
-  .input-area input:focus {
+  .input-area textarea:focus {
     border-color: var(--neon);
     box-shadow: 0 0 12px var(--neon-glow), 0 0 4px var(--neon-wash-strong);
     background: var(--neon-wash);
   }
-  .input-area input::placeholder { color: var(--text-muted); }
+  .input-area textarea::placeholder { color: var(--text-muted); }
 
   /* ── Inline item edit ── */
   .todo-edit-input {
@@ -506,6 +513,9 @@
     border-radius: 6px;
     box-shadow: 0 0 8px var(--neon-glow);
     width: 100%;
+    resize: none;
+    overflow-y: auto;
+    max-height: 200px;
   }
 
   /* ── Empty state ── */
@@ -568,6 +578,10 @@
     border-radius: 12px;
     width: 90px;
     box-shadow: 0 0 10px var(--neon-glow);
+    resize: none;
+    overflow-y: auto;
+    max-height: 80px;
+    line-height: 1.4;
   }
 
   /* ── Check completion animation ── */
@@ -791,7 +805,7 @@
       <div class="tab-bar" id="tabBar"></div>
       <div class="list-area" id="listArea"></div>
       <div class="input-area" id="inputArea">
-        <input type="text" id="newItemInput" placeholder="Add a task…" autofocus>
+        <textarea id="newItemInput" rows="1" placeholder="Add a task…" autofocus></textarea>
       </div>
       <div class="status-bar" id="statusBar">
         <span id="statusText"></span>
@@ -1559,7 +1573,7 @@ function renderTabs() {
     // Tab drag: reorder lists by dragging their tabs left/right
     tab.draggable = true;
     tab.addEventListener('dragstart', (e) => {
-      if (tab.querySelector('input')) { e.preventDefault(); return; } // renaming — leave the input alone
+      if (tab.querySelector('input, textarea')) { e.preventDefault(); return; } // renaming — leave the rename field alone
       dragSrcListId = list.id;
       tab.classList.add('dragging');
       e.dataTransfer.effectAllowed = 'move';
@@ -1649,14 +1663,30 @@ function renderTabs() {
   bar.appendChild(addGroup);
 }
 
+// ── Auto-growing textareas ──
+// Inputs are textareas so long tasks wrap and stay fully visible while typing.
+function autoGrow(el) {
+  el.style.height = 'auto';
+  // scrollHeight is 0 while hidden (e.g. before identity is picked) — keep natural rows=1 height then.
+  // offsetHeight - clientHeight re-adds the border, which scrollHeight excludes (box-sizing: border-box).
+  if (el.scrollHeight > 0) el.style.height = (el.scrollHeight + el.offsetHeight - el.clientHeight) + 'px';
+}
+function makeAutoGrow(el) {
+  el.addEventListener('input', () => autoGrow(el));
+  autoGrow(el); // size to current content (element must already be in the DOM)
+}
+// Width changes rewrap the text, so heights go stale — re-measure when the floating window is resized
+window.addEventListener('resize', () => document.querySelectorAll('textarea').forEach((el) => autoGrow(el)));
+
 function startRenameTab(tabEl, nameEl, list) {
   tabEl.draggable = false; // let the mouse select text in the input; render() restores it
-  const inp = document.createElement('input');
-  inp.type = 'text';
+  const inp = document.createElement('textarea');
+  inp.rows = 1;
   inp.className = 'tab-rename-input';
   inp.value = list.name;
 
   nameEl.replaceWith(inp);
+  makeAutoGrow(inp);
   inp.focus();
   inp.select();
 
@@ -1664,7 +1694,8 @@ function startRenameTab(tabEl, nameEl, list) {
   const finish = () => {
     if (finished) return;
     finished = true;
-    const val = inp.value.trim();
+    // List names are single-line — fold newlines a paste may have carried in (other whitespace kept as typed)
+    const val = inp.value.replace(/\s*[\r\n]+\s*/g, ' ').trim();
     if (val && val !== list.name) {
       updateList(list.id, { name: val });
     } else {
@@ -1674,7 +1705,9 @@ function startRenameTab(tabEl, nameEl, list) {
   };
   inp.addEventListener('blur', finish);
   inp.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') { e.preventDefault(); finish(); }
+    // any Enter commits — list names are single-line, no Shift+Enter newline
+    // (isComposing: Enter inside an IME conversion confirms the composition, not the commit)
+    if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); finish(); }
     if (e.key === 'Escape') { finished = true; render(); }
   });
 }
@@ -1764,11 +1797,12 @@ function makeItemRow(item, list, displayIdx, topLevelItems) {
   textEl.addEventListener('dblclick', (e) => {
     e.stopPropagation();
     row.draggable = false;
-    const inp = document.createElement('input');
-    inp.type = 'text';
+    const inp = document.createElement('textarea');
+    inp.rows = 1;
     inp.className = 'todo-edit-input';
     inp.value = item.text;
     textEl.replaceWith(inp);
+    makeAutoGrow(inp);
     inp.focus();
     inp.select();
     let finished = false;
@@ -1782,7 +1816,7 @@ function makeItemRow(item, list, displayIdx, topLevelItems) {
     };
     inp.addEventListener('blur', finish);
     inp.addEventListener('keydown', (ev) => {
-      if (ev.key === 'Enter') { ev.preventDefault(); finish(); }
+      if (ev.key === 'Enter' && !ev.shiftKey && !ev.isComposing) { ev.preventDefault(); finish(); }
       if (ev.key === 'Escape') { finished = true; render(); }
     });
   });
@@ -1856,8 +1890,8 @@ function renderList() {
       const dot = document.createElement('span');
       dot.className = 'subtask-new-dot';
       dot.textContent = '\u25e6';
-      const inp = document.createElement('input');
-      inp.type = 'text';
+      const inp = document.createElement('textarea');
+      inp.rows = 1;
       inp.className = 'todo-edit-input subtask-edit-input';
       inp.placeholder = 'New subtask\u2026';
       inputRow.appendChild(indent);
@@ -1877,6 +1911,7 @@ function renderList() {
       } else {
         area.appendChild(inputRow);
       }
+      makeAutoGrow(inp);
       inp.focus();
       let done = false;
       const commit = () => {
@@ -1888,7 +1923,7 @@ function renderList() {
       };
       inp.addEventListener('blur', commit);
       inp.addEventListener('keydown', (ev) => {
-        if (ev.key === 'Enter') { ev.preventDefault(); commit(); }
+        if (ev.key === 'Enter' && !ev.shiftKey && !ev.isComposing) { ev.preventDefault(); commit(); }
         if (ev.key === 'Escape') { done = true; render(); }
       });
     });
@@ -1934,10 +1969,16 @@ function renderStatus() {
 // ── Input handling ──
 
 const input = document.getElementById('newItemInput');
+makeAutoGrow(input);
 input.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter' && input.value.trim()) {
-    addItems(input.value);
-    input.value = '';
+  // Enter commits; Shift+Enter inserts a newline (each line becomes its own task)
+  if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
+    e.preventDefault();
+    if (input.value.trim()) {
+      addItems(input.value);
+      input.value = '';
+      autoGrow(input);
+    }
   }
 });
 
@@ -1949,6 +1990,7 @@ input.addEventListener('paste', (e) => {
     const suffix = input.value.substring(input.selectionEnd);
     addItems(prefix + pasted + suffix);
     input.value = '';
+    autoGrow(input);
   }
 });
 
