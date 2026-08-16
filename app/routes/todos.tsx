@@ -1,4 +1,4 @@
-import { Fragment, useState, useRef, useCallback, useEffect } from "react";
+import { Fragment, useState, useRef, useCallback, useEffect, useLayoutEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   fetchTodoListsWithItems,
@@ -69,6 +69,15 @@ function splitTaskLines(text: string): string[] {
     .filter(Boolean)
     .map(stripBulletPrefix)
     .filter(Boolean);
+}
+
+/** Size a textarea to its content so long tasks stay fully visible while typing */
+function autoGrowTextarea(el: HTMLTextAreaElement | null) {
+  if (!el) return;
+  el.style.height = "auto";
+  // scrollHeight is 0 while hidden — keep the natural rows=1 height then.
+  // offsetHeight - clientHeight re-adds the border, which scrollHeight excludes (box-sizing: border-box).
+  if (el.scrollHeight > 0) el.style.height = `${el.scrollHeight + el.offsetHeight - el.clientHeight}px`;
 }
 
 /** Check if a list is visible to a given user */
@@ -217,10 +226,10 @@ function TodosMain({
   const [subtaskText, setSubtaskText] = useState("");
   // Just-completed items keep their spot (and animate) briefly before sorting down
   const [recentlyDone, setRecentlyDone] = useState<Set<string>>(() => new Set());
-  const inputRef = useRef<HTMLInputElement>(null);
-  const renameRef = useRef<HTMLInputElement>(null);
-  const editRef = useRef<HTMLInputElement>(null);
-  const subInputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const renameRef = useRef<HTMLTextAreaElement>(null);
+  const editRef = useRef<HTMLTextAreaElement>(null);
+  const subInputRef = useRef<HTMLTextAreaElement>(null);
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Auto-select first list ONLY if no valid active list exists
@@ -247,6 +256,25 @@ function TodosMain({
   useEffect(() => {
     if (addingSubtaskFor) subInputRef.current?.focus();
   }, [addingSubtaskFor]);
+
+  // Keep every textarea sized to its content (covers open, typing, paste, and clear).
+  // Layout effects so the height is set before paint — no one-frame wrapped-but-short flash.
+  useLayoutEffect(() => autoGrowTextarea(renameRef.current), [renamingListId, renamingListName]);
+  useLayoutEffect(() => autoGrowTextarea(editRef.current), [editingItemId, editingItemText]);
+  useLayoutEffect(() => autoGrowTextarea(subInputRef.current), [addingSubtaskFor, subtaskText]);
+  useLayoutEffect(() => autoGrowTextarea(inputRef.current), [newInput]);
+
+  // Width changes rewrap the text, so heights go stale — re-measure on viewport resize
+  useEffect(() => {
+    const regrow = () => {
+      autoGrowTextarea(renameRef.current);
+      autoGrowTextarea(editRef.current);
+      autoGrowTextarea(subInputRef.current);
+      autoGrowTextarea(inputRef.current);
+    };
+    window.addEventListener("resize", regrow);
+    return () => window.removeEventListener("resize", regrow);
+  }, []);
 
   const activeList = sortedLists.find((l) => l.id === activeListId) ?? null;
   const activeColor = activeList ? NEON_COLORS[activeList.color_index % NEON_COLORS.length] : NEON_COLORS[0];
@@ -602,8 +630,10 @@ function TodosMain({
   }, [activeList, deleteItemMut]);
 
   const commitRename = useCallback(() => {
-    if (renamingListId && renamingListName.trim()) {
-      updateListMut.mutate({ id: renamingListId, updates: { name: renamingListName.trim() } });
+    // List names are single-line — fold newlines a paste may have carried in (other whitespace kept as typed)
+    const name = renamingListName.replace(/\s*[\r\n]+\s*/g, " ").trim();
+    if (renamingListId && name) {
+      updateListMut.mutate({ id: renamingListId, updates: { name } });
     }
     setRenamingListId(null);
   }, [renamingListId, renamingListName, updateListMut]);
@@ -746,7 +776,7 @@ function TodosMain({
     if (item.parent_id) return; // only top-level items are draggable, like the desktop app
     if (e.button !== 0 && e.pointerType === "mouse") return;
     const target = e.target as HTMLElement;
-    if (target.closest("button, input")) return; // don't hijack checkbox/delete/edit taps
+    if (target.closest("button, input, textarea")) return; // don't hijack checkbox/delete/edit taps
     if (editingItemId) return;
 
     const gesture = {
@@ -935,7 +965,7 @@ function TodosMain({
     if (e.button !== 0 && e.pointerType === "mouse") return;
     if (renamingListId === list.id) return;
     const target = e.target as HTMLElement;
-    if (target.closest("button, input")) return; // don't hijack delete/rename taps
+    if (target.closest("button, input, textarea")) return; // don't hijack delete/rename taps
 
     const gesture = {
       pointerId: e.pointerId,
@@ -1110,14 +1140,20 @@ function TodosMain({
         </button>
 
         {editingItemId === item.id ? (
-          <input
+          <textarea
             ref={editRef}
+            rows={1}
+            enterKeyHint="done"
             className="todo-item-edit"
             value={editingItemText}
             onChange={(e) => setEditingItemText(e.target.value)}
             onBlur={commitItemEdit}
             onKeyDown={(e) => {
-              if (e.key === "Enter") commitItemEdit();
+              // isComposing: Enter inside an IME conversion confirms the composition, not the edit
+              if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+                e.preventDefault();
+                commitItemEdit();
+              }
               if (e.key === "Escape") setEditingItemId(null);
             }}
           />
@@ -1211,14 +1247,20 @@ function TodosMain({
                 onMouseLeave={() => setHoveredTab(null)}
               >
                 {renamingListId === list.id ? (
-                  <input
+                  <textarea
                     ref={renameRef}
+                    rows={1}
+                    enterKeyHint="done"
                     className="todo-tab-rename"
                     value={renamingListName}
                     onChange={(e) => setRenamingListName(e.target.value)}
                     onBlur={commitRename}
                     onKeyDown={(e) => {
-                      if (e.key === "Enter") commitRename();
+                      // any Enter commits — list names are single-line, no Shift+Enter newline
+                      if (e.key === "Enter" && !e.nativeEvent.isComposing) {
+                        e.preventDefault();
+                        commitRename();
+                      }
                       if (e.key === "Escape") setRenamingListId(null);
                     }}
                     onClick={(e) => e.stopPropagation()}
@@ -1291,15 +1333,17 @@ function TodosMain({
                     <div className="todo-item todo-subtask-row todo-subtask-add-row">
                       <span className="todo-subtask-indent" />
                       <span className="todo-subtask-dot">&#9702;</span>
-                      <input
+                      <textarea
                         ref={subInputRef}
+                        rows={1}
+                        enterKeyHint="done"
                         className="todo-subtask-input"
                         placeholder="New subtask&hellip;"
                         value={subtaskText}
                         onChange={(e) => setSubtaskText(e.target.value)}
                         onBlur={() => commitSubtask(item.id, false)}
                         onKeyDown={(e) => {
-                          if (e.key === "Enter") {
+                          if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
                             e.preventDefault();
                             commitSubtask(item.id, true);
                           }
@@ -1330,8 +1374,9 @@ function TodosMain({
 
           {/* Input bar */}
           <div className="todo-input-bar">
-            <input
+            <textarea
               ref={inputRef}
+              rows={1}
               className="todo-input"
               placeholder="Add a task..."
               value={newInput}
@@ -1341,7 +1386,7 @@ function TodosMain({
                 if (newInput.trim()) handleAddItems();
               }}
               onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
+                if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
                   e.preventDefault();
                   handleAddItems();
                 }
@@ -1611,11 +1656,16 @@ const styles = `
   border: none;
   border-bottom: 1px solid var(--tab-color, var(--accent));
   color: var(--text);
+  font-family: inherit;
   font-size: 16px;
   font-weight: 500;
+  line-height: 1.3;
   outline: none;
   width: 80px;
   padding: 0;
+  resize: none;
+  overflow-y: auto;
+  max-height: 80px;
 }
 
 .todo-tab-count {
@@ -1796,6 +1846,7 @@ const styles = `
   cursor: default;
   min-width: 0;
   word-break: break-word;
+  white-space: pre-wrap;
 }
 
 .todo-item--done .todo-item-text {
@@ -1814,10 +1865,15 @@ const styles = `
   border: 1px solid var(--todo-accent);
   border-radius: 6px;
   color: var(--text);
+  font-family: inherit;
   font-size: 16px;
+  line-height: 1.4;
   padding: 4px 8px;
   outline: none;
   min-width: 0;
+  resize: none;
+  overflow-y: auto;
+  max-height: 40vh;
 }
 
 .todo-item-delete {
@@ -1919,10 +1975,15 @@ const styles = `
   border: 1px solid var(--todo-accent);
   border-radius: 6px;
   color: var(--text);
+  font-family: inherit;
   font-size: 14px;
+  line-height: 1.4;
   padding: 3px 8px;
   outline: none;
   min-width: 0;
+  resize: none;
+  overflow-y: auto;
+  max-height: 40vh;
 }
 .todo-subtask-input::placeholder {
   color: var(--text-dim);
@@ -1967,15 +2028,21 @@ const styles = `
 }
 
 .todo-input {
+  display: block;
   width: 100%;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   color: var(--text);
+  font-family: inherit;
   font-size: 16px;
+  line-height: 1.4;
   padding: 10px 14px;
   outline: none;
   transition: border-color 0.15s;
+  resize: none;
+  overflow-y: auto;
+  max-height: 40vh;
 }
 .todo-input::placeholder {
   color: var(--text-dim);
